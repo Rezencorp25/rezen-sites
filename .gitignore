@@ -4,6 +4,11 @@
 /node_modules
 /.pnp
 .pnp.*
+
+# package-lock excluded: avoids platform-specific optional dep drift
+# between local (macOS) and Cloud Build (linux). Cloud Build will
+# regenerate via npm install.
+package-lock.json
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
