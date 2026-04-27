@@ -1,5 +1,10 @@
 import type { PuckData, Page, Project } from "@/types";
-import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
+import type {
+  LocalBusinessSettings,
+  LocaleAlternate,
+  ProjectSettings,
+} from "@/lib/stores/settings-store";
+import { buildConsentBannerHtml } from "@/lib/seo/consent-banner";
 import {
   articleSchema,
   organizationSchema,
@@ -18,13 +23,23 @@ export type RenderOptions = {
   page?: Page;
   project?: Project;
   localBusiness?: LocalBusinessSettings;
+  /** BCP 47 default page language (e.g. "it", "en-US") */
+  locale?: string;
+  /** Per-page alternate language URLs */
+  alternates?: LocaleAlternate[];
+  /** Consent banner config (rendered when enabled) */
+  consent?: ProjectSettings["consent"];
 };
 
 export function renderPuckToHtml(data: PuckData, opts: RenderOptions): string {
   const body = (data.content ?? []).map(renderItem).join("\n");
   const head = renderHead(data, opts);
+  const lang = opts.locale ?? "it";
+  const consentBanner = opts.consent
+    ? buildConsentBannerHtml(opts.consent, lang)
+    : "";
   return `<!doctype html>
-<html lang="it">
+<html lang="${escapeAttr(lang)}">
   <head>
 ${head}
     <style data-rezen-styles="true">
@@ -66,6 +81,7 @@ ${head}
   </head>
   <body>
 ${body}
+${consentBanner}
   </body>
 </html>`;
 }
@@ -103,6 +119,27 @@ function renderHead(data: PuckData, opts: RenderOptions): string {
       : "");
   if (canonical) {
     lines.push(`    <link rel="canonical" href="${escapeAttr(canonical)}" />`);
+  }
+
+  // hreflang alternates
+  if (opts.alternates && opts.alternates.length > 0 && opts.locale) {
+    // Self-reference
+    if (canonical) {
+      lines.push(
+        `    <link rel="alternate" hreflang="${escapeAttr(opts.locale)}" href="${escapeAttr(canonical)}" />`,
+      );
+    }
+    for (const alt of opts.alternates) {
+      lines.push(
+        `    <link rel="alternate" hreflang="${escapeAttr(alt.hreflang)}" href="${escapeAttr(alt.href)}" />`,
+      );
+    }
+    // x-default fallback (best practice: points to default language version)
+    if (canonical) {
+      lines.push(
+        `    <link rel="alternate" hreflang="x-default" href="${escapeAttr(canonical)}" />`,
+      );
+    }
   }
 
   // OpenGraph
@@ -157,6 +194,7 @@ function renderHead(data: PuckData, opts: RenderOptions): string {
           openingHours: lb.openingHours.length > 0 ? lb.openingHours : undefined,
           serviceArea: lb.serviceArea.length > 0 ? lb.serviceArea : undefined,
           sameAs: lb.sameAs.length > 0 ? lb.sameAs : undefined,
+          reviews: lb.reviews && lb.reviews.length > 0 ? lb.reviews : undefined,
         }),
       );
     }

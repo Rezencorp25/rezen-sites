@@ -38,6 +38,12 @@ export type LocalBusinessInput = {
   serviceArea?: string[]; // ["Lugano", "Bellinzona"]
   image?: string;
   sameAs?: string[];
+  reviews?: Array<{
+    rating: number;
+    author: string;
+    date: string;
+    text: string;
+  }>;
 };
 
 function clean<T extends Record<string, unknown>>(obj: T): T {
@@ -140,6 +146,21 @@ export function breadcrumbSchema(
 export function localBusinessSchema(
   input: LocalBusinessInput,
 ): Record<string, unknown> {
+  const reviews = input.reviews ?? [];
+  const validReviews = reviews.filter(
+    (r) => r.rating >= 1 && r.rating <= 5 && r.author && r.text,
+  );
+  const aggregateRating =
+    validReviews.length > 0
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: (
+            validReviews.reduce((s, r) => s + r.rating, 0) / validReviews.length
+          ).toFixed(1),
+          reviewCount: validReviews.length,
+        }
+      : undefined;
+
   return clean({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -160,6 +181,21 @@ export function localBusinessSchema(
       : undefined,
     openingHoursSpecification: input.openingHours,
     areaServed: input.serviceArea,
+    aggregateRating,
+    review:
+      validReviews.length > 0
+        ? validReviews.map((r) => ({
+            "@type": "Review",
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: r.rating,
+              bestRating: 5,
+            },
+            author: { "@type": "Person", name: r.author },
+            datePublished: r.date,
+            reviewBody: r.text,
+          }))
+        : undefined,
   });
 }
 

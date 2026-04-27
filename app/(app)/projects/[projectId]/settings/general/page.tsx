@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { LocalBusinessEditor } from "@/components/seo/local-business-editor";
+import { HreflangEditor } from "@/components/seo/hreflang-editor";
+import { ConsentEditor } from "@/components/seo/consent-editor";
 import { buildRobotsTxt } from "@/lib/seo/robots-sitemap";
 
 export default function SettingsGeneralPage({
@@ -128,7 +130,9 @@ export default function SettingsGeneralPage({
             />
           </section>
 
+          <HreflangEditor projectId={projectId} />
           <LocalBusinessEditor projectId={projectId} />
+          <ConsentEditor projectId={projectId} />
 
           <section className="rounded-xl bg-surface-container-high p-6">
             <h2 className="mb-4 text-title-md font-semibold text-on-surface">

@@ -3,6 +3,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+export type LocalReview = {
+  /** 1-5 */
+  rating: number;
+  author: string;
+  /** ISO date YYYY-MM-DD */
+  date: string;
+  text: string;
+};
+
 export type LocalBusinessSettings = {
   enabled: boolean;
   /** legalName fallback to project.name when empty */
@@ -22,6 +31,15 @@ export type LocalBusinessSettings = {
   serviceArea: string[];
   /** Social profile URLs */
   sameAs: string[];
+  /** Customer reviews — render as Review/AggregateRating schema */
+  reviews: LocalReview[];
+};
+
+export type LocaleAlternate = {
+  /** ISO 639-1 + optional region: it, en-US, de-CH */
+  hreflang: string;
+  /** Absolute URL of the localised page (or root) */
+  href: string;
 };
 
 export type ProjectSettings = {
@@ -32,6 +50,10 @@ export type ProjectSettings = {
     indexable: boolean;
     canonical: boolean;
     socialImage?: string;
+    /** Default page language (BCP 47 short) */
+    defaultLocale: string;
+    /** Project-wide alternate locales mapped to roots/subdomains */
+    alternates: LocaleAlternate[];
   };
   domain: {
     customDomain: string;
@@ -56,6 +78,22 @@ export type ProjectSettings = {
     includeSitemap: boolean;
   };
   localBusiness: LocalBusinessSettings;
+  consent: {
+    enabled: boolean;
+    /** Cookie banner language; uses general.defaultLocale if empty */
+    locale: string;
+    /** Privacy policy URL (full or relative) */
+    privacyPolicyUrl: string;
+    /** Cookie policy URL */
+    cookiePolicyUrl: string;
+    /** Vendor categories to gate behind consent */
+    vendors: {
+      analytics: boolean;
+      ads: boolean;
+      marketing: boolean;
+      social: boolean;
+    };
+  };
 };
 
 type SettingsStore = {
@@ -77,6 +115,8 @@ function defaultsFor(projectId: string): ProjectSettings {
       description: "",
       indexable: true,
       canonical: true,
+      defaultLocale: "it",
+      alternates: [],
     },
     domain: {
       customDomain: "",
@@ -114,6 +154,19 @@ function defaultsFor(projectId: string): ProjectSettings {
       priceRange: "",
       serviceArea: [],
       sameAs: [],
+      reviews: [],
+    },
+    consent: {
+      enabled: false,
+      locale: "",
+      privacyPolicyUrl: "/privacy",
+      cookiePolicyUrl: "/cookies",
+      vendors: {
+        analytics: true,
+        ads: true,
+        marketing: true,
+        social: false,
+      },
     },
   };
 }
@@ -145,6 +198,7 @@ export const useSettingsStore = create<SettingsStore>()(
             ...fresh.localBusiness,
             ...(existing.localBusiness ?? {}),
           },
+          consent: { ...fresh.consent, ...(existing.consent ?? {}) },
         };
         return merged;
       },

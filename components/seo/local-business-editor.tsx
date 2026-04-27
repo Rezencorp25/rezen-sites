@@ -1,12 +1,14 @@
 "use client";
 
-import { MapPin, Plus, X } from "lucide-react";
+import { MapPin, Plus, Star, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useSettingsStore,
   type LocalBusinessSettings,
+  type LocalReview,
 } from "@/lib/stores/settings-store";
 
 export function LocalBusinessEditor({ projectId }: { projectId: string }) {
@@ -52,6 +54,24 @@ export function LocalBusinessEditor({ projectId }: { projectId: string }) {
   }
   function removeSameAs(i: number) {
     patch({ sameAs: lb.sameAs.filter((_, idx) => idx !== i) });
+  }
+
+  function addReview() {
+    const today = new Date().toISOString().slice(0, 10);
+    patch({
+      reviews: [
+        ...lb.reviews,
+        { rating: 5, author: "", date: today, text: "" },
+      ],
+    });
+  }
+  function updateReview(i: number, p: Partial<LocalReview>) {
+    const next = [...lb.reviews];
+    next[i] = { ...next[i], ...p };
+    patch({ reviews: next });
+  }
+  function removeReview(i: number) {
+    patch({ reviews: lb.reviews.filter((_, idx) => idx !== i) });
   }
 
   return (
@@ -201,6 +221,92 @@ export function LocalBusinessEditor({ projectId }: { projectId: string }) {
             onRemove={removeSameAs}
             placeholder="https://www.linkedin.com/company/..."
           />
+
+          <div className="md:col-span-2 mt-2">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-warning" />
+                <Label className="text-label-md text-secondary-text">
+                  Recensioni clienti ({lb.reviews.length})
+                </Label>
+              </div>
+              <button
+                type="button"
+                onClick={addReview}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-label-md text-molten-primary hover:bg-surface-container-highest"
+              >
+                <Plus className="h-3 w-3" />
+                Aggiungi
+              </button>
+            </div>
+            {lb.reviews.length === 0 ? (
+              <p className="rounded-md border border-dashed border-outline/30 px-3 py-2 text-label-md text-text-muted">
+                Nessuna recensione. Quando aggiungi almeno 1 review, l&apos;export
+                inietta AggregateRating + Review schema (rich snippets stelline
+                nei risultati Google).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {lb.reviews.map((r, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-outline/20 bg-surface-container-low p-3"
+                  >
+                    <div className="grid grid-cols-[100px_1fr_140px_36px] gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={5}
+                        step={1}
+                        value={r.rating}
+                        onChange={(e) =>
+                          updateReview(i, {
+                            rating: Math.max(
+                              1,
+                              Math.min(5, Number(e.target.value)),
+                            ),
+                          })
+                        }
+                        className="font-mono"
+                      />
+                      <Input
+                        value={r.author}
+                        onChange={(e) =>
+                          updateReview(i, { author: e.target.value })
+                        }
+                        placeholder="Nome cliente"
+                      />
+                      <Input
+                        type="date"
+                        value={r.date}
+                        onChange={(e) =>
+                          updateReview(i, { date: e.target.value })
+                        }
+                        className="font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeReview(i)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container hover:bg-surface-container-highest"
+                        aria-label="Rimuovi"
+                      >
+                        <X className="h-4 w-4 text-error" />
+                      </button>
+                    </div>
+                    <Textarea
+                      rows={2}
+                      value={r.text}
+                      onChange={(e) =>
+                        updateReview(i, { text: e.target.value })
+                      }
+                      placeholder="Testo recensione..."
+                      className="mt-2"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </section>

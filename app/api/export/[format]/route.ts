@@ -3,7 +3,11 @@ import { renderPuckToHtml } from "@/lib/export/render-html";
 import { exportReactComponent } from "@/lib/export/react-component";
 import { buildNextJsZip } from "@/lib/export/nextjs-zip";
 import type { Page, Project } from "@/types";
-import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
+import type {
+  LocalBusinessSettings,
+  LocaleAlternate,
+  ProjectSettings,
+} from "@/lib/stores/settings-store";
 
 export const runtime = "nodejs";
 
@@ -13,6 +17,9 @@ type Body = {
   project?: Project;
   projectName?: string;
   localBusiness?: LocalBusinessSettings;
+  locale?: string;
+  alternates?: LocaleAlternate[];
+  consent?: ProjectSettings["consent"];
 };
 
 export async function POST(
@@ -30,6 +37,9 @@ export async function POST(
         page: body.page,
         project: body.project,
         localBusiness: body.localBusiness,
+        locale: body.locale,
+        alternates: body.alternates,
+        consent: body.consent,
       });
       return new NextResponse(html, {
         headers: {
@@ -59,6 +69,9 @@ export async function POST(
         pages: body.pages,
         project: body.project,
         localBusiness: body.localBusiness,
+        locale: body.locale,
+        alternates: body.alternates,
+        consent: body.consent,
       });
       return new NextResponse(new Uint8Array(zip), {
         headers: {

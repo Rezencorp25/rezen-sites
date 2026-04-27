@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectData } from "@/lib/hooks/use-project-data";
+import { useProjectsStore } from "@/lib/stores/projects-store";
+import { useSettingsStore } from "@/lib/stores/settings-store";
+import { computeAlerts } from "@/lib/seo/alert-engine";
 import { SeverityPill } from "@/components/luminous/status-pill";
 import { cn } from "@/lib/utils";
 import type { Alert, AlertSeverity } from "@/types";
@@ -38,7 +41,20 @@ export default function AlertsPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = use(params);
-  const { alerts } = useProjectData(projectId);
+  const data = useProjectData(projectId);
+  const project = useProjectsStore((s) => s.getById(projectId));
+  const settings = useSettingsStore((s) => s.get(projectId));
+  // Real alerts from rule engine (live from page state) instead of MOCK_ALERTS.
+  // Falls back to data.alerts (mock) only if project is missing.
+  const alerts = useMemo(() => {
+    if (!project) return data.alerts;
+    return computeAlerts({
+      project,
+      pages: data.pages,
+      redirects: data.redirects,
+      localBusiness: settings.localBusiness,
+    });
+  }, [project, data.pages, data.redirects, data.alerts, settings.localBusiness]);
   const [filter, setFilter] = useState<AlertSeverity | "all">("all");
   const [acknowledged, setAcknowledged] = useState<Set<string>>(new Set());
 

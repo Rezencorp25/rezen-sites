@@ -19,13 +19,20 @@ import {
  * `app/[...slug]/page.tsx` returning `dangerouslySetInnerHTML`. The archive
  * contains exactly what's needed to `npm install && npm run dev`.
  */
-import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
+import type {
+  LocalBusinessSettings,
+  LocaleAlternate,
+  ProjectSettings,
+} from "@/lib/stores/settings-store";
 
 export async function buildNextJsZip(opts: {
   projectName: string;
   pages: Page[];
   project?: Project;
   localBusiness?: LocalBusinessSettings;
+  locale?: string;
+  alternates?: LocaleAlternate[];
+  consent?: ProjectSettings["consent"];
 }): Promise<Buffer> {
   const zip = new JSZip();
   const root = sanitizeDir(opts.projectName);
@@ -54,7 +61,17 @@ export async function buildNextJsZip(opts: {
     opts.pages.find((p) => p.slug === "/" || p.slug === "home") ??
     opts.pages[0];
   if (home) {
-    app.file("page.tsx", staticPageTsx(home, opts.project, opts.localBusiness));
+    app.file(
+      "page.tsx",
+      staticPageTsx(
+        home,
+        opts.project,
+        opts.localBusiness,
+        opts.locale,
+        opts.alternates,
+        opts.consent,
+      ),
+    );
   }
 
   // Other pages under /[slug]/page.tsx
@@ -63,7 +80,17 @@ export async function buildNextJsZip(opts: {
     const slug = page.slug.replace(/^\//, "") || page.id;
     app
       .folder(slug)!
-      .file("page.tsx", staticPageTsx(page, opts.project, opts.localBusiness));
+      .file(
+        "page.tsx",
+        staticPageTsx(
+          page,
+          opts.project,
+          opts.localBusiness,
+          opts.locale,
+          opts.alternates,
+          opts.consent,
+        ),
+      );
   }
 
   return Buffer.from(await zip.generateAsync({ type: "nodebuffer" }));
@@ -82,12 +109,18 @@ function staticPageTsx(
   page: Page,
   project?: Project,
   localBusiness?: LocalBusinessSettings,
+  locale?: string,
+  alternates?: LocaleAlternate[],
+  consent?: ProjectSettings["consent"],
 ): string {
   const html = renderPuckToHtml(page.puckData, {
     title: page.title,
     page,
     project,
     localBusiness,
+    locale,
+    alternates,
+    consent,
   });
   const body = html.substring(html.indexOf("<body>") + 6, html.indexOf("</body>"));
   const styleTag = html.match(/<style[^>]*>([\s\S]*?)<\/style>/);

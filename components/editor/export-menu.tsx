@@ -31,6 +31,9 @@ export function ExportMenu({
   const project = useProjectsStore((s) => s.getById(projectId));
   const settings = useSettingsStore((s) => s.get(projectId));
   const localBusiness = settings.localBusiness;
+  const locale = settings.general.defaultLocale;
+  const alternates = settings.general.alternates;
+  const consent = settings.consent;
 
   async function run(format: Format) {
     if (busy) return;
@@ -42,11 +45,14 @@ export function ExportMenu({
               projectName,
               project,
               localBusiness,
+              locale,
+              alternates,
+              consent,
               pages: allPages.filter(
                 (p) => p.projectId === projectId && p.status === "published",
               ),
             }
-          : { page, project, localBusiness };
+          : { page, project, localBusiness, locale, alternates, consent };
 
       if (format === "nextjs" && body.pages!.length === 0) {
         toast.error("Nessuna pagina pubblicata da esportare");

@@ -11,35 +11,34 @@
 | 2026-04-27 | R1 — Foundations | service-factory cross-cutting (D.28, E.37, E.38, F.54 abilitati) | `lib/services/*` con switch mock/real |
 | 2026-04-27 | R2-A — SEO core editor | A.1, A.2, A.4, A.8 (UI), A.10 | SEO editor reale al posto di ModulePlaceholder |
 | 2026-04-27 | R2-B — Schema + technical | A.3, A.6, A.8 (enforcement), A.13, B.19, C.20 | JSON-LD auto-iniettato + robots/sitemap + LocalBusiness editor |
+| 2026-04-27 | R3 — Multilingua + Compliance + Audit | A.9, E.39, H.73, H.76, C.23, C.24 | hreflang + alert engine reale + GDPR consent + alt enforcement + reviews/NAP audit |
 
-**Stato corrente**: 13 gap chiusi su 99 totali. Restano 86.
+**Stato corrente**: 19 gap chiusi su 99 totali. Restano 80.
 
 ## Sommario aggiornato
 
 | Area | Gap aperti | P0 | P1 | P2 |
 |------|----:|---:|---:|---:|
-| A. SEO classico | 7 | 1 | 5 | 1 |
+| A. SEO classico | 6 | 0 | 5 | 1 |
 | B. AEO | 5 | 1 | 4 | 0 |
-| C. GEO + Local | 6 | 0 | 5 | 1 |
+| C. GEO + Local | 4 | 0 | 3 | 1 |
 | D. Ads & Paid Media | 10 | 2 | 7 | 1 |
-| E. Analytics & Measurement | 12 | 3 | 6 | 3 |
+| E. Analytics & Measurement | 11 | 2 | 6 | 3 |
 | F. Domain / Hosting / Infra | 12 | 2 | 8 | 2 |
 | G. Forms / Leads / CRM | 12 | 3 | 7 | 2 |
-| H. Compliance / Legal / A11y | 10 | 2 | 7 | 1 |
+| H. Compliance / Legal / A11y | 8 | 1 | 6 | 1 |
 | I. Operational / Agency | 17 | 2 | 13 | 2 |
-| **TOTALE** | **86** | **16** | **62** | **13** |
+| **TOTALE** | **80** | **13** | **59** | **13** |
 
 ---
 
 ## A. SEO classico (on-page + technical + off-page)
 
-> Chiusi in R2: A.1 (editor on-page), A.2 (AI fill wire), A.3 (Schema.org auto-inject), A.4 (canonical override), A.6 (robots.txt + sitemap.xml), A.8 (indexable enforcement), A.10 (counter live), A.13 (redirect chain/loop validator).
+> Chiusi: A.1, A.2, A.3, A.4, A.6, A.8, A.9 (R3), A.10, A.13.
 
 A.5 **Internal linking suggestions assenti.** Nessuna analisi orphan pages, anchor text, link suggeriti. **P1** → crawl pagine, estrai keyword, suggerisci anchor + target.
 
 A.7 **rel=nofollow/sponsored/ugc non gestibili.** **P2** → audit link esterni nel contenuto Puck + bulk attribute apply.
-
-A.9 **hreflang / multilingua zero.** UI è tutta italiana ma nessuna infrastruttura locale. **P0** → hreflang generation + sitemap variants per lingua.
 
 A.11 **Backlink monitoring assente.** Zero integrazione Ahrefs/Moz/Semrush, niente import manuale. **P1** → tracker manuale + opzionale API SEO tool per DA + backlink profile.
 
@@ -47,7 +46,7 @@ A.12 **Competitor SEO benchmarking assente.** **P2** → input URL competitor + 
 
 A.X **llms.txt builder.** **P1** (post-2024) → file standard per AI engines, builder con consent crawler AI.
 
-A.Y **Image SEO automatico.** Alt text mandatory + dimensioni + formats moderni (webp/avif). **P1** → enforcement + vision AI auto-alt.
+A.Y **Image SEO automatico.** Vision AI auto-alt + dimensioni + formats moderni (webp/avif). **P1** (alt enforcement chiuso in R3.H.76; manca auto-generation + format moderni).
 
 ---
 
@@ -65,12 +64,10 @@ B.18 **Entity optimization assente.** Nessun linking a entità definite (persone
 
 ## C. GEO (Generative Engine Optimization + Local SEO)
 
-> Chiuso in R2: C.20 (LocalBusiness editor in settings + auto-inject schema in export).
+> Chiusi: C.20 (LocalBusiness editor + auto-inject schema), C.23 (Review/AggregateRating in R3), C.24 (NAP audit in R3 alert engine).
 
-C.21 **Service area / multi-location targeting assente.** **P1** → metadata location-aware + landing page templates per location + service area schema (LocalBusiness ha campo `serviceArea`, ora UI esiste; manca gestione MULTI-location).
+C.21 **Service area / multi-location targeting assente.** **P1** → metadata location-aware + landing page templates per location (SerEvice area UI esiste; manca gestione MULTI-location).
 C.22 **LocalBusiness/Place schema esiste ma manca preview Google Local Pack.** **P1** → preview "near me" + breadcrumb geo.
-C.23 **Review/rating schema management mancante.** **P1** → import recensioni Google/Yelp/custom + auto-inject AggregateRating/Review schema.
-C.24 **NAP consistency audit assente.** **P1** → audit cross-pagine + flag deviazioni + canonical NAP suggerito.
 C.25 **Local citations management assente.** Apple Maps, Bing, TripAdvisor, directory di settore. **P2** → submission UI + monitoring NAP consistency.
 C.26 **GEO snippet optimization assente.** Zero ottimizzazione per query "near me" / local pack / map snippets. **P1** → schema "near me" intent + map-friendly markup (coords, radius).
 
@@ -99,7 +96,7 @@ D.36 **Pixel debug tools assenti.** Verified/unverified flags solo cosmetici. **
 
 E.37 **Layer analytics interamente mock.** Architettura swap-ready in piedi; manca refactor di useProjectData per consumare il factory. **P0**.
 E.38 **GA4 integration vera assente.** Stub class GA4AnalyticsService pronto da implementare. **P0** (al go-live).
-E.39 **Alerts hardcoded.** `MOCK_ALERTS` con 6 alert predefiniti, niente monitoring reale. **P0** → engine real-time: meta description missing, CWV failure, traffic anomaly, GSC crawl errors, form abandonment spike.
+~~E.39 Alert engine reale~~ — chiuso in R3 (`lib/seo/alert-engine.ts`, 9 regole live: meta missing, title length, OG image, alt text, redirect issues, FAQ schema gap, NAP consistency, etc.). Estensioni future P1: anomaly detection, GSC crawl errors, form abandonment.
 E.40 **Anomaly detection / forecasting assente.** Trend lineari hardcoded. **P1** → z-score / Isolation Forest + forecast 7/30gg con seasonal decomposition.
 E.41 **Cohort/retention analysis mancante.** **P1** → segmentazione per source/behavior/device + curve di retention + LTV + payback.
 E.42 **Form conversion rate scollegato da GA4.** **P1** → mapping submissions → GA4 events + funnel + abandonment.
@@ -150,10 +147,10 @@ G.72 **Progressive profiling / enrichment assenti.** **P2** → hide known field
 
 ## H. Compliance / Legal / Accessibility
 
-H.73 **GDPR / consent management assente.** Zero cookie banner, preferences, DSAR workflow, privacy policy template. **P0** → integrare Cookiebot/OneTrust o open-source (Osano) + privacy policy generator + DSAR.
+~~H.73 GDPR consent banner~~ — chiuso in R3 (`lib/seo/consent-banner.ts`, banner self-contained con Consent Mode v2, 4 lingue, gating per categoria; UI editor in `/settings/general`).
 H.74 **`robots.txt` builder UI** (vedi A.6) — chiuso in R2 (preview live in settings).
 H.75 **Accessibility audit / WCAG reporting assente.** **P0** → integrare axe-core o WAVE API + audit on publish + report WCAG 2.2 AA.
-H.76 **Alt text immagini non enforced.** Componenti Puck image accettano img senza alt. **P1** → alt mandatory + auto-generate via vision AI (Claude vision) + validate on publish.
+~~H.76 Alt text enforcement~~ — chiuso in R3 (badge "Alt mancante" in editor Puck + alert rule cross-pagine). Estensione P2: auto-generate alt via vision AI.
 H.77 **ToS / privacy / disclaimer template assenti.** **P1** → integrare iubenda/Termly/TermsFeed o template interno + sync custom domain.
 H.78 **PII masking / data residency config assenti.** **P1** → field-level encryption + PII detection in analytics + residency selection (EU/US/CH).
 H.79 **Keyboard nav / screen reader testing mancante.** **P1** → audit keyboard via Axe + ARIA labels + test NVDA/JAWS.
@@ -185,20 +182,18 @@ I.99 **Backup/restore / DR plan documentato assente** (vedi anche F.59). **P1**.
 
 ---
 
-## Top 10 priorità rimaste
+## Top 10 priorità rimaste (post R3)
 
-Ricalibrato in base a quello che è già stato fatto:
-
-1. **A.9** — hreflang + multilingua infrastructure (sblocca clienti con audience EU non-IT)
-2. **D.28 + E.37** — Refactor dashboard analytics/ads/adsense per consumare service-factory (chiude la coda dell'architettura R1)
-3. **E.39** — Alert engine reale al posto di MOCK_ALERTS
-4. **G.61 + G.63** — Form builder + CRM webhook (oggi i form sono solo capture, zero valore lead-gen)
-5. **H.73** — GDPR consent + cookie banner (compliance bloccante)
-6. **H.75 + H.76** — Accessibility audit + alt text enforcement
-7. **C.23 + C.24** — Review schema + NAP consistency audit
-8. **A.5 + A.X** — Internal linking suggestions + llms.txt builder
-9. **F.50** — SSL automation + cert renewal alerts
-10. **I.83 + I.86** — RBAC + public REST API (foundation operational)
+1. **D.28 + E.37** — Refactor dashboard analytics/ads/adsense per consumare service-factory (chiude la coda dell'architettura R1)
+2. **G.61 + G.63** — Form builder + CRM webhook (oggi i form sono solo capture, zero valore lead-gen)
+3. **H.75** — Accessibility audit con axe-core
+4. **A.5 + A.X** — Internal linking suggestions + llms.txt builder
+5. **F.50** — SSL automation + cert renewal alerts
+6. **F.49 + F.51** — DNS records UI + email auth (SPF/DKIM/DMARC)
+7. **D.29 + D.30** — Conversion tracking wizard + UTM builder
+8. **G.62** — Spam protection forms (reCAPTCHA / honeypot)
+9. **I.83 + I.86** — RBAC + public REST API (foundation operational)
+10. **B.14 + B.16** — AEO snippet optimizer + passage scoring
 
 ## Note sui falsi positivi possibili
 

@@ -270,17 +270,33 @@ export const ImageBlock: ComponentConfig<ImageBlockProps> = {
     },
   },
   defaultProps: { src: "/mock-images/hero-gradient.svg", alt: "Immagine", aspectRatio: "16/9", fit: "cover" },
-  render: ({ src, alt, aspectRatio, fit }) => (
-    <div className="mx-auto max-w-7xl px-10 py-6">
-      <div
-        className="overflow-hidden rounded-xl bg-surface-container-low"
-        style={{ aspectRatio: aspectRatio === "auto" ? undefined : aspectRatio }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="h-full w-full" style={{ objectFit: fit }} />
+  render: ({ src, alt, aspectRatio, fit }) => {
+    const altMissing = !alt || !String(alt).trim();
+    return (
+      <div className="mx-auto max-w-7xl px-10 py-6">
+        <div
+          className="relative overflow-hidden rounded-xl bg-surface-container-low"
+          style={{ aspectRatio: aspectRatio === "auto" ? undefined : aspectRatio }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt || ""}
+            className="h-full w-full"
+            style={{ objectFit: fit }}
+          />
+          {altMissing && (
+            <span
+              className="pointer-events-none absolute right-2 top-2 rounded-md bg-error px-2 py-0.5 text-label-sm font-bold uppercase tracking-wider text-on-surface"
+              title="Alt mancante: bloccante per accessibilità (WCAG) e SEO immagini"
+            >
+              Alt mancante
+            </span>
+          )}
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 };
 
 // ───────────────────────── Button ─────────────────────────
