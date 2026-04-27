@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useMemo } from "react";
 import { Upload, Globe, Search, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectsStore } from "@/lib/stores/projects-store";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { LocalBusinessEditor } from "@/components/seo/local-business-editor";
+import { buildRobotsTxt } from "@/lib/seo/robots-sitemap";
 
 export default function SettingsGeneralPage({
   params,
@@ -30,6 +32,18 @@ export default function SettingsGeneralPage({
       });
     }
   }, [project, projectId, settings.general.siteTitle, updateSection]);
+
+  const robotsPreview = useMemo(() => {
+    return buildRobotsTxt(
+      {
+        allowAll: settings.general.indexable && settings.robots.allowAll,
+        disallow: settings.robots.disallow,
+        crawlDelay: settings.robots.crawlDelay,
+        includeSitemap: settings.robots.includeSitemap,
+      },
+      settings.general.siteUrl || "https://example.ch",
+    );
+  }, [settings]);
 
   if (!project) return null;
 
@@ -114,6 +128,8 @@ export default function SettingsGeneralPage({
             />
           </section>
 
+          <LocalBusinessEditor projectId={projectId} />
+
           <section className="rounded-xl bg-surface-container-high p-6">
             <h2 className="mb-4 text-title-md font-semibold text-on-surface">
               Immagini Social
@@ -161,13 +177,11 @@ export default function SettingsGeneralPage({
               robots.txt
             </h2>
             <pre className="overflow-x-auto rounded-lg bg-surface-container-lowest p-4 font-mono text-label-sm leading-6 text-success">
-{`User-agent: *
-${settings.general.indexable ? "Allow: /" : "Disallow: /"}
-
-Sitemap: ${settings.general.siteUrl || "https://example.ch"}/sitemap.xml`}
+{robotsPreview}
             </pre>
             <p className="mt-2 text-label-sm text-text-muted">
-              Generato automaticamente. Override manuale disponibile in DOC 3.
+              Generato automaticamente in base agli switch &amp; alla lista Disallow.
+              Override granulare nella prossima iterazione.
             </p>
           </section>
         </div>

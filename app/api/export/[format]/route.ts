@@ -2,14 +2,17 @@ import { NextResponse } from "next/server";
 import { renderPuckToHtml } from "@/lib/export/render-html";
 import { exportReactComponent } from "@/lib/export/react-component";
 import { buildNextJsZip } from "@/lib/export/nextjs-zip";
-import type { Page } from "@/types";
+import type { Page, Project } from "@/types";
+import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
 
 export const runtime = "nodejs";
 
 type Body = {
   page?: Page;
   pages?: Page[];
+  project?: Project;
   projectName?: string;
+  localBusiness?: LocalBusinessSettings;
 };
 
 export async function POST(
@@ -22,7 +25,12 @@ export async function POST(
   try {
     if (format === "html") {
       if (!body.page) return bad("page richiesta");
-      const html = renderPuckToHtml(body.page.puckData, { title: body.page.title });
+      const html = renderPuckToHtml(body.page.puckData, {
+        title: body.page.title,
+        page: body.page,
+        project: body.project,
+        localBusiness: body.localBusiness,
+      });
       return new NextResponse(html, {
         headers: {
           "content-type": "text/html; charset=utf-8",
@@ -49,6 +57,8 @@ export async function POST(
       const zip = await buildNextJsZip({
         projectName: body.projectName ?? "rezen-site",
         pages: body.pages,
+        project: body.project,
+        localBusiness: body.localBusiness,
       });
       return new NextResponse(new Uint8Array(zip), {
         headers: {

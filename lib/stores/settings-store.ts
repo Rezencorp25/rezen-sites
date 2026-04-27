@@ -3,6 +3,27 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+export type LocalBusinessSettings = {
+  enabled: boolean;
+  /** legalName fallback to project.name when empty */
+  legalName: string;
+  telephone: string;
+  email: string;
+  streetAddress: string;
+  postalCode: string;
+  addressLocality: string;
+  addressRegion: string;
+  addressCountry: string;
+  geoLat?: number;
+  geoLng?: number;
+  /** OpenStreetMap-style hours, e.g. ["Mo-Fr 09:00-18:00"] */
+  openingHours: string[];
+  priceRange: string;
+  serviceArea: string[];
+  /** Social profile URLs */
+  sameAs: string[];
+};
+
 export type ProjectSettings = {
   general: {
     siteTitle: string;
@@ -28,6 +49,13 @@ export type ProjectSettings = {
     headerCode: string;
     footerCode: string;
   };
+  robots: {
+    allowAll: boolean;
+    disallow: string[];
+    crawlDelay: number;
+    includeSitemap: boolean;
+  };
+  localBusiness: LocalBusinessSettings;
 };
 
 type SettingsStore = {
@@ -66,6 +94,27 @@ function defaultsFor(projectId: string): ProjectSettings {
       headerCode: "",
       footerCode: "",
     },
+    robots: {
+      allowAll: true,
+      disallow: ["/admin", "/api", "/_next"],
+      crawlDelay: 0,
+      includeSitemap: true,
+    },
+    localBusiness: {
+      enabled: false,
+      legalName: "",
+      telephone: "",
+      email: "",
+      streetAddress: "",
+      postalCode: "",
+      addressLocality: "",
+      addressRegion: "",
+      addressCountry: "CH",
+      openingHours: [],
+      priceRange: "",
+      serviceArea: [],
+      sameAs: [],
+    },
   };
 }
 
@@ -75,12 +124,29 @@ export const useSettingsStore = create<SettingsStore>()(
       byProject: {},
       get: (projectId) => {
         const existing = getState().byProject[projectId];
-        if (existing) return existing;
         const fresh = defaultsFor(projectId);
-        set((state) => ({
-          byProject: { ...state.byProject, [projectId]: fresh },
-        }));
-        return fresh;
+        if (!existing) {
+          set((state) => ({
+            byProject: { ...state.byProject, [projectId]: fresh },
+          }));
+          return fresh;
+        }
+        // Forward-compat merge: inject any new sections (robots, localBusiness)
+        // that may be missing from settings persisted by previous versions.
+        const merged: ProjectSettings = {
+          ...fresh,
+          ...existing,
+          general: { ...fresh.general, ...existing.general },
+          domain: { ...fresh.domain, ...existing.domain },
+          staging: { ...fresh.staging, ...existing.staging },
+          tracking: { ...fresh.tracking, ...existing.tracking },
+          robots: { ...fresh.robots, ...(existing.robots ?? {}) },
+          localBusiness: {
+            ...fresh.localBusiness,
+            ...(existing.localBusiness ?? {}),
+          },
+        };
+        return merged;
       },
       update: (projectId, patch) =>
         set((state) => ({

@@ -1,19 +1,33 @@
-import type { PuckData } from "@/types";
+import type { PuckData, Page, Project } from "@/types";
+import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
+import {
+  articleSchema,
+  organizationSchema,
+  faqSchema,
+  localBusinessSchema,
+} from "@/lib/seo/schema-generator";
 
 /**
  * Server-safe HTML renderer for Puck data. Maps each Luminous component
  * type to inline-styled HTML so the output is self-contained (no Tailwind
  * runtime required on the exported page).
  */
-export function renderPuckToHtml(data: PuckData, opts: { title: string }): string {
+export type RenderOptions = {
+  title: string;
+  /** When provided, full SEO + schema.org head injection */
+  page?: Page;
+  project?: Project;
+  localBusiness?: LocalBusinessSettings;
+};
+
+export function renderPuckToHtml(data: PuckData, opts: RenderOptions): string {
   const body = (data.content ?? []).map(renderItem).join("\n");
+  const head = renderHead(data, opts);
   return `<!doctype html>
 <html lang="it">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(opts.title)}</title>
-    <style>
+${head}
+    <style data-rezen-styles="true">
       :root {
         --bg: #12121d; --surface: #1d1d29; --surface-high: #292935;
         --surface-highest: #33333f; --surface-lowest: #16161f;
@@ -54,6 +68,125 @@ export function renderPuckToHtml(data: PuckData, opts: { title: string }): strin
 ${body}
   </body>
 </html>`;
+}
+
+function renderHead(data: PuckData, opts: RenderOptions): string {
+  const lines: string[] = [
+    '    <meta charset="utf-8" />',
+    '    <meta name="viewport" content="width=device-width, initial-scale=1" />',
+  ];
+
+  const seo = opts.page?.seo;
+  const project = opts.project;
+  const title = seo?.metaTitle?.trim() || opts.title;
+  lines.push(`    <title>${escapeHtml(title)}</title>`);
+
+  if (seo?.metaDescription) {
+    lines.push(`    <meta name="description" content="${escapeAttr(seo.metaDescription)}" />`);
+  }
+
+  // Robots meta — enforce indexable flag
+  if (seo) {
+    const directives = [
+      seo.indexable ? "index" : "noindex",
+      "follow",
+    ];
+    if (!seo.internalSearch) directives.push("nositelinkssearchbox");
+    lines.push(`    <meta name="robots" content="${directives.join(", ")}" />`);
+  }
+
+  // Canonical
+  const canonical =
+    seo?.canonicalUrl ||
+    (project && opts.page
+      ? `https://${project.domain}/${opts.page.slug}`.replace(/\/+$/, "")
+      : "");
+  if (canonical) {
+    lines.push(`    <link rel="canonical" href="${escapeAttr(canonical)}" />`);
+  }
+
+  // OpenGraph
+  if (seo) {
+    const ogTitle = seo.og?.title || title;
+    const ogDesc = seo.og?.description || seo.metaDescription;
+    lines.push(`    <meta property="og:type" content="website" />`);
+    lines.push(`    <meta property="og:title" content="${escapeAttr(ogTitle)}" />`);
+    if (ogDesc) lines.push(`    <meta property="og:description" content="${escapeAttr(ogDesc)}" />`);
+    if (canonical) lines.push(`    <meta property="og:url" content="${escapeAttr(canonical)}" />`);
+    if (seo.og?.image) {
+      lines.push(`    <meta property="og:image" content="${escapeAttr(seo.og.image)}" />`);
+      lines.push(`    <meta name="twitter:card" content="summary_large_image" />`);
+    } else {
+      lines.push(`    <meta name="twitter:card" content="summary" />`);
+    }
+    lines.push(`    <meta name="twitter:title" content="${escapeAttr(ogTitle)}" />`);
+    if (ogDesc) lines.push(`    <meta name="twitter:description" content="${escapeAttr(ogDesc)}" />`);
+  }
+
+  // JSON-LD schema.org auto-injection
+  if (project && opts.page) {
+    const schemas: Record<string, unknown>[] = [
+      organizationSchema(project),
+      articleSchema(project, opts.page),
+    ];
+    // Auto-detect FAQ blocks in puck content and append FAQPage schema
+    const faqItems = extractFaqItems(data);
+    if (faqItems.length > 0) schemas.push(faqSchema(faqItems));
+    // LocalBusiness schema if enabled in settings
+    if (opts.localBusiness?.enabled) {
+      const lb = opts.localBusiness;
+      schemas.push(
+        localBusinessSchema({
+          name: lb.legalName || project.name,
+          url: `https://${project.domain}`,
+          telephone: lb.telephone || undefined,
+          priceRange: lb.priceRange || undefined,
+          address: lb.streetAddress
+            ? {
+                streetAddress: lb.streetAddress,
+                addressLocality: lb.addressLocality,
+                postalCode: lb.postalCode,
+                addressCountry: lb.addressCountry,
+                addressRegion: lb.addressRegion || undefined,
+              }
+            : undefined,
+          geo:
+            lb.geoLat && lb.geoLng
+              ? { latitude: lb.geoLat, longitude: lb.geoLng }
+              : undefined,
+          openingHours: lb.openingHours.length > 0 ? lb.openingHours : undefined,
+          serviceArea: lb.serviceArea.length > 0 ? lb.serviceArea : undefined,
+          sameAs: lb.sameAs.length > 0 ? lb.sameAs : undefined,
+        }),
+      );
+    }
+    for (const s of schemas) {
+      lines.push(
+        `    <script type="application/ld+json">${JSON.stringify(s)}</script>`,
+      );
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function extractFaqItems(
+  data: PuckData,
+): { question: string; answer: string }[] {
+  const out: { question: string; answer: string }[] = [];
+  for (const item of data.content ?? []) {
+    if (item.type === "FAQ") {
+      const items = (item.props as Record<string, unknown>).items as
+        | Array<{ question: string; answer: string }>
+        | undefined;
+      if (Array.isArray(items)) {
+        for (const it of items) {
+          if (it.question && it.answer) out.push(it);
+        }
+      }
+    }
+  }
+  return out;
 }
 
 type Item = PuckData["content"][number] & { type: string };

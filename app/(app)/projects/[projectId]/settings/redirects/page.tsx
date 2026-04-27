@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
@@ -10,9 +10,14 @@ import {
   Gauge,
   Activity,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRedirectsStore } from "@/lib/stores/redirects-store";
+import {
+  validateRedirects,
+  describeIssue,
+} from "@/lib/seo/redirect-validator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -41,6 +46,8 @@ export default function SettingsRedirectsPage({
   const [newPath, setNewPath] = useState("");
   const [type, setType] = useState<"301" | "302">("301");
 
+  const validation = useMemo(() => validateRedirects(redirects), [redirects]);
+
   function handleCreate() {
     if (!oldPath.trim() || !newPath.trim()) {
       toast.error("Completa entrambi i campi");
@@ -59,6 +66,27 @@ export default function SettingsRedirectsPage({
 
   return (
     <div className="mx-auto max-w-5xl px-10 pb-12 pt-2">
+      {validation.issues.length > 0 && (
+        <section className="mb-5 rounded-xl border border-warning/40 bg-warning-container p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-warning" />
+            <h3 className="text-body-md font-semibold text-on-surface">
+              {validation.issues.length} problema/i rilevati
+            </h3>
+          </div>
+          <ul className="space-y-1">
+            {validation.issues.map((iss, idx) => (
+              <li
+                key={`${iss.kind}-${idx}`}
+                className="font-mono text-label-md text-secondary-text"
+              >
+                · {describeIssue(iss)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="mb-5 rounded-xl bg-surface-container-high p-6">
         <div className="mb-5 flex items-center gap-2.5">
           <Plus className="h-4 w-4 text-molten-primary" />

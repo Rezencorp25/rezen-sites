@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePagesStore } from "@/lib/stores/pages-store";
+import { useProjectsStore } from "@/lib/stores/projects-store";
+import { useSettingsStore } from "@/lib/stores/settings-store";
 import { cn } from "@/lib/utils";
 import type { Page } from "@/types";
 
@@ -26,6 +28,9 @@ export function ExportMenu({
 }) {
   const [busy, setBusy] = useState<Format | null>(null);
   const allPages = usePagesStore((s) => s.pages);
+  const project = useProjectsStore((s) => s.getById(projectId));
+  const settings = useSettingsStore((s) => s.get(projectId));
+  const localBusiness = settings.localBusiness;
 
   async function run(format: Format) {
     if (busy) return;
@@ -35,11 +40,13 @@ export function ExportMenu({
         format === "nextjs"
           ? {
               projectName,
+              project,
+              localBusiness,
               pages: allPages.filter(
                 (p) => p.projectId === projectId && p.status === "published",
               ),
             }
-          : { page };
+          : { page, project, localBusiness };
 
       if (format === "nextjs" && body.pages!.length === 0) {
         toast.error("Nessuna pagina pubblicata da esportare");
