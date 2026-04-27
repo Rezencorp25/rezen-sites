@@ -1,0 +1,126 @@
+/* Puck editor dark theme overrides — scoped inside the editor canvas only. */
+
+/* Component palette (DraggableComponent tiles) */
+[class*="_DrawerItem"] [class*="_DrawerItem-draggable"],
+[class*="_DrawerItem_"] {
+  background: var(--color-surface-container-high) !important;
+  color: var(--color-on-surface) !important;
+  border: 1px solid var(--color-outline) !important;
+  border-radius: 0.625rem !important;
+  padding: 0.625rem 0.75rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  transition: all 160ms ease !important;
+}
+[class*="_DrawerItem_"]:hover {
+  background: var(--color-surface-container-highest) !important;
+  border-color: var(--color-molten-primary-container) !important;
+  color: var(--color-molten-primary) !important;
+}
+
+/* Category headers in drawer */
+[class*="_SidebarSection-title_"],
+[class*="_SidebarSection-heading_"] {
+  color: var(--color-text-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+}
+
+/* Fields (right inspector) */
+[class*="_Input_"] input,
+[class*="_Input_"] textarea,
+[class*="_Input_"] select {
+  background: var(--color-surface-container-lowest) !important;
+  color: var(--color-on-surface) !important;
+  border: 1px solid var(--color-outline) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.8125rem !important;
+}
+[class*="_Input_"] input:focus,
+[class*="_Input_"] textarea:focus,
+[class*="_Input_"] select:focus {
+  border-color: var(--color-molten-primary-container) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255, 98, 0, 0.15) !important;
+}
+
+[class*="_InputWrapper_"] label,
+[class*="_Input_label_"] {
+  color: var(--color-text-muted) !important;
+  font-size: 0.6875rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  font-weight: 600 !important;
+}
+
+/* Canvas frame (viewport wrapper) */
+[class*="_PuckPreview_"] {
+  background: var(--color-surface-container-lowest) !important;
+  border-radius: 0 !important;
+}
+[class*="_PuckFrame_"] {
+  background: var(--color-surface-container-lowest) !important;
+}
+
+/* Overlay outlines on selected items */
+[class*="_DraggableComponent_"][data-puck-dragging="true"] {
+  opacity: 0.6;
+}
+[class*="_DraggableComponent_"][data-puck-selected="true"] [class*="_DraggableComponent-overlay_"] {
+  outline: 2px solid var(--color-molten-primary-container) !important;
+  outline-offset: 2px !important;
+  background: rgba(255, 98, 0, 0.06) !important;
+}
+[class*="_DraggableComponent_"]:hover [class*="_DraggableComponent-overlay_"] {
+  outline: 1px dashed var(--color-molten-primary) !important;
+}
+
+/* Action bar (item label + duplicate/delete) */
+[class*="_ActionBar_"] {
+  background: var(--color-surface-container-highest) !important;
+  color: var(--color-on-surface) !important;
+  border: 1px solid var(--color-outline) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+[class*="_ActionBar_"] button {
+  color: var(--color-on-surface) !important;
+}
+[class*="_ActionBar_"] button:hover {
+  color: var(--color-molten-primary) !important;
+  background: rgba(255, 98, 0, 0.1) !important;
+}
+
+/* Dropzone (empty area / insertion point) */
+[class*="_DropZone_"][class*="_isAreaSelected_"],
+[class*="_DropZone_"][class*="_hoveringArea_"] {
+  background: rgba(255, 98, 0, 0.04) !important;
+  outline: 1px dashed var(--color-molten-primary) !important;
+  outline-offset: -4px !important;
+}
+
+/* Array field row */
+[class*="_ArrayField_"] [class*="_ArrayFieldItem_"] {
+  background: var(--color-surface-container-high) !important;
+  border: 1px solid var(--color-outline) !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Collapsible sections in drawer (LAYOUT / CONTENUTO / SEZIONI) */
+[class*="_SidebarSection_"] {
+  border-bottom: 1px solid var(--color-outline) !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* General text override */
+[class*="_Puck_"] {
+  color: var(--color-on-surface) !important;
+}

@@ -1,0 +1,245 @@
+"use client";
+
+import { use, useMemo } from "react";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import {
+  Download,
+  Inbox,
+  Target,
+  BarChart3,
+  Users,
+  MousePointerClick,
+  Calendar,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useProjectData } from "@/lib/hooks/use-project-data";
+import { UtmPills } from "@/components/forms/utm-pills";
+import { StatusPill } from "@/components/luminous/status-pill";
+import { KpiCard } from "@/components/luminous/kpi-card";
+
+function truncate(s: string, n = 18) {
+  return s.length > n ? `${s.slice(0, n)}…` : s;
+}
+
+export default function FormsPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = use(params);
+  const { forms } = useProjectData(projectId);
+
+  const stats = useMemo(() => {
+    const withUtm = forms.filter((f) => f.utm).length;
+    const withGclid = forms.filter((f) => f.gclid).length;
+    const activeUtms = new Set(
+      forms
+        .map((f) => f.utm?.source)
+        .filter(Boolean) as string[],
+    ).size;
+    const convRate = forms.length ? (withGclid / forms.length) * 100 : 0;
+    return {
+      total: forms.length,
+      withUtm,
+      withGclid,
+      activeUtms,
+      convRate,
+    };
+  }, [forms]);
+
+  function exportCsv() {
+    if (forms.length === 0) {
+      toast.error("Nessun submission da esportare");
+      return;
+    }
+    const headers = [
+      "createdAt",
+      "formName",
+      "name",
+      "email",
+      "company",
+      "page",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "gclid",
+    ];
+    const rows = forms.map((f) =>
+      [
+        f.createdAt.toISOString(),
+        f.formName,
+        f.fields.name ?? "",
+        f.fields.email ?? "",
+        f.fields.company ?? "",
+        f.page,
+        f.utm?.source ?? "",
+        f.utm?.medium ?? "",
+        f.utm?.campaign ?? "",
+        f.gclid ?? "",
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(","),
+    );
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `form-submissions-${projectId}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Esportate ${forms.length} submission`);
+  }
+
+  return (
+    <div className="mx-auto max-w-7xl px-10 py-10">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-label-md uppercase tracking-widest text-text-muted">
+            <Inbox className="h-3.5 w-3.5" />
+            Submissions
+          </div>
+          <h1 className="text-headline-md font-bold text-on-surface">
+            Form Submissions
+          </h1>
+          <p className="text-body-md text-secondary-text">
+            Tutti i lead raccolti, con tracking UTM e GCLID.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-lg bg-surface-container-high px-3.5 py-2.5 text-body-sm font-medium text-on-surface hover:bg-surface-container-highest transition-colors"
+          >
+            <Calendar className="h-4 w-4 text-secondary-text" />
+            Ultimi 30 giorni
+          </button>
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="flex items-center gap-2 rounded-lg bg-surface-container-high px-3.5 py-2.5 text-body-sm font-semibold text-on-surface hover:bg-surface-container-highest transition-colors"
+          >
+            <Download className="h-4 w-4 text-molten-primary" />
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-5 grid gap-4 grid-cols-1 md:grid-cols-3">
+        <div className="md:col-span-2 flex items-stretch gap-3 rounded-xl bg-surface-container-high p-6">
+          <div className="flex flex-1 flex-col gap-2">
+            <div className="flex items-center gap-2 text-label-md uppercase tracking-widest text-text-muted">
+              <Target className="h-3.5 w-3.5" />
+              Campaign Tracking
+            </div>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="flex flex-col gap-1">
+                <span className="text-label-sm uppercase tracking-widest text-text-muted">
+                  Active UTMs
+                </span>
+                <span className="text-title-lg font-bold text-on-surface tabular-nums">
+                  {stats.activeUtms}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-label-sm uppercase tracking-widest text-text-muted">
+                  GCLID Hits
+                </span>
+                <span className="text-title-lg font-bold text-molten-primary tabular-nums">
+                  {stats.withGclid}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-label-sm uppercase tracking-widest text-text-muted">
+                  Conv. Rate
+                </span>
+                <span className="text-title-lg font-bold text-success tabular-nums">
+                  {stats.convRate.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <KpiCard
+          label="Total Submissions"
+          value={stats.total}
+          icon={Users}
+          deltaLabel="ultimi 30 giorni"
+        />
+      </div>
+
+      <div className="overflow-hidden rounded-xl bg-surface-container-high">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-molten-primary" />
+            <h2 className="text-title-md font-semibold text-on-surface">
+              Submissions Recenti
+            </h2>
+          </div>
+          <span className="text-label-md text-text-muted">
+            {forms.length} risultati
+          </span>
+        </div>
+        <div className="grid grid-cols-[110px_110px_1fr_1.3fr_1fr_1fr_100px] items-center gap-4 px-6 py-3 text-label-md uppercase tracking-widest text-text-muted">
+          <span>Data</span>
+          <span>Form</span>
+          <span>Nome</span>
+          <span>Email</span>
+          <span>Pagina</span>
+          <span>UTM</span>
+          <span>GCLID</span>
+        </div>
+        <div className="flex flex-col">
+          {forms.slice(0, 12).map((f, i) => (
+            <div
+              key={f.id}
+              className={`grid grid-cols-[110px_110px_1fr_1.3fr_1fr_1fr_100px] items-center gap-4 px-6 py-3 transition-colors hover:bg-surface-container-highest ${
+                i % 2 === 0
+                  ? "bg-surface-container-lowest"
+                  : "bg-surface-container-low"
+              }`}
+            >
+              <div className="flex flex-col leading-tight">
+                <span className="text-body-sm font-medium text-on-surface">
+                  {format(f.createdAt, "d MMM", { locale: it })}
+                </span>
+                <span className="text-label-sm text-text-muted">
+                  {format(f.createdAt, "HH:mm")}
+                </span>
+              </div>
+              <StatusPill variant="info">{f.formName}</StatusPill>
+              <span className="truncate text-body-sm text-on-surface">
+                {f.fields.name}
+              </span>
+              <span
+                className="truncate font-mono text-body-sm text-secondary-text"
+                title={f.fields.email}
+              >
+                {f.fields.email}
+              </span>
+              <span className="truncate font-mono text-body-sm text-secondary-text">
+                {f.page}
+              </span>
+              <UtmPills utm={f.utm} />
+              {f.gclid ? (
+                <span
+                  className="truncate font-mono text-label-sm text-molten-primary"
+                  title={f.gclid}
+                >
+                  {truncate(f.gclid, 10)}
+                </span>
+              ) : (
+                <span className="text-text-muted">—</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between px-6 py-3 text-label-md text-text-muted">
+          <span>Mostrando prime 12 di {forms.length}</span>
+          <span>Paginazione completa in DOC 3</span>
+        </div>
+      </div>
+    </div>
+  );
+}

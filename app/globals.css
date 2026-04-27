@@ -1,26 +1,293 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* === REZEN brand palette ===
+     nero  #0f1113
+     arancio #ff6200
+     bianco #f2f2f2
+  */
+
+  /* Surface hierarchy (cool-neutral greys climbing from #0f1113) */
+  --color-surface-dim: #0b0d0f;
+  --color-surface: #0f1113;
+  --color-surface-container-lowest: #131518;
+  --color-surface-container-low: #181a1d;
+  --color-surface-container: #1c1f23;
+  --color-surface-container-high: #23262a;
+  --color-surface-container-highest: #2a2d32;
+  --color-surface-bright: #33373c;
+
+  /* Molten accent */
+  --color-molten-primary: #ff8533;          /* light tone, readable on dark */
+  --color-molten-primary-container: #ff6200;
+  --color-molten-accent-hover: #ff7a1f;
+  --color-on-molten: #0f1113;
+
+  /* Text */
+  --color-on-surface: #f2f2f2;
+  --color-secondary-text: #b3b5b9;
+  --color-text-muted: #76787c;
+
+  /* Functional (slightly desaturated for cohesion with new bg) */
+  --color-success: #5ec27f;
+  --color-warning: #e6b340;
+  --color-error: #e66b6b;
+  --color-info: #6ea8ff;
+  --color-success-container: #1e2e23;
+  --color-warning-container: #322918;
+  --color-error-container: #2f1e1e;
+  --color-info-container: #1e2630;
+
+  /* Outlines */
+  --color-outline: #3a3d42;
+  --color-outline-variant: #52565c;
+
+  /* === Shadcn mapping === */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Typography scales (slightly tighter, more modern) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-label-sm: 0.6875rem;
+  --text-label-sm--line-height: 1rem;
+  --text-label-sm--letter-spacing: 0.06em;
+
+  --text-label-md: 0.75rem;
+  --text-label-md--line-height: 1rem;
+  --text-label-md--letter-spacing: 0.04em;
+
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.25rem;
+
+  --text-body-md: 0.875rem;
+  --text-body-md--line-height: 1.375rem;
+
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.5rem;
+
+  --text-title-md: 0.9375rem;
+  --text-title-md--line-height: 1.4rem;
+  --text-title-md--font-weight: 600;
+
+  --text-title-lg: 1.0625rem;
+  --text-title-lg--line-height: 1.5rem;
+  --text-title-lg--font-weight: 600;
+
+  --text-headline-sm: 1.375rem;
+  --text-headline-sm--line-height: 1.75rem;
+  --text-headline-sm--font-weight: 700;
+  --text-headline-sm--letter-spacing: -0.01em;
+
+  --text-headline-md: 1.625rem;
+  --text-headline-md--line-height: 2rem;
+  --text-headline-md--font-weight: 700;
+  --text-headline-md--letter-spacing: -0.015em;
+
+  --text-headline-lg: 2rem;
+  --text-headline-lg--line-height: 2.375rem;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--letter-spacing: -0.02em;
+
+  --text-display-sm: 2.375rem;
+  --text-display-sm--line-height: 2.75rem;
+  --text-display-sm--font-weight: 800;
+  --text-display-sm--letter-spacing: -0.025em;
+
+  /* Radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Dark-first: the product is always dark. */
+:root {
+  --background: #0f1113;
+  --foreground: #f2f2f2;
+
+  --card: #1c1f23;
+  --card-foreground: #f2f2f2;
+
+  --popover: #23262a;
+  --popover-foreground: #f2f2f2;
+
+  --primary: #ff6200;
+  --primary-foreground: #0f1113;
+
+  --secondary: #181a1d;
+  --secondary-foreground: #f2f2f2;
+
+  --muted: #181a1d;
+  --muted-foreground: #b3b5b9;
+
+  --accent: #23262a;
+  --accent-foreground: #ff8533;
+
+  --destructive: #e66b6b;
+
+  --border: rgba(82, 86, 92, 0.18);
+  --input: rgba(82, 86, 92, 0.22);
+  --ring: #ff6200;
+
+  --chart-1: #ff8533;
+  --chart-2: #ff6200;
+  --chart-3: #6ea8ff;
+  --chart-4: #5ec27f;
+  --chart-5: #e6b340;
+
+  --radius: 0.875rem;
+
+  --sidebar: #0f1113;
+  --sidebar-foreground: #f2f2f2;
+  --sidebar-primary: #ff6200;
+  --sidebar-primary-foreground: #0f1113;
+  --sidebar-accent: #1c1f23;
+  --sidebar-accent-foreground: #ff8533;
+  --sidebar-border: rgba(82, 86, 92, 0.14);
+  --sidebar-ring: #ff6200;
+}
+
+.dark {
+  --background: #0f1113;
+  --foreground: #f2f2f2;
+  --card: #1c1f23;
+  --card-foreground: #f2f2f2;
+  --popover: #23262a;
+  --popover-foreground: #f2f2f2;
+  --primary: #ff6200;
+  --primary-foreground: #0f1113;
+  --secondary: #181a1d;
+  --secondary-foreground: #f2f2f2;
+  --muted: #181a1d;
+  --muted-foreground: #b3b5b9;
+  --accent: #23262a;
+  --accent-foreground: #ff8533;
+  --destructive: #e66b6b;
+  --border: rgba(82, 86, 92, 0.18);
+  --input: rgba(82, 86, 92, 0.22);
+  --ring: #ff6200;
+  --chart-1: #ff8533;
+  --chart-2: #ff6200;
+  --chart-3: #6ea8ff;
+  --chart-4: #5ec27f;
+  --chart-5: #e6b340;
+  --sidebar: #0f1113;
+  --sidebar-foreground: #f2f2f2;
+  --sidebar-primary: #ff6200;
+  --sidebar-primary-foreground: #0f1113;
+  --sidebar-accent: #1c1f23;
+  --sidebar-accent-foreground: #ff8533;
+  --sidebar-border: rgba(82, 86, 92, 0.14);
+  --sidebar-ring: #ff6200;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans bg-surface-dim;
+  }
+  body {
+    @apply bg-surface-dim text-on-surface antialiased;
+    font-feature-settings: "cv11", "ss01", "cv10";
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Force dark scrollbars to match brand */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2d32;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #33373c;
+  }
+  /* Selection */
+  ::selection {
+    background: rgba(255, 98, 0, 0.28);
+    color: #f2f2f2;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Utility components (outside @layer to avoid Turbopack postcss issues) */
+.bg-molten-gradient {
+  background: linear-gradient(135deg, #ff8533 0%, #ff6200 100%);
+}
+.bg-molten-gradient-hover:hover {
+  background: linear-gradient(135deg, #ff9547 0%, #ff7a1f 100%);
+}
+.glass {
+  background: rgba(15, 17, 19, 0.72);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+.lift {
+  transition: transform 200ms ease, box-shadow 200ms ease, background 150ms ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 98, 0, 0.08);
+}
+.pill-success {
+  background: rgba(94, 194, 127, 0.12);
+  color: #5ec27f;
+}
+.pill-warning {
+  background: rgba(230, 179, 64, 0.12);
+  color: #e6b340;
+}
+.pill-error {
+  background: rgba(230, 107, 107, 0.12);
+  color: #e66b6b;
+}
+.pill-info {
+  background: rgba(110, 168, 255, 0.12);
+  color: #6ea8ff;
+}
+.pill-neutral {
+  background: rgba(179, 181, 185, 0.1);
+  color: #b3b5b9;
 }

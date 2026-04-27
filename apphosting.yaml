@@ -1,0 +1,22 @@
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  maxInstances: 1
+  minInstances: 0
+  concurrency: 80
+
+env:
+  - variable: NEXT_PUBLIC_USE_FIREBASE_EMULATOR
+    value: "false"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: rezen-sites-preview
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: rezen-sites-preview.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: preview-no-auth
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: rezen-sites-preview.appspot.com
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "000000000000"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:000000000000:web:preview"
