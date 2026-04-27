@@ -1,5 +1,9 @@
 "use client";
 
+// MOCK: Synchronous aggregator built on lib/mocks/* generators.
+// At go-live: migrate to async hooks calling lib/services/service-factory.
+// See GO_LIVE_GUIDE.md.
+
 import { useMemo } from "react";
 import { useProjectsStore } from "@/lib/stores/projects-store";
 import { MOCK_ALERTS } from "@/lib/mocks/alerts";
