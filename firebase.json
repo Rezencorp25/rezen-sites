@@ -3,9 +3,19 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "hosting": {
-    "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  "apphosting": {
+    "backendId": "rezen-sites-preview",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".git",
+      ".next",
+      ".firebase",
+      ".firebase-data",
+      "*.local",
+      ".env*",
+      "!.env.local.example"
+    ]
   },
   "emulators": {
     "auth": { "port": 9099 },
