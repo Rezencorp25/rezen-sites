@@ -162,6 +162,82 @@ export function aggregateAeoScore(passages: AeoPassage[]): number {
   return Math.round(total / passages.length);
 }
 
+/**
+ * AI Overview cannibalization risk (B.15).
+ *
+ * Scores 0-100 (higher = higher risk Google AI Overview will surface
+ * an answer derived from the page WITHOUT sending a click). Heuristics:
+ *   - Page contains a "what is / cos'è" definitional opener → +30
+ *   - Page is heavy on bullet lists / short answers → +20
+ *   - FAQ block present → +20
+ *   - Direct numerical answers (% / CHF / dates) → +15
+ *   - Long-form (>1500 char total) → -15 (LLM prefers short)
+ *   - Strong CTA (Buy/Demo/Contact) → -10 (commercial intent → Google sends click)
+ */
+export function aiOverviewRisk(passages: AeoPassage[]): {
+  score: number;
+  level: "low" | "medium" | "high" | "critical";
+  drivers: string[];
+} {
+  if (passages.length === 0)
+    return { score: 0, level: "low", drivers: ["Nessun contenuto"] };
+
+  let score = 20; // baseline
+  const drivers: string[] = [];
+
+  const allText = passages.map((p) => p.text).join(" ");
+  const hasDefinitional = passages.some((p) =>
+    p.signals.some((s) => s.label.includes("definitionale")),
+  );
+  if (hasDefinitional) {
+    score += 30;
+    drivers.push("Apertura definitionale (LLM-extractable)");
+  }
+  const hasFaq = passages.some((p) => p.blockType === "FAQ");
+  if (hasFaq) {
+    score += 20;
+    drivers.push("FAQ block presente");
+  }
+  const hasLists = passages.some((p) =>
+    p.signals.some((s) => s.label.includes("lista")),
+  );
+  if (hasLists) {
+    score += 20;
+    drivers.push("Struttura a lista");
+  }
+  const hasNumerical = passages.some((p) =>
+    p.signals.some((s) => s.label.includes("dati numerici")),
+  );
+  if (hasNumerical) {
+    score += 15;
+    drivers.push("Risposte numeriche dirette");
+  }
+  if (allText.length > 1500) {
+    score -= 15;
+    drivers.push("Long-form (riduce rischio)");
+  }
+  if (
+    /\b(acquista|compra|prenota|chiama|demo|preventivo|buy|book|contact)\b/i.test(
+      allText,
+    )
+  ) {
+    score -= 10;
+    drivers.push("CTA commerciale (intent click-out)");
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  const level: "low" | "medium" | "high" | "critical" =
+    score >= 75
+      ? "critical"
+      : score >= 55
+        ? "high"
+        : score >= 35
+          ? "medium"
+          : "low";
+
+  return { score, level, drivers };
+}
+
 function hashId(s: string): string {
   let h = 0;
   for (let i = 0; i < s.length; i++) {

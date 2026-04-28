@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import {
   useCampaignsStore,
   PLATFORM_META,
+  BID_STRATEGY_META,
   type CampaignPlatform,
   type CampaignObjective,
   type CampaignStatus,
+  type BidStrategy,
 } from "@/lib/stores/campaigns-store";
 import { useAuditStore } from "@/lib/stores/audit-store";
 import {
@@ -111,6 +113,18 @@ export default function CampaignsPage({
                 <span className="font-mono text-label-sm text-text-muted">
                   {c.landingUrl}
                 </span>
+                <div className="mt-1 flex flex-wrap items-center gap-1 text-label-sm">
+                  <span className="rounded bg-surface-container-highest px-1.5 py-0.5 text-text-muted">
+                    {BID_STRATEGY_META[c.bidStrategy ?? "manual_cpc"].label}
+                    {c.bidTarget ? ` · ${c.bidTarget}` : ""}
+                  </span>
+                  {(c.variants ?? []).length > 0 && (
+                    <span className="rounded bg-info-container px-1.5 py-0.5 text-info">
+                      {c.variants.length} variant{c.variants.length > 1 ? "i" : ""}
+                      {c.variants.find((v) => v.status === "winner") && " · 🏆 winner"}
+                    </span>
+                  )}
+                </div>
               </div>
               <span
                 className="inline-flex w-fit rounded px-2 py-0.5 text-label-sm font-bold text-on-molten"
@@ -194,6 +208,8 @@ function NewCampaignDialog({ projectId }: { projectId: string }) {
   const [dailyBudget, setDailyBudget] = useState(20);
   const [landingUrl, setLandingUrl] = useState("");
   const [audienceNotes, setAudienceNotes] = useState("");
+  const [bidStrategy, setBidStrategy] = useState<BidStrategy>("max_conversions");
+  const [bidTarget, setBidTarget] = useState<number | undefined>(undefined);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -263,6 +279,43 @@ function NewCampaignDialog({ projectId }: { projectId: string }) {
               onChange={(e) => setDailyBudget(parseInt(e.target.value, 10) || 0)}
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-label-md text-secondary-text">
+                Bid strategy
+              </Label>
+              <select
+                value={bidStrategy}
+                onChange={(e) =>
+                  setBidStrategy(e.target.value as BidStrategy)
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+              >
+                {(Object.keys(BID_STRATEGY_META) as BidStrategy[]).map((b) => (
+                  <option key={b} value={b}>
+                    {BID_STRATEGY_META[b].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {BID_STRATEGY_META[bidStrategy].needsTarget && (
+              <div className="space-y-1.5">
+                <Label className="text-label-md text-secondary-text">
+                  {BID_STRATEGY_META[bidStrategy].targetLabel}
+                </Label>
+                <Input
+                  type="number"
+                  value={bidTarget ?? ""}
+                  onChange={(e) =>
+                    setBidTarget(
+                      e.target.value ? Number(e.target.value) : undefined,
+                    )
+                  }
+                  placeholder="es. 25"
+                />
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-label-md text-secondary-text">
               Landing page
@@ -302,6 +355,9 @@ function NewCampaignDialog({ projectId }: { projectId: string }) {
                 startDate: new Date().toISOString().slice(0, 10),
                 landingUrl,
                 audienceNotes,
+                bidStrategy,
+                bidTarget,
+                variants: [],
               });
               log({
                 actor: { id: "u-owner", name: "Te" },

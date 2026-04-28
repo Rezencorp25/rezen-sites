@@ -17,8 +17,9 @@
 | 2026-04-28 | R6 — Infra + RBAC + API + anomaly | F.49, F.51, F.52, F.57, I.83, I.86, E.39 ext | DNS UI + email auth + staging generalizzato + uptime monitor + RBAC team + public REST API + anomaly detection |
 | 2026-04-28 | R7 — Operational + lead-gen | D.27, G.64, G.65, G.69, I.84, I.97, I.88 | Campaign UI + lead scoring + abandonment + follow-up sequence + audit log + activity feed + scheduled publishing |
 | 2026-04-28 | R8 — Entity + multi-location + privacy + bulk + webhooks | B.18, C.21, C.26, H.78, H.81, I.85, I.87 | Entity schema editor + multi-location LocalBusiness + auto Breadcrumb + Privacy/PII + CCPA/LGPD regions + bulk page ops + webhooks outbound |
+| 2026-04-28 | R9 — Research + ads advanced + cohort + CDN + AEO risk + map | A.11, A.12, B.15, C.22, D.31, D.33, E.41, E.43, F.53, F.55 | SEO research page (backlink + competitor) + AEO risk scorer + Map embed Puck block + ad copy variants + bid strategy + cohort retention + custom GA4 events + CDN config |
 
-**Stato corrente**: 53 gap chiusi su 99 totali. Restano 46.
+**Stato corrente**: 63 gap chiusi su 99 totali. Restano 36.
 
 ## Sommario aggiornato
 
@@ -33,7 +34,7 @@
 | G. Forms / Leads / CRM | 6 | 0 | 4 | 2 |
 | H. Compliance / Legal / A11y | 5 | 0 | 4 | 1 |
 | I. Operational / Agency | 9 | 1 | 6 | 2 |
-| **TOTALE** | **46** | **1** | **34** | **11** |
+| **TOTALE** | **36** | **1** | **24** | **11** |
 
 ---
 

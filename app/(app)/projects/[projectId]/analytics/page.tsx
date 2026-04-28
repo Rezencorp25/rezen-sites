@@ -15,6 +15,7 @@ import { useAnalyticsData } from "@/lib/hooks/use-analytics-data";
 import { KpiCard } from "@/components/luminous/kpi-card";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { DevicesPie } from "@/components/analytics/devices-pie";
+import { CohortTable } from "@/components/analytics/cohort-table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AnalyticsOverviewPage({
@@ -194,6 +195,10 @@ export default function AnalyticsOverviewPage({
             </ul>
           </div>
         </div>
+      </div>
+
+      <div className="mt-5">
+        <CohortTable projectId={projectId} />
       </div>
     </div>
   );

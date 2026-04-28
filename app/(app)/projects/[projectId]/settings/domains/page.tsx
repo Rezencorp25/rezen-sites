@@ -14,6 +14,8 @@ import {
   AlertCircle,
   ShieldCheck,
   RefreshCw,
+  Cloud,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectsStore } from "@/lib/stores/projects-store";
@@ -250,6 +252,113 @@ export default function SettingsDomainsPage({
             <RefreshCw className="h-3.5 w-3.5" />
             Forza rinnovo manuale
           </button>
+        </section>
+
+        <section className="rounded-xl bg-surface-container-high p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center gap-2.5">
+            <Cloud className="h-4 w-4 text-molten-primary" />
+            <h2 className="text-title-md font-semibold text-on-surface">
+              CDN &amp; cache
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">Provider</span>
+              <select
+                value={settings.domain.cdn.provider}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    cdn: {
+                      ...settings.domain.cdn,
+                      provider: e.target.value as
+                        | "none"
+                        | "cloudflare"
+                        | "fastly"
+                        | "vercel"
+                        | "bunnynet",
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+              >
+                <option value="none">Nessuno (origin only)</option>
+                <option value="cloudflare">Cloudflare</option>
+                <option value="fastly">Fastly</option>
+                <option value="vercel">Vercel Edge</option>
+                <option value="bunnynet">Bunny.net</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Compression
+              </span>
+              <select
+                value={settings.domain.cdn.compression}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    cdn: {
+                      ...settings.domain.cdn,
+                      compression: e.target.value as
+                        | "gzip"
+                        | "brotli"
+                        | "both",
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+              >
+                <option value="gzip">gzip</option>
+                <option value="brotli">brotli (consigliato)</option>
+                <option value="both">gzip + brotli (Accept-Encoding negotiation)</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Browser cache (s)
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={settings.domain.cdn.browserCacheSeconds}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    cdn: {
+                      ...settings.domain.cdn,
+                      browserCacheSeconds: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Edge cache (s)
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={settings.domain.cdn.edgeCacheSeconds}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    cdn: {
+                      ...settings.domain.cdn,
+                      edgeCacheSeconds: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+              />
+            </div>
+          </div>
+          <div className="mt-3 rounded-md bg-surface-container-lowest p-3 font-mono text-label-md text-success">
+            <Zap className="mr-1 inline h-3 w-3" />
+            Cache-Control: public, max-age={settings.domain.cdn.browserCacheSeconds}, s-maxage={settings.domain.cdn.edgeCacheSeconds}
+          </div>
+          <p className="mt-2 text-label-sm text-text-muted">
+            I path bypass cache: {settings.domain.cdn.bypassPaths.join(", ") || "—"}.
+            Configurazione applicata via headers nelle pagine esportate.
+          </p>
         </section>
 
         <DnsRecordsPanel projectId={projectId} />

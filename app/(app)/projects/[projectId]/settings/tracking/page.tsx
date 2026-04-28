@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConversionWizard } from "@/components/seo/conversion-wizard";
 import { UtmBuilderCard } from "@/components/seo/utm-builder-card";
+import { CustomEventsCard } from "@/components/seo/custom-events-card";
 import { cn } from "@/lib/utils";
 
 type IntegrationKey = "ga4" | "metaPixel" | "adsense" | "googleAds";
@@ -212,6 +213,10 @@ export default function SettingsTrackingPage({
         <UtmBuilderCard
           defaultBaseUrl={`https://${project.domain}/landing`}
         />
+      </div>
+
+      <div className="mb-5">
+        <CustomEventsCard projectId={projectId} />
       </div>
 
       <section className="rounded-xl bg-surface-container-high">

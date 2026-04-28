@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Settings,
   Inbox,
+  Telescope,
 } from "lucide-react";
 
 export type NavItem = {
@@ -39,6 +40,12 @@ export const PROJECT_NAV: NavItem[] = [
     href: (id) => `/projects/${id}/analytics`,
     icon: LineChart,
     matchPath: "analytics",
+  },
+  {
+    label: "SEO Research",
+    href: (id) => `/projects/${id}/seo-research`,
+    icon: Telescope,
+    matchPath: "seo-research",
   },
   {
     label: "Forms",

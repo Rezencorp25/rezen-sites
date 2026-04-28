@@ -20,6 +20,26 @@ export type CampaignObjective =
   | "sales"
   | "brand";
 
+export type BidStrategy =
+  | "manual_cpc"
+  | "max_clicks"
+  | "max_conversions"
+  | "target_cpa"
+  | "target_roas"
+  | "max_conversion_value";
+
+export type AdVariant = {
+  id: string;
+  /** Headline 1 (≤30 char Google Ads RSA) */
+  headline: string;
+  /** Description 1 (≤90 char) */
+  description: string;
+  /** Performance hint — variant winner status */
+  status: "active" | "paused" | "winner" | "loser";
+  /** Mock conversion rate in % */
+  conversionRate: number;
+};
+
 export type Campaign = {
   id: string;
   projectId: string;
@@ -35,6 +55,12 @@ export type Campaign = {
   endDate?: string;
   landingUrl: string;
   audienceNotes?: string;
+  /** Bid strategy (Google Ads native) */
+  bidStrategy: BidStrategy;
+  /** Target CPA / ROAS (depending on strategy) */
+  bidTarget?: number;
+  /** Ad copy A/B variants */
+  variants: AdVariant[];
   createdAt: string;
 };
 
@@ -51,6 +77,24 @@ const SEED: Campaign[] = [
     startDate: new Date(NOW_ANCHOR - 30 * 86400000).toISOString().slice(0, 10),
     landingUrl: "https://verumflow.ch/contatti",
     audienceNotes: "Search brand keyword + competitor protect",
+    bidStrategy: "max_conversions",
+    bidTarget: 25,
+    variants: [
+      {
+        id: "v-1a",
+        headline: "REZEN Sites — SEO Studio Svizzero",
+        description: "Pacchetti chiavi-in-mano da 2.500 CHF. Audit gratuito. Prenota oggi.",
+        status: "winner",
+        conversionRate: 4.8,
+      },
+      {
+        id: "v-1b",
+        headline: "Sito + SEO in 2 settimane",
+        description: "Tecnologia AI-first. Risultati misurabili. Verifica online.",
+        status: "active",
+        conversionRate: 3.2,
+      },
+    ],
     createdAt: new Date(NOW_ANCHOR - 30 * 86400000).toISOString(),
   },
   {
@@ -65,6 +109,9 @@ const SEED: Campaign[] = [
     startDate: new Date(NOW_ANCHOR - 21 * 86400000).toISOString().slice(0, 10),
     landingUrl: "https://verumflow.ch/audit",
     audienceNotes: "CMO/CEO 30-55 IT/CH, lookalike clienti past",
+    bidStrategy: "target_cpa",
+    bidTarget: 35,
+    variants: [],
     createdAt: new Date(NOW_ANCHOR - 21 * 86400000).toISOString(),
   },
   {
@@ -79,6 +126,8 @@ const SEED: Campaign[] = [
     startDate: new Date(NOW_ANCHOR - 14 * 86400000).toISOString().slice(0, 10),
     landingUrl: "https://verumflow.ch/blog",
     audienceNotes: "Display remarketing list 30d",
+    bidStrategy: "max_clicks",
+    variants: [],
     createdAt: new Date(NOW_ANCHOR - 14 * 86400000).toISOString(),
   },
 ];
@@ -142,4 +191,31 @@ export const PLATFORM_META: Record<
   "linkedin-ads": { label: "LinkedIn", color: "#0A66C2" },
   "tiktok-ads": { label: "TikTok", color: "#000000" },
   "microsoft-ads": { label: "Microsoft Ads", color: "#00A4EF" },
+};
+
+export const BID_STRATEGY_META: Record<
+  BidStrategy,
+  { label: string; needsTarget: boolean; targetLabel?: string }
+> = {
+  manual_cpc: { label: "Manual CPC", needsTarget: false },
+  max_clicks: { label: "Maximize Clicks", needsTarget: false },
+  max_conversions: {
+    label: "Maximize Conversions",
+    needsTarget: true,
+    targetLabel: "Target CPA (CHF, opz)",
+  },
+  target_cpa: {
+    label: "Target CPA",
+    needsTarget: true,
+    targetLabel: "CPA target (CHF)",
+  },
+  target_roas: {
+    label: "Target ROAS",
+    needsTarget: true,
+    targetLabel: "ROAS target (% es. 400)",
+  },
+  max_conversion_value: {
+    label: "Maximize Conversion Value",
+    needsTarget: false,
+  },
 };

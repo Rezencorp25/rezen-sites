@@ -92,6 +92,15 @@ export type ProjectSettings = {
       dmarc: string;
       mxProvider: "google" | "microsoft365" | "fastmail" | "infomaniak" | "custom" | "none";
     };
+    /** CDN + cache configuration */
+    cdn: {
+      provider: "none" | "cloudflare" | "fastly" | "vercel" | "bunnynet";
+      compression: "gzip" | "brotli" | "both";
+      browserCacheSeconds: number;
+      edgeCacheSeconds: number;
+      /** Bypass cache for these path patterns (regex-friendly) */
+      bypassPaths: string[];
+    };
   };
   staging: {
     stagingEnabled: boolean;
@@ -208,6 +217,13 @@ function defaultsFor(projectId: string): ProjectSettings {
         dmarc: "v=DMARC1; p=none; rua=mailto:dmarc@example.ch",
         mxProvider: "none",
       },
+      cdn: {
+        provider: "none",
+        compression: "brotli",
+        browserCacheSeconds: 3600,
+        edgeCacheSeconds: 86400,
+        bypassPaths: ["/api", "/admin"],
+      },
     },
     staging: {
       // Generalised: any project can opt-in to staging
@@ -303,6 +319,7 @@ export const useSettingsStore = create<SettingsStore>()(
           !existing.localBusiness ||
           !existing.domain?.ssl ||
           !existing.domain?.emailAuth ||
+          !existing.domain?.cdn ||
           !existing.staging?.stagingDomain;
         if (!needsBackfill) {
           // Stable reference — Zustand selectors stay equal, no re-render loop.
@@ -321,6 +338,7 @@ export const useSettingsStore = create<SettingsStore>()(
               ...fresh.domain.emailAuth,
               ...(existing?.domain?.emailAuth ?? {}),
             },
+            cdn: { ...fresh.domain.cdn, ...(existing?.domain?.cdn ?? {}) },
           },
           staging: { ...fresh.staging, ...(existing?.staging ?? {}) },
           tracking: { ...fresh.tracking, ...(existing?.tracking ?? {}) },

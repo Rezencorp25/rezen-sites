@@ -16,6 +16,7 @@ import {
   FAQ,
   ContactForm,
   Footer,
+  MapEmbed,
 } from "./components";
 
 export const puckConfig: Config = {
@@ -34,6 +35,7 @@ export const puckConfig: Config = {
     FAQ,
     ContactForm,
     Footer,
+    MapEmbed,
   },
   categories: {
     layout: {
@@ -46,7 +48,7 @@ export const puckConfig: Config = {
     },
     sections: {
       title: "Sezioni",
-      components: ["Hero", "CTA", "FeatureList", "PricingCard", "Testimonial", "FAQ", "ContactForm"],
+      components: ["Hero", "CTA", "FeatureList", "PricingCard", "Testimonial", "FAQ", "ContactForm", "MapEmbed"],
     },
   },
   root: {

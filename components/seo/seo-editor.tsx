@@ -18,7 +18,11 @@ import { SocialPreview } from "./social-preview";
 import { articleSchema, organizationSchema } from "@/lib/seo/schema-generator";
 import { applySEOFill, type SEOFill } from "@/lib/ai/agents/seo-agent";
 import { suggestInternalLinksTo } from "@/lib/seo/internal-linking";
-import { scorePagePassages, aggregateAeoScore } from "@/lib/seo/aeo-scorer";
+import {
+  scorePagePassages,
+  aggregateAeoScore,
+  aiOverviewRisk,
+} from "@/lib/seo/aeo-scorer";
 import type { PageSEO } from "@/types";
 
 const TITLE_MIN = 30;
@@ -75,6 +79,7 @@ export function SeoEditor({
     return scorePagePassages(page);
   }, [page]);
   const aeoOverall = useMemo(() => aggregateAeoScore(aeoPassages), [aeoPassages]);
+  const aiRisk = useMemo(() => aiOverviewRisk(aeoPassages), [aeoPassages]);
 
   if (!project || !page) {
     return <div className="p-8 text-text-muted">Pagina non trovata.</div>;
@@ -585,36 +590,85 @@ export function SeoEditor({
               </div>
             </TabsContent>
             <TabsContent value="aeo" className="mt-4">
-              <div className="mb-3 flex items-center justify-between rounded-lg border border-outline/20 bg-surface-container-low p-3">
-                <div>
-                  <h3 className="text-body-md font-semibold text-on-surface">
-                    AEO score
-                  </h3>
-                  <p className="text-label-md text-text-muted">
-                    Quanto la pagina è ottimizzata per AI Overviews / ChatGPT
-                    / Perplexity
-                  </p>
+              <div className="mb-3 grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-between rounded-lg border border-outline/20 bg-surface-container-low p-3">
+                  <div>
+                    <h3 className="text-body-md font-semibold text-on-surface">
+                      AEO score
+                    </h3>
+                    <p className="text-label-md text-text-muted">
+                      Quanto sei estraibile da LLM
+                    </p>
+                  </div>
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full text-title-md font-bold"
+                    style={{
+                      background:
+                        aeoOverall >= 70
+                          ? "rgba(94,194,127,0.18)"
+                          : aeoOverall >= 50
+                            ? "rgba(230,179,64,0.18)"
+                            : "rgba(230,107,107,0.18)",
+                      color:
+                        aeoOverall >= 70
+                          ? "#5ec27f"
+                          : aeoOverall >= 50
+                            ? "#e6b340"
+                            : "#e66b6b",
+                    }}
+                  >
+                    {aeoOverall}
+                  </div>
                 </div>
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-full text-title-md font-bold"
-                  style={{
-                    background:
-                      aeoOverall >= 70
-                        ? "rgba(94,194,127,0.18)"
-                        : aeoOverall >= 50
-                          ? "rgba(230,179,64,0.18)"
-                          : "rgba(230,107,107,0.18)",
-                    color:
-                      aeoOverall >= 70
-                        ? "#5ec27f"
-                        : aeoOverall >= 50
-                          ? "#e6b340"
-                          : "#e66b6b",
-                  }}
-                >
-                  {aeoOverall}
+                <div className="flex items-center justify-between rounded-lg border border-outline/20 bg-surface-container-low p-3">
+                  <div>
+                    <h3 className="text-body-md font-semibold text-on-surface">
+                      AI Overview risk
+                    </h3>
+                    <p className="text-label-md text-text-muted">
+                      Rischio risposta senza click
+                    </p>
+                  </div>
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full text-title-md font-bold"
+                    style={{
+                      background:
+                        aiRisk.level === "low"
+                          ? "rgba(94,194,127,0.18)"
+                          : aiRisk.level === "medium"
+                            ? "rgba(230,179,64,0.18)"
+                            : aiRisk.level === "high"
+                              ? "rgba(230,107,107,0.18)"
+                              : "rgba(230,107,107,0.32)",
+                      color:
+                        aiRisk.level === "low"
+                          ? "#5ec27f"
+                          : aiRisk.level === "medium"
+                            ? "#e6b340"
+                            : "#e66b6b",
+                    }}
+                  >
+                    {aiRisk.score}
+                  </div>
                 </div>
               </div>
+              {aiRisk.drivers.length > 0 && (
+                <div className="mb-3 rounded-md border border-outline/20 bg-surface-container px-3 py-2">
+                  <p className="mb-1 text-label-md font-semibold uppercase tracking-wider text-text-muted">
+                    Drivers
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {aiRisk.drivers.map((d, i) => (
+                      <span
+                        key={i}
+                        className="rounded bg-surface-container-highest px-1.5 py-0.5 text-label-sm text-secondary-text"
+                      >
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {aeoPassages.length === 0 ? (
                 <p className="text-body-sm text-text-muted">
                   Nessun passaggio analizzabile. Aggiungi paragrafi/FAQ.

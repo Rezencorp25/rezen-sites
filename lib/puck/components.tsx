@@ -1114,3 +1114,84 @@ export const Footer: ComponentConfig<FooterProps> = {
     </footer>
   ),
 };
+
+// ───────────────────────── MapEmbed ─────────────────────────
+export type MapEmbedProps = {
+  title: string;
+  /** Address or place name; used as label on map */
+  address: string;
+  latitude: number;
+  longitude: number;
+  zoom: number;
+  /** Optional caption shown below */
+  caption: string;
+};
+
+export const MapEmbed: ComponentConfig<MapEmbedProps> = {
+  label: "Map Embed",
+  fields: {
+    title: { type: "text", label: "Titolo (sopra mappa)" },
+    address: { type: "text", label: "Indirizzo" },
+    latitude: { type: "number", label: "Latitudine" },
+    longitude: { type: "number", label: "Longitudine" },
+    zoom: { type: "number", label: "Zoom (1-19)", min: 1, max: 19 },
+    caption: { type: "text", label: "Caption (sotto mappa)" },
+  },
+  defaultProps: {
+    title: "Trova le nostre sedi",
+    address: "Lugano, Ticino, Svizzera",
+    latitude: 46.0037,
+    longitude: 8.951,
+    zoom: 14,
+    caption: "Apri in Google Maps per indicazioni stradali.",
+  },
+  render: ({ title, address, latitude, longitude, zoom, caption }) => {
+    // OpenStreetMap embed — no API key required, privacy-friendly.
+    // GEO snippet helper (C.22): paired with LocalBusiness schema, this
+    // helps Google Local Pack visibility for "near me" queries.
+    const bbox = [
+      longitude - 0.01,
+      latitude - 0.005,
+      longitude + 0.01,
+      latitude + 0.005,
+    ].join("%2C");
+    const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+    const gmapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    return (
+      <div className="mx-auto max-w-5xl px-10 py-10">
+        {title && (
+          <h2 className="mb-4 text-headline-sm font-bold text-on-surface">
+            {title}
+          </h2>
+        )}
+        <div className="overflow-hidden rounded-2xl border border-outline/30 bg-surface-container-lowest">
+          <iframe
+            title={`Mappa di ${address}`}
+            src={src}
+            style={{ width: "100%", height: 360, border: 0 }}
+            data-zoom={zoom}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-body-sm text-secondary-text">
+            <span className="font-mono text-label-sm text-text-muted">📍</span>{" "}
+            {address}
+          </p>
+          <a
+            href={gmapsLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-body-sm font-medium text-molten-primary hover:text-molten-accent-hover"
+          >
+            Apri in Google Maps →
+          </a>
+        </div>
+        {caption && (
+          <p className="mt-2 text-label-md text-text-muted">{caption}</p>
+        )}
+      </div>
+    );
+  },
+};
