@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Plus, Star, X } from "lucide-react";
+import { MapPin, Plus, Star, X, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   useSettingsStore,
   type LocalBusinessSettings,
+  type LocalBusinessLocation,
   type LocalReview,
 } from "@/lib/stores/settings-store";
 
@@ -72,6 +73,38 @@ export function LocalBusinessEditor({ projectId }: { projectId: string }) {
   }
   function removeReview(i: number) {
     patch({ reviews: lb.reviews.filter((_, idx) => idx !== i) });
+  }
+
+  function addLocation() {
+    const id = `loc-${Date.now()}`;
+    patch({
+      additionalLocations: [
+        ...(lb.additionalLocations ?? []),
+        {
+          id,
+          name: "Nuova sede",
+          streetAddress: "",
+          postalCode: "",
+          addressLocality: "",
+          addressRegion: "",
+          addressCountry: lb.addressCountry,
+          telephone: "",
+          openingHours: [],
+        },
+      ],
+    });
+  }
+  function updateLocation(i: number, p: Partial<LocalBusinessLocation>) {
+    const next = [...(lb.additionalLocations ?? [])];
+    next[i] = { ...next[i], ...p };
+    patch({ additionalLocations: next });
+  }
+  function removeLocation(i: number) {
+    patch({
+      additionalLocations: (lb.additionalLocations ?? []).filter(
+        (_, idx) => idx !== i,
+      ),
+    });
   }
 
   return (
@@ -221,6 +254,117 @@ export function LocalBusinessEditor({ projectId }: { projectId: string }) {
             onRemove={removeSameAs}
             placeholder="https://www.linkedin.com/company/..."
           />
+
+          <div className="md:col-span-2 mt-2">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-info" />
+                <Label className="text-label-md text-secondary-text">
+                  Sedi aggiuntive ({(lb.additionalLocations ?? []).length})
+                </Label>
+              </div>
+              <button
+                type="button"
+                onClick={addLocation}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-label-md text-molten-primary hover:bg-surface-container-highest"
+              >
+                <Plus className="h-3 w-3" />
+                Aggiungi sede
+              </button>
+            </div>
+            {(lb.additionalLocations ?? []).length === 0 ? (
+              <p className="rounded-md border border-dashed border-outline/30 px-3 py-2 text-label-md text-text-muted">
+                Sede principale sopra. Aggiungi sedi qui per multi-location
+                LocalBusiness schema (utile per franchise, agenzie multi-città).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {(lb.additionalLocations ?? []).map((loc, i) => (
+                  <div
+                    key={loc.id}
+                    className="rounded-lg border border-outline/20 bg-surface-container-low p-3"
+                  >
+                    <div className="mb-2 flex items-center gap-2">
+                      <Input
+                        value={loc.name}
+                        onChange={(e) =>
+                          updateLocation(i, { name: e.target.value })
+                        }
+                        placeholder="Sede Lugano"
+                        className="font-semibold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeLocation(i)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container hover:bg-surface-container-highest"
+                        aria-label="Rimuovi sede"
+                      >
+                        <X className="h-4 w-4 text-error" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        value={loc.streetAddress}
+                        onChange={(e) =>
+                          updateLocation(i, { streetAddress: e.target.value })
+                        }
+                        placeholder="Via …"
+                      />
+                      <Input
+                        value={loc.telephone}
+                        onChange={(e) =>
+                          updateLocation(i, { telephone: e.target.value })
+                        }
+                        placeholder="+41 …"
+                      />
+                      <Input
+                        value={loc.postalCode}
+                        onChange={(e) =>
+                          updateLocation(i, { postalCode: e.target.value })
+                        }
+                        placeholder="CAP"
+                      />
+                      <Input
+                        value={loc.addressLocality}
+                        onChange={(e) =>
+                          updateLocation(i, { addressLocality: e.target.value })
+                        }
+                        placeholder="Città"
+                      />
+                      <Input
+                        type="number"
+                        step="0.000001"
+                        value={loc.geoLat ?? ""}
+                        onChange={(e) =>
+                          updateLocation(i, {
+                            geoLat: e.target.value
+                              ? Number(e.target.value)
+                              : undefined,
+                          })
+                        }
+                        placeholder="Lat"
+                        className="font-mono"
+                      />
+                      <Input
+                        type="number"
+                        step="0.000001"
+                        value={loc.geoLng ?? ""}
+                        onChange={(e) =>
+                          updateLocation(i, {
+                            geoLng: e.target.value
+                              ? Number(e.target.value)
+                              : undefined,
+                          })
+                        }
+                        placeholder="Lng"
+                        className="font-mono"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="md:col-span-2 mt-2">
             <div className="mb-2 flex items-center justify-between">

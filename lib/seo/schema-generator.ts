@@ -218,3 +218,25 @@ export function localBusinessSchema(
 export function jsonLdScript(schema: Record<string, unknown>): string {
   return `<script type="application/ld+json">${JSON.stringify(schema)}</script>`;
 }
+
+export type EntityInput = {
+  type: "Person" | "Organization" | "Place" | "Event" | "Product";
+  name: string;
+  url?: string;
+  sameAs?: string;
+};
+
+/**
+ * Entity schema for AI engine attribution (B.18). Outputs minimal
+ * Person/Organization/Place markup with sameAs disambiguation links to
+ * Wikidata or canonical sources.
+ */
+export function entitySchema(e: EntityInput): Record<string, unknown> {
+  return clean({
+    "@context": "https://schema.org",
+    "@type": e.type,
+    name: e.name,
+    url: e.url,
+    sameAs: e.sameAs ? [e.sameAs] : undefined,
+  });
+}

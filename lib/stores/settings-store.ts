@@ -13,6 +13,20 @@ export type LocalReview = {
   text: string;
 };
 
+export type LocalBusinessLocation = {
+  id: string;
+  name: string;
+  streetAddress: string;
+  postalCode: string;
+  addressLocality: string;
+  addressRegion: string;
+  addressCountry: string;
+  telephone: string;
+  geoLat?: number;
+  geoLng?: number;
+  openingHours: string[];
+};
+
 export type LocalBusinessSettings = {
   enabled: boolean;
   /** legalName fallback to project.name when empty */
@@ -34,6 +48,9 @@ export type LocalBusinessSettings = {
   sameAs: string[];
   /** Customer reviews — render as Review/AggregateRating schema */
   reviews: LocalReview[];
+  /** Multi-location support — additional sedes/branches.
+   *  Each generates its own LocalBusiness schema in export. */
+  additionalLocations: LocalBusinessLocation[];
 };
 
 export type LocaleAlternate = {
@@ -115,6 +132,25 @@ export type ProjectSettings = {
       marketing: boolean;
       social: boolean;
     };
+    /** Regional regimes to comply with */
+    regions: {
+      gdpr: boolean; // EU 27 + UK + CH
+      ccpa: boolean; // California "Do Not Sell My Personal Information"
+      lgpd: boolean; // Brasil
+      pipeda: boolean; // Canada
+    };
+  };
+  privacy: {
+    /** Data residency for form submissions and analytics */
+    dataResidency: "eu" | "us" | "ch" | "auto";
+    /** PII field name hints — fields matching these are encrypted/masked */
+    piiFieldHints: string[];
+    /** Hash strategy for analytics enhanced conversions */
+    hashStrategy: "sha256" | "none";
+    /** DSAR (Data Subject Access Request) contact email */
+    dsarEmail: string;
+    /** Default retention days for form submissions */
+    retentionDays: number;
   };
   uptime: {
     enabled: boolean;
@@ -210,6 +246,7 @@ function defaultsFor(projectId: string): ProjectSettings {
       serviceArea: [],
       sameAs: [],
       reviews: [],
+      additionalLocations: [],
     },
     consent: {
       enabled: false,
@@ -222,6 +259,19 @@ function defaultsFor(projectId: string): ProjectSettings {
         marketing: true,
         social: false,
       },
+      regions: {
+        gdpr: true,
+        ccpa: false,
+        lgpd: false,
+        pipeda: false,
+      },
+    },
+    privacy: {
+      dataResidency: "eu",
+      piiFieldHints: ["email", "phone", "tel", "ssn", "iban", "credit"],
+      hashStrategy: "sha256",
+      dsarEmail: "",
+      retentionDays: 365,
     },
     uptime: {
       enabled: false,
@@ -246,6 +296,8 @@ export const useSettingsStore = create<SettingsStore>()(
         const needsBackfill =
           !existing ||
           !existing.consent ||
+          !existing.consent.regions ||
+          !existing.privacy ||
           !existing.uptime ||
           !existing.robots ||
           !existing.localBusiness ||
@@ -277,7 +329,15 @@ export const useSettingsStore = create<SettingsStore>()(
             ...fresh.localBusiness,
             ...(existing?.localBusiness ?? {}),
           },
-          consent: { ...fresh.consent, ...(existing?.consent ?? {}) },
+          consent: {
+            ...fresh.consent,
+            ...(existing?.consent ?? {}),
+            regions: {
+              ...fresh.consent.regions,
+              ...(existing?.consent?.regions ?? {}),
+            },
+          },
+          privacy: { ...fresh.privacy, ...(existing?.privacy ?? {}) },
           uptime: { ...fresh.uptime, ...(existing?.uptime ?? {}) },
         };
         // Persist so next call returns stable reference.

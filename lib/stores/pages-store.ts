@@ -18,6 +18,11 @@ type Actions = {
   updatePage: (pageId: string, patch: Partial<Page>) => void;
   addPage: (page: Page) => void;
   removePage: (pageId: string) => void;
+  /** Bulk: update many pages at once */
+  bulkUpdate: (ids: string[], patch: Partial<Page>) => void;
+  /** Bulk: update SEO sub-fields */
+  bulkUpdateSEO: (ids: string[], seoPatch: Partial<Page["seo"]>) => void;
+  bulkRemove: (ids: string[]) => void;
   resetSeed: () => void;
 };
 
@@ -42,6 +47,35 @@ export const usePagesStore = create<State & Actions>()(
       addPage: (page) => set((s) => ({ pages: [page, ...s.pages] })),
       removePage: (pageId) =>
         set((s) => ({ pages: s.pages.filter((p) => p.id !== pageId) })),
+      bulkUpdate: (ids, patch) =>
+        set((s) => {
+          const idSet = new Set(ids);
+          return {
+            pages: s.pages.map((p) =>
+              idSet.has(p.id) ? { ...p, ...patch, updatedAt: new Date() } : p,
+            ),
+          };
+        }),
+      bulkUpdateSEO: (ids, seoPatch) =>
+        set((s) => {
+          const idSet = new Set(ids);
+          return {
+            pages: s.pages.map((p) =>
+              idSet.has(p.id)
+                ? {
+                    ...p,
+                    seo: { ...p.seo, ...seoPatch },
+                    updatedAt: new Date(),
+                  }
+                : p,
+            ),
+          };
+        }),
+      bulkRemove: (ids) =>
+        set((s) => {
+          const idSet = new Set(ids);
+          return { pages: s.pages.filter((p) => !idSet.has(p.id)) };
+        }),
       resetSeed: () => set({ pages: SEED }),
     }),
     {

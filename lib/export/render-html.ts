@@ -10,6 +10,8 @@ import {
   organizationSchema,
   faqSchema,
   localBusinessSchema,
+  entitySchema,
+  breadcrumbSchema,
 } from "@/lib/seo/schema-generator";
 
 /**
@@ -166,9 +168,36 @@ function renderHead(data: PuckData, opts: RenderOptions): string {
       organizationSchema(project),
       articleSchema(project, opts.page),
     ];
+    // Auto-breadcrumb from slug segments (C.26 GEO snippet helper).
+    // E.g. /servizi/seo-svizzera → Home › Servizi › Seo Svizzera
+    const slugSegs = (opts.page.slug || "/")
+      .split("/")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (slugSegs.length > 0) {
+      const baseUrl = `https://${project.domain}`;
+      const items = [{ name: "Home", url: `${baseUrl}/` }];
+      let acc = "";
+      for (const seg of slugSegs) {
+        acc += `/${seg}`;
+        items.push({
+          name: seg
+            .replace(/[-_]/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase()),
+          url: `${baseUrl}${acc}`,
+        });
+      }
+      schemas.push(breadcrumbSchema(items));
+    }
     // Auto-detect FAQ blocks in puck content and append FAQPage schema
     const faqItems = extractFaqItems(data);
     if (faqItems.length > 0) schemas.push(faqSchema(faqItems));
+    // Entity references (B.18) — Person/Organization/Place schemas
+    if (opts.page.seo.entities && opts.page.seo.entities.length > 0) {
+      for (const e of opts.page.seo.entities) {
+        if (e.name) schemas.push(entitySchema(e));
+      }
+    }
     // LocalBusiness schema if enabled in settings
     if (opts.localBusiness?.enabled) {
       const lb = opts.localBusiness;
@@ -197,6 +226,30 @@ function renderHead(data: PuckData, opts: RenderOptions): string {
           reviews: lb.reviews && lb.reviews.length > 0 ? lb.reviews : undefined,
         }),
       );
+      // Multi-location: emit a separate LocalBusiness for each branch
+      for (const loc of opts.localBusiness.additionalLocations ?? []) {
+        if (!loc.streetAddress && !loc.addressLocality) continue;
+        schemas.push(
+          localBusinessSchema({
+            name: `${lb.legalName || project.name} — ${loc.name}`,
+            url: `https://${project.domain}`,
+            telephone: loc.telephone || undefined,
+            address: {
+              streetAddress: loc.streetAddress,
+              addressLocality: loc.addressLocality,
+              postalCode: loc.postalCode,
+              addressCountry: loc.addressCountry || lb.addressCountry,
+              addressRegion: loc.addressRegion || undefined,
+            },
+            geo:
+              loc.geoLat && loc.geoLng
+                ? { latitude: loc.geoLat, longitude: loc.geoLng }
+                : undefined,
+            openingHours:
+              loc.openingHours.length > 0 ? loc.openingHours : undefined,
+          }),
+        );
+      }
     }
     for (const s of schemas) {
       lines.push(

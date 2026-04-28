@@ -56,6 +56,16 @@ export type PageSEO = {
   };
   /** Override Article schema content type */
   schemaType?: "Article" | "NewsArticle" | "BlogPosting";
+  /** Entity references mentioned in the page (Person, Organization, Place,
+   *  Event, Product). Output as nested @id-linked schema for AI engines. */
+  entities?: Array<{
+    type: "Person" | "Organization" | "Place" | "Event" | "Product";
+    name: string;
+    /** Wikipedia / company / LinkedIn URL */
+    url?: string;
+    /** Wikidata Q-id for entity disambiguation (e.g. Q42) */
+    sameAs?: string;
+  }>;
   schema?: Record<string, unknown>;
 };
 

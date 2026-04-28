@@ -42,6 +42,47 @@ export function ConsentEditor({ projectId }: { projectId: string }) {
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <p className="mb-2 text-label-md text-secondary-text">
+              Regimi normativi attivi
+            </p>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <RegionPill
+                label="GDPR"
+                desc="EU + CH + UK"
+                value={c.regions.gdpr}
+                onChange={() =>
+                  patch({ regions: { ...c.regions, gdpr: !c.regions.gdpr } })
+                }
+              />
+              <RegionPill
+                label="CCPA"
+                desc="California"
+                value={c.regions.ccpa}
+                onChange={() =>
+                  patch({ regions: { ...c.regions, ccpa: !c.regions.ccpa } })
+                }
+              />
+              <RegionPill
+                label="LGPD"
+                desc="Brasil"
+                value={c.regions.lgpd}
+                onChange={() =>
+                  patch({ regions: { ...c.regions, lgpd: !c.regions.lgpd } })
+                }
+              />
+              <RegionPill
+                label="PIPEDA"
+                desc="Canada"
+                value={c.regions.pipeda}
+                onChange={() =>
+                  patch({
+                    regions: { ...c.regions, pipeda: !c.regions.pipeda },
+                  })
+                }
+              />
+            </div>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label className="text-label-md text-secondary-text">
               Lingua banner (lascia vuoto per default progetto)
@@ -135,5 +176,39 @@ function VendorRow({
       </div>
       <Switch checked={value} onCheckedChange={onChange} />
     </div>
+  );
+}
+
+function RegionPill({
+  label,
+  desc,
+  value,
+  onChange,
+}: {
+  label: string;
+  desc: string;
+  value: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex flex-col items-start rounded-md border px-3 py-2 text-left transition-colors ${
+        value
+          ? "border-molten-primary-container bg-surface-container"
+          : "border-outline/20 bg-surface-container-low hover:bg-surface-container"
+      }`}
+    >
+      <span className="text-body-sm font-semibold text-on-surface">
+        {label}
+        {value && (
+          <span className="ml-2 inline-block rounded-full bg-success-container px-1.5 py-0.5 text-label-sm text-success">
+            ON
+          </span>
+        )}
+      </span>
+      <span className="text-label-md text-text-muted">{desc}</span>
+    </button>
   );
 }

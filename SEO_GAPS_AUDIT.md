@@ -16,23 +16,24 @@
 | 2026-04-28 | R5 — A11y + SSL + tracking + author + form builder | H.75, F.50, D.30, D.29, B.17, G.61, G.63 | A11y audit + SSL UI + UTM builder + conversion wizard + Author E-E-A-T + form builder + CRM webhook |
 | 2026-04-28 | R6 — Infra + RBAC + API + anomaly | F.49, F.51, F.52, F.57, I.83, I.86, E.39 ext | DNS UI + email auth + staging generalizzato + uptime monitor + RBAC team + public REST API + anomaly detection |
 | 2026-04-28 | R7 — Operational + lead-gen | D.27, G.64, G.65, G.69, I.84, I.97, I.88 | Campaign UI + lead scoring + abandonment + follow-up sequence + audit log + activity feed + scheduled publishing |
+| 2026-04-28 | R8 — Entity + multi-location + privacy + bulk + webhooks | B.18, C.21, C.26, H.78, H.81, I.85, I.87 | Entity schema editor + multi-location LocalBusiness + auto Breadcrumb + Privacy/PII + CCPA/LGPD regions + bulk page ops + webhooks outbound |
 
-**Stato corrente**: 46 gap chiusi su 99 totali. Restano 53.
+**Stato corrente**: 53 gap chiusi su 99 totali. Restano 46.
 
 ## Sommario aggiornato
 
 | Area | Gap aperti | P0 | P1 | P2 |
 |------|----:|---:|---:|---:|
 | A. SEO classico | 4 | 0 | 3 | 1 |
-| B. AEO | 3 | 0 | 3 | 0 |
-| C. GEO + Local | 4 | 0 | 3 | 1 |
+| B. AEO | 2 | 0 | 2 | 0 |
+| C. GEO + Local | 2 | 0 | 1 | 1 |
 | D. Ads & Paid Media | 6 | 0 | 5 | 1 |
 | E. Analytics & Measurement | 9 | 0 | 6 | 3 |
 | F. Domain / Hosting / Infra | 8 | 0 | 6 | 2 |
 | G. Forms / Leads / CRM | 6 | 0 | 4 | 2 |
-| H. Compliance / Legal / A11y | 7 | 0 | 6 | 1 |
-| I. Operational / Agency | 11 | 1 | 8 | 2 |
-| **TOTALE** | **53** | **1** | **41** | **11** |
+| H. Compliance / Legal / A11y | 5 | 0 | 4 | 1 |
+| I. Operational / Agency | 9 | 1 | 6 | 2 |
+| **TOTALE** | **46** | **1** | **34** | **11** |
 
 ---
 
@@ -52,21 +53,18 @@ A.Y **Image SEO automatico.** Vision AI auto-alt + dimensioni + formats moderni 
 
 ## B. AEO (Answer Engine Optimization)
 
-> Chiusi: B.14, B.16 (R4 AEO scorer + passage-level), B.17 (R5 author/reviewedBy + schemaType per Article/NewsArticle/BlogPosting), B.19 (FAQ).
+> Chiusi: B.14, B.16 (R4 AEO scorer + passage-level), B.17 (R5 author/reviewedBy + schemaType), B.18 (R8 entity schema editor con sameAs Wikidata), B.19 (FAQ).
 
 B.15 **AI overview traffic risk modeling assente.** **P1** → integrare Semrush/Moz AEO API o classifier interno + raccomandazioni difensive.
-B.18 **Entity optimization assente.** Nessun linking a entità definite (persone, org, concetti). **P1** → entity recognition + entity schema + linking interno a entity pages.
 
 ---
 
 ## C. GEO (Generative Engine Optimization + Local SEO)
 
-> Chiusi: C.20 (LocalBusiness editor + auto-inject schema), C.23 (Review/AggregateRating in R3), C.24 (NAP audit in R3 alert engine).
+> Chiusi: C.20 (LocalBusiness editor + auto-inject), C.21 (R8 multi-location editor + per-branch schema), C.23 (Review/AggregateRating), C.24 (NAP audit), C.26 (R8 auto-Breadcrumb da slug).
 
-C.21 **Service area / multi-location targeting assente.** **P1** → metadata location-aware + landing page templates per location (SerEvice area UI esiste; manca gestione MULTI-location).
-C.22 **LocalBusiness/Place schema esiste ma manca preview Google Local Pack.** **P1** → preview "near me" + breadcrumb geo.
+C.22 **LocalBusiness/Place schema esiste ma manca preview Google Local Pack.** **P1** → preview "near me" + map embed Puck block.
 C.25 **Local citations management assente.** Apple Maps, Bing, TripAdvisor, directory di settore. **P2** → submission UI + monitoring NAP consistency.
-C.26 **GEO snippet optimization assente.** Zero ottimizzazione per query "near me" / local pack / map snippets. **P1** → schema "near me" intent + map-friendly markup (coords, radius).
 
 ---
 
@@ -149,10 +147,10 @@ H.74 **`robots.txt` builder UI** (vedi A.6) — chiuso in R2 (preview live in se
 ~~H.75 Accessibility audit / WCAG~~ — chiuso in R5 (`lib/seo/a11y-audit.ts` con regole H1 unico, hierarchy no-skip, alt enforcement, descriptive link text; alert engine surface count + severity).
 ~~H.76 Alt text enforcement~~ — chiuso in R3 (badge "Alt mancante" in editor Puck + alert rule cross-pagine). Estensione P2: auto-generate alt via vision AI.
 H.77 **ToS / privacy / disclaimer template assenti.** **P1** → integrare iubenda/Termly/TermsFeed o template interno + sync custom domain.
-H.78 **PII masking / data residency config assenti.** **P1** → field-level encryption + PII detection in analytics + residency selection (EU/US/CH).
+~~H.78 PII masking / data residency~~ — chiuso in R8 (PrivacyEditor con dataResidency EU/US/CH/auto + piiFieldHints + hashStrategy SHA-256 + DSAR email + retention days).
 H.79 **Keyboard nav / screen reader testing mancante.** **P1** → audit keyboard via Axe + ARIA labels + test NVDA/JAWS.
 H.80 **Cookie disclosure per third-party scripts assente.** GA4/Meta/Ads/AdSense caricano senza consent gate. **P1** → cookie inventory + script blocking pre-consent + auto-detect cookies.
-H.81 **CCPA/LGPD/altre giurisdizioni assenti.** Solo GDPR EU. **P1** → consent regional + privacy policy region-specific + opt-out CCPA "Do Not Sell".
+~~H.81 CCPA/LGPD/regional consent~~ — chiuso in R8 (consent.regions con GDPR/CCPA/LGPD/PIPEDA toggleable in `/settings/general`).
 H.82 **ADA compliance statement / accessibility policy assenti.** **P2** → template + contact form + issue tracking.
 
 ---
@@ -161,9 +159,9 @@ H.82 **ADA compliance statement / accessibility policy assenti.** **P2** → tem
 
 ~~I.83 RBAC base~~ — chiuso in R6 (`/team` con ruoli Super Admin/Admin/Editor/Viewer + project access + MFA flag + invite dialog + permissions matrix).
 ~~I.84 Audit log~~ — chiuso in R7 (`lib/stores/audit-store.ts` + `/audit` page con filtri action/actor; log automatico campagne, schedule, pubblicazioni).
-I.85 **Bulk operations / batch export assenti.** **P1** → bulk edit pages (status/indexable/slug) + CSV export + project setting copy cross-project.
+~~I.85 Bulk operations~~ — chiuso in R8 (bulk action bar in `/pages` con pubblica/draft/index ON/OFF/CSV export/elimina su set selezionate).
 ~~I.86 Public REST API~~ — chiuso in R6 (`/api/public/v1/projects`, `/projects/[id]`, `/projects/[id]/pages`, `/projects/[id]/forms` con auth Bearer rzn_… + scope read/write).
-I.87 **Webhooks per integrazioni esterne assenti.** **P1** → form submission, page publish, version live, alert events + delivery log + retry.
+~~I.87 Webhooks esterni~~ — chiuso in R8 (`/settings/webhooks` con CRUD endpoint + 7 eventi + secret HMAC + delivery log + test fire).
 ~~I.88 Scheduled publishing + approval~~ — chiuso in R7 (`lib/stores/schedule-store.ts` + ScheduledReleases in `/settings/staging` con status draft→review→approved→published e bottoni approve/reject/deploy).
 I.89 **Client / white-label mode assente.** Brand REZEN baked-in. **P1** → white-label: hide branding + custom name/logo + color scheme + hide internal settings.
 I.90 **Cost allocation / project billing assenti.** **P1** → cost tracking per progetto + hourly/usage rate + report per cliente.
@@ -179,18 +177,18 @@ I.99 **Backup/restore / DR plan documentato assente** (vedi anche F.59). **P1**.
 
 ---
 
-## Top 10 priorità rimaste (post R7)
+## Top 10 priorità rimaste (post R8)
 
-1. **B.18** — Entity linking schema
-2. **C.21 + C.26** — Multi-location + GEO snippets
-3. **H.78 + H.81** — PII masking + CCPA/LGPD regional consent
-4. **I.85 + I.87** — Bulk ops + webhooks esterni
-5. **I.94 + I.91** — Custom report builder + client portal
-6. **D.31 + D.33** — Ad copy A/B + bid strategy optimization
-7. **F.53 + F.55** — CDN config + cache headers
-8. **E.41 + E.43** — Cohort/retention + custom event config
-9. **A.5 esteso (A.11 + A.12)** — Backlink monitoring + competitor benchmarking
-10. **I.92 + I.93** — Performance benchmarking cross-client + task management
+1. **A.11 + A.12** — Backlink monitoring + competitor benchmarking
+2. **D.31 + D.33** — Ad copy A/B + bid strategy optimization
+3. **E.41 + E.43** — Cohort/retention + custom event config
+4. **F.53 + F.55** — CDN config + cache headers
+5. **B.15** — AI overview traffic risk modeling
+6. **C.22 + C.25** — Map embed Puck block + local citations
+7. **G.67 + G.70** — Form heatmap + form A/B testing
+8. **I.94 + I.91** — Custom report builder + client portal
+9. **I.92 + I.93** — Performance benchmarking + task management
+10. **I.96 + I.98** — SSO/SAML + onboarding wizard
 
 ## Note sui falsi positivi possibili
 

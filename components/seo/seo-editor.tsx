@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Save, Globe, Share2, MessageSquare, Code, Network, Bot } from "lucide-react";
+import { ArrowLeft, Sparkles, Save, Globe, Share2, MessageSquare, Code, Network, Bot, Users, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { usePagesStore } from "@/lib/stores/pages-store";
 import { useProjectsStore } from "@/lib/stores/projects-store";
@@ -336,6 +336,110 @@ export function SeoEditor({
                   <option value="NewsArticle">NewsArticle</option>
                   <option value="BlogPosting">BlogPosting</option>
                 </select>
+              </div>
+
+              <div className="col-span-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5 text-label-md text-secondary-text">
+                    <Users className="h-3.5 w-3.5" />
+                    Entità menzionate (Person/Organization/Place)
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSeo((cur) => ({
+                        ...cur,
+                        entities: [
+                          ...(cur.entities ?? []),
+                          { type: "Person", name: "", url: "", sameAs: "" },
+                        ],
+                      }))
+                    }
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-label-md text-molten-primary hover:bg-surface-container-highest"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Aggiungi
+                  </button>
+                </div>
+                {(seo.entities ?? []).length === 0 ? (
+                  <p className="rounded-md border border-dashed border-outline/30 px-3 py-2 text-label-md text-text-muted">
+                    Nessuna entità. Aggiungi persone/aziende/luoghi citati per
+                    boost LLM citation + entity disambiguation (Wikidata Q-id).
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {(seo.entities ?? []).map((ent, i) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-[110px_1fr_1fr_36px] gap-2"
+                      >
+                        <select
+                          value={ent.type}
+                          onChange={(e) =>
+                            setSeo((cur) => {
+                              const next = [...(cur.entities ?? [])];
+                              next[i] = {
+                                ...next[i],
+                                type: e.target.value as NonNullable<
+                                  PageSEO["entities"]
+                                >[number]["type"],
+                              };
+                              return { ...cur, entities: next };
+                            })
+                          }
+                          className="h-9 rounded-md bg-surface-container-low px-2 text-label-md"
+                        >
+                          <option value="Person">Person</option>
+                          <option value="Organization">Organization</option>
+                          <option value="Place">Place</option>
+                          <option value="Event">Event</option>
+                          <option value="Product">Product</option>
+                        </select>
+                        <Input
+                          value={ent.name}
+                          onChange={(e) =>
+                            setSeo((cur) => {
+                              const next = [...(cur.entities ?? [])];
+                              next[i] = { ...next[i], name: e.target.value };
+                              return { ...cur, entities: next };
+                            })
+                          }
+                          placeholder="Nome entità"
+                        />
+                        <Input
+                          value={ent.sameAs ?? ""}
+                          onChange={(e) =>
+                            setSeo((cur) => {
+                              const next = [...(cur.entities ?? [])];
+                              next[i] = {
+                                ...next[i],
+                                sameAs: e.target.value,
+                              };
+                              return { ...cur, entities: next };
+                            })
+                          }
+                          placeholder="https://www.wikidata.org/wiki/Q…"
+                          className="font-mono text-body-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSeo((cur) => ({
+                              ...cur,
+                              entities: (cur.entities ?? []).filter(
+                                (_, idx) => idx !== i,
+                              ),
+                            }))
+                          }
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container hover:bg-surface-container-highest"
+                          aria-label="Rimuovi"
+                        >
+                          <X className="h-4 w-4 text-error" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>
