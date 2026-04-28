@@ -1,8 +1,19 @@
 "use client";
 
 import { use, useMemo } from "react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+
+const MONTHS_IT = [
+  "gen", "feb", "mar", "apr", "mag", "giu",
+  "lug", "ago", "set", "ott", "nov", "dic",
+];
+
+/** UTC-stable date formatter — avoids SSR/CSR hydration mismatch. */
+function fmtDate(d: Date): string {
+  return `${d.getUTCDate()} ${MONTHS_IT[d.getUTCMonth()]}`;
+}
+function fmtTime(d: Date): string {
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
 import {
   Download,
   Inbox,
@@ -246,10 +257,10 @@ export default function FormsPage({
             >
               <div className="flex flex-col leading-tight">
                 <span className="text-body-sm font-medium text-on-surface">
-                  {format(f.createdAt, "d MMM", { locale: it })}
+                  {fmtDate(f.createdAt)}
                 </span>
                 <span className="text-label-sm text-text-muted">
-                  {format(f.createdAt, "HH:mm")}
+                  {fmtTime(f.createdAt)}
                 </span>
               </div>
               <span
