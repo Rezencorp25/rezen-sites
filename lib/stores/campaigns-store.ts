@@ -61,6 +61,16 @@ export type Campaign = {
   bidTarget?: number;
   /** Ad copy A/B variants */
   variants: AdVariant[];
+  /** Audience exported as Custom Audience / lookalike (D.32) */
+  audienceExport?: {
+    sourceType: "form_submissions" | "high_intent_visitors" | "past_buyers";
+    audienceSize: number;
+    lookalikePct?: number;
+  };
+  /** Pacing — auto-pause threshold % over budget (D.35) */
+  pacingThresholdPct?: number;
+  /** Mock landing page quality score 0-100 (D.34) */
+  landingScore?: number;
   createdAt: string;
 };
 

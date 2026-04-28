@@ -16,6 +16,10 @@ import { KpiCard } from "@/components/luminous/kpi-card";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { DevicesPie } from "@/components/analytics/devices-pie";
 import { CohortTable } from "@/components/analytics/cohort-table";
+import {
+  ForecastCard,
+  AudienceOverlapCard,
+} from "@/components/analytics/forecast-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AnalyticsOverviewPage({
@@ -195,6 +199,11 @@ export default function AnalyticsOverviewPage({
             </ul>
           </div>
         </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ForecastCard pageviews={pageviews} />
+        <AudienceOverlapCard projectId={projectId} />
       </div>
 
       <div className="mt-5">

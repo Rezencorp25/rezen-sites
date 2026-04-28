@@ -122,6 +122,13 @@ export type ProjectSettings = {
       /** Region per backup storage */
       backupRegion: "eu-west" | "eu-central" | "us-east" | "swiss";
     };
+    /** HTTP protocol enforcement (F.58) */
+    protocol: {
+      minVersion: "http1" | "http2" | "http3";
+      forceHttps: boolean;
+      /** HSTS max-age in seconds (recommended 31536000 = 1y) */
+      hstsMaxAge: number;
+    };
   };
   staging: {
     stagingEnabled: boolean;
@@ -139,6 +146,18 @@ export type ProjectSettings = {
     googleAds: { id: string; verified: boolean };
     headerCode: string;
     footerCode: string;
+    /** Cross-domain linker domains (E.48) */
+    crossDomains: string[];
+    /** Multi-touch attribution model (E.44) */
+    attributionModel:
+      | "last-click"
+      | "first-click"
+      | "linear"
+      | "time-decay"
+      | "position-based"
+      | "data-driven";
+    /** GA4 data retention in months (E.47) */
+    dataRetentionMonths: 2 | 14 | 26 | 38 | 50;
   };
   robots: {
     allowAll: boolean;
@@ -258,6 +277,11 @@ function defaultsFor(projectId: string): ProjectSettings {
         rtoMinutes: 30,
         backupRegion: "eu-west",
       },
+      protocol: {
+        minVersion: "http2",
+        forceHttps: true,
+        hstsMaxAge: 31536000,
+      },
     },
     staging: {
       // Generalised: any project can opt-in to staging
@@ -274,6 +298,9 @@ function defaultsFor(projectId: string): ProjectSettings {
       googleAds: { id: "", verified: false },
       headerCode: "",
       footerCode: "",
+      crossDomains: [],
+      attributionModel: "last-click",
+      dataRetentionMonths: 14,
     },
     robots: {
       allowAll: true,
@@ -356,6 +383,7 @@ export const useSettingsStore = create<SettingsStore>()(
           !existing.domain?.cdn ||
           !existing.domain?.waf ||
           !existing.domain?.backup ||
+          !existing.domain?.protocol ||
           !existing.staging?.stagingDomain;
         if (!needsBackfill) {
           // Stable reference — Zustand selectors stay equal, no re-render loop.
@@ -379,6 +407,10 @@ export const useSettingsStore = create<SettingsStore>()(
             backup: {
               ...fresh.domain.backup,
               ...(existing?.domain?.backup ?? {}),
+            },
+            protocol: {
+              ...fresh.domain.protocol,
+              ...(existing?.domain?.protocol ?? {}),
             },
           },
           staging: { ...fresh.staging, ...(existing?.staging ?? {}) },

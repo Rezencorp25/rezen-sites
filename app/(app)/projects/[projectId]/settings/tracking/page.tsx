@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { ConversionWizard } from "@/components/seo/conversion-wizard";
 import { UtmBuilderCard } from "@/components/seo/utm-builder-card";
 import { CustomEventsCard } from "@/components/seo/custom-events-card";
+import { TrackingAdvanced } from "@/components/seo/tracking-advanced";
 import { cn } from "@/lib/utils";
 
 type IntegrationKey = "ga4" | "metaPixel" | "adsense" | "googleAds";
@@ -217,6 +218,10 @@ export default function SettingsTrackingPage({
 
       <div className="mb-5">
         <CustomEventsCard projectId={projectId} />
+      </div>
+
+      <div className="mb-5">
+        <TrackingAdvanced projectId={projectId} />
       </div>
 
       <section className="rounded-xl bg-surface-container-high">

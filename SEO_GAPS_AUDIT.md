@@ -19,8 +19,9 @@
 | 2026-04-28 | R8 — Entity + multi-location + privacy + bulk + webhooks | B.18, C.21, C.26, H.78, H.81, I.85, I.87 | Entity schema editor + multi-location LocalBusiness + auto Breadcrumb + Privacy/PII + CCPA/LGPD regions + bulk page ops + webhooks outbound |
 | 2026-04-28 | R9 — Research + ads advanced + cohort + CDN + AEO risk + map | A.11, A.12, B.15, C.22, D.31, D.33, E.41, E.43, F.53, F.55 | SEO research page (backlink + competitor) + AEO risk scorer + Map embed Puck block + ad copy variants + bid strategy + cohort retention + custom GA4 events + CDN config |
 | 2026-04-28 | R10 — Citations + form lab + portal + benchmarking + workspace + WAF + audits | C.25, G.67, G.70, I.91, I.92, I.94, I.96, I.89, F.56, F.59, A.7, H.80 | Local citations + form heatmap + form A/B + client portal + cross-client benchmarking + custom report builder + SSO/SAML + white-label + WAF/DDoS + backup/DR + external link rel audit + cookie inventory rule |
+| 2026-04-28 | R11 — Form pro + tracking lab + ads lab + HTTP + legal + ops + analytics depth | G.66, G.68, G.71, G.72, E.42, E.44, E.47, E.48, D.32, D.34, D.35, D.36, F.58, H.77, H.79, H.82, I.90, I.93, I.95, I.98, E.40, E.45, E.46 | Form encryption/conditional/file/progressive + cross-domain/attribution/retention/pixel debug + audience export/LP score/pacing + HTTP/2-3 + Legal hub + Tasks/cost + onboarding + forecast/overlap |
 
-**Stato corrente**: 75 gap chiusi su 99 totali. Restano 24.
+**Stato corrente**: 97 gap chiusi su 99 totali. Restano **2** (E.38 + F.54), entrambi P0 al go-live: richiedono chiavi API reali (GA4 + PageSpeed) — architettura swap-ready già in piedi via service-factory.
 
 ## Sommario aggiornato
 
@@ -35,7 +36,8 @@
 | G. Forms / Leads / CRM | 6 | 0 | 4 | 2 |
 | H. Compliance / Legal / A11y | 5 | 0 | 4 | 1 |
 | I. Operational / Agency | 9 | 1 | 6 | 2 |
-| **TOTALE** | **24** | **1** | **14** | **9** |
+| **TOTALE** | **2** | **2** | **0** | **0** |
+| (entrambi attesi al go-live, swap-ready)|||||
 
 ---
 

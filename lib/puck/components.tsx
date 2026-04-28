@@ -694,7 +694,8 @@ export type ContactFormFieldType =
   | "select"
   | "checkbox"
   | "url"
-  | "number";
+  | "number"
+  | "file";
 
 export type ContactFormField = {
   /** Internal name (no spaces) */
@@ -709,6 +710,10 @@ export type ContactFormField = {
   placeholder?: string;
   /** For select: comma-separated options */
   options?: string;
+  /** Conditional logic: show this field only if another field has this value */
+  showIf?: string; // format: "fieldname=value"
+  /** Mark as PII — encrypted at rest */
+  isPii?: boolean;
 };
 
 export type ContactFormProps = {
@@ -735,6 +740,12 @@ export type ContactFormProps = {
   autoReplyBody: string;
   /** Nurture sequence: comma-separated days from submission, e.g. "1,3,7,14" */
   followupDays: string;
+  /** Field-level encryption for fields marked isPii (G.66) */
+  fieldEncryption: boolean;
+  /** Progressive profiling: hide already-known fields on returning visitors (G.72) */
+  progressiveProfiling: boolean;
+  /** Max file upload size in MB (G.71) */
+  maxFileSizeMb: number;
 };
 
 export const ContactForm: ComponentConfig<ContactFormProps> = {
@@ -776,6 +787,18 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
           type: "text",
           label: "Opzioni (solo select, separate da ,)",
         },
+        showIf: {
+          type: "text",
+          label: "Mostra se (es. \"newsletter=yes\")",
+        },
+        isPii: {
+          type: "radio",
+          label: "PII / encrypted",
+          options: [
+            { label: "Sì", value: true },
+            { label: "No", value: false },
+          ],
+        },
       },
       defaultItemProps: {
         value: "nuovo_campo",
@@ -784,6 +807,8 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
         required: false,
         placeholder: "",
         options: "",
+        showIf: "",
+        isPii: false,
       },
       getItemSummary: (item) =>
         `${item?.label ?? item?.value ?? "campo"}${item?.required ? " *" : ""}`,
@@ -848,6 +873,23 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
       type: "text",
       label: "Sequenza nurture (giorni separati da virgola, es. 3,7,14)",
     },
+    fieldEncryption: {
+      type: "radio",
+      label: "Encryption at-rest per PII fields",
+      options: [
+        { label: "AES-256 (raccomandato)", value: true },
+        { label: "Off", value: false },
+      ],
+    },
+    progressiveProfiling: {
+      type: "radio",
+      label: "Progressive profiling (nascondi campi noti)",
+      options: [
+        { label: "On", value: true },
+        { label: "Off", value: false },
+      ],
+    },
+    maxFileSizeMb: { type: "number", label: "Max file upload (MB)" },
   },
   defaultProps: {
     title: "Scrivici",
@@ -890,6 +932,9 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
     autoReplyBody:
       "Ciao {{name}},\n\nabbiamo ricevuto il tuo messaggio. Ti rispondiamo entro 24h.\n\nA presto,\nIl team",
     followupDays: "3,7,14",
+    fieldEncryption: true,
+    progressiveProfiling: false,
+    maxFileSizeMb: 10,
   },
   resolveData: ({ props }) => {
     // legacy mock templates may send string[]; normalize to ContactFormField[]
@@ -927,6 +972,9 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
     webhookUrl,
     autoReplyEnabled,
     followupDays,
+    fieldEncryption,
+    progressiveProfiling,
+    maxFileSizeMb,
   }) => (
     <div className="mx-auto max-w-2xl px-10 py-10">
       <div className="rounded-2xl bg-surface-container-high p-8">
@@ -938,11 +986,31 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
             const ph = field.placeholder ?? "";
             const req = !!field.required;
             const ft = field.fieldType ?? "text";
+            const condBadge = field.showIf ? ` · ${field.showIf}` : "";
             return (
-              <div key={f} className="flex flex-col gap-1.5">
-                <label className="text-label-md text-text-muted">
-                  {lbl}
-                  {req && <span className="ml-1 text-error">*</span>}
+              <div
+                key={f}
+                className="flex flex-col gap-1.5"
+                data-show-if={field.showIf || undefined}
+              >
+                <label className="flex items-center gap-2 text-label-md text-text-muted">
+                  <span>
+                    {lbl}
+                    {req && <span className="ml-1 text-error">*</span>}
+                  </span>
+                  {field.isPii && (
+                    <span className="rounded bg-warning-container px-1 text-label-sm text-warning">
+                      🔒 PII
+                    </span>
+                  )}
+                  {field.showIf && (
+                    <span
+                      className="rounded bg-info-container px-1 text-label-sm text-info"
+                      title={`Conditional: ${field.showIf}`}
+                    >
+                      if{condBadge}
+                    </span>
+                  )}
                 </label>
                 {ft === "textarea" ? (
                   <textarea
@@ -971,6 +1039,12 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
                     <input type="checkbox" required={req} className="accent-molten-primary" />
                     {ph || lbl}
                   </label>
+                ) : ft === "file" ? (
+                  <input
+                    type="file"
+                    required={req}
+                    className="rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-sm text-on-surface outline-none"
+                  />
                 ) : (
                   <input
                     type={ft}
@@ -1038,6 +1112,21 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
               {followupDays && (
                 <span className="rounded bg-warning-container px-1.5 py-0.5 font-mono text-warning">
                   nurture {followupDays}gg
+                </span>
+              )}
+              {fieldEncryption && (
+                <span className="rounded bg-success-container px-1.5 py-0.5 font-mono text-success">
+                  AES-256 PII
+                </span>
+              )}
+              {progressiveProfiling && (
+                <span className="rounded bg-info-container px-1.5 py-0.5 font-mono text-info">
+                  progressive
+                </span>
+              )}
+              {fields.some((f) => f.fieldType === "file") && (
+                <span className="rounded bg-surface-container-highest px-1.5 py-0.5 font-mono text-secondary-text">
+                  upload max {maxFileSizeMb}MB
                 </span>
               )}
             </div>

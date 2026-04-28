@@ -545,6 +545,80 @@ export default function SettingsDomainsPage({
           </button>
         </section>
 
+        <section className="rounded-xl bg-surface-container-high p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center gap-2.5">
+            <Lock className="h-4 w-4 text-molten-primary" />
+            <h2 className="text-title-md font-semibold text-on-surface">
+              HTTP protocol &amp; HSTS
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Min protocol version
+              </span>
+              <select
+                value={settings.domain.protocol.minVersion}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    protocol: {
+                      ...settings.domain.protocol,
+                      minVersion: e.target.value as
+                        | "http1"
+                        | "http2"
+                        | "http3",
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+              >
+                <option value="http1">HTTP/1.1</option>
+                <option value="http2">HTTP/2 (raccomandato)</option>
+                <option value="http3">HTTP/3 + QUIC</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-outline/20 px-3 py-2">
+              <div>
+                <span className="text-body-sm font-semibold text-on-surface">
+                  Force HTTPS
+                </span>
+                <p className="text-label-md text-text-muted">
+                  Auto-redirect 301
+                </p>
+              </div>
+              <Switch
+                checked={settings.domain.protocol.forceHttps}
+                onCheckedChange={(v) =>
+                  updateSection(projectId, "domain", {
+                    protocol: { ...settings.domain.protocol, forceHttps: v },
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                HSTS max-age (sec)
+              </span>
+              <input
+                type="number"
+                value={settings.domain.protocol.hstsMaxAge}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    protocol: {
+                      ...settings.domain.protocol,
+                      hstsMaxAge: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+              />
+            </div>
+          </div>
+          <div className="mt-3 rounded-md bg-surface-container-lowest p-3 font-mono text-label-md text-success">
+            Strict-Transport-Security: max-age={settings.domain.protocol.hstsMaxAge}; includeSubDomains; preload
+          </div>
+        </section>
+
         <DnsRecordsPanel projectId={projectId} />
 
         <section className="rounded-xl bg-surface-container-high p-6 lg:col-span-2">

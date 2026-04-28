@@ -1,7 +1,16 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
-import { Megaphone, Plus, Pause, Play, Trash2 } from "lucide-react";
+import {
+  Megaphone,
+  Plus,
+  Pause,
+  Play,
+  Trash2,
+  Users,
+  Gauge,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   useCampaignsStore,
@@ -78,6 +87,69 @@ export default function CampaignsPage({
         </div>
         <NewCampaignDialog projectId={projectId} />
       </div>
+
+      <section className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-xl bg-surface-container-high p-4">
+          <div className="mb-1 flex items-center gap-2">
+            <Users className="h-3.5 w-3.5 text-molten-primary" />
+            <p className="text-label-md font-semibold uppercase tracking-wider text-text-muted">
+              Audience export
+            </p>
+          </div>
+          <p className="text-body-sm text-on-surface">
+            <span className="font-mono font-bold">3</span> custom audiences
+          </p>
+          <p className="text-label-sm text-text-muted">
+            form_submissions · high_intent · past_buyers (lookalike 3%)
+          </p>
+          <button
+            type="button"
+            onClick={() => toast.success("Audience export avviato (mock)")}
+            className="mt-2 inline-flex items-center gap-1 rounded-md bg-surface-container-lowest px-2 py-1 text-label-md text-molten-primary hover:bg-surface-container"
+          >
+            <Plus className="h-3 w-3" />
+            Export Meta + Google
+          </button>
+        </div>
+
+        <div className="rounded-xl bg-surface-container-high p-4">
+          <div className="mb-1 flex items-center gap-2">
+            <Gauge className="h-3.5 w-3.5 text-molten-primary" />
+            <p className="text-label-md font-semibold uppercase tracking-wider text-text-muted">
+              Budget pacing
+            </p>
+          </div>
+          <p className="text-body-sm text-on-surface">
+            Auto-pause se overspend &gt;{" "}
+            <span className="font-mono font-bold">110%</span>
+          </p>
+          <p className="text-label-sm text-text-muted">
+            Alert Slack/email · sotto controllo
+          </p>
+          <span className="mt-2 inline-block rounded bg-success-container px-1.5 py-0.5 text-label-sm text-success">
+            ✓ Tutte le campagne entro budget
+          </span>
+        </div>
+
+        <div className="rounded-xl bg-surface-container-high p-4">
+          <div className="mb-1 flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5 text-molten-primary" />
+            <p className="text-label-md font-semibold uppercase tracking-wider text-text-muted">
+              Landing quality
+            </p>
+          </div>
+          <p className="text-body-sm text-on-surface">
+            Score medio LP:{" "}
+            <span className="font-mono font-bold text-success">82/100</span>
+          </p>
+          <p className="text-label-sm text-text-muted">
+            CWV + load time + content relevance
+          </p>
+          <p className="mt-2 text-label-sm text-text-muted">
+            Poor performers: 0 · {campaigns.length} LP analizzate
+          </p>
+        </div>
+      </section>
 
       {campaigns.length === 0 ? (
         <div className="rounded-xl border border-dashed border-outline/30 px-8 py-16 text-center">
