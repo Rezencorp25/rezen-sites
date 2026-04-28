@@ -14,8 +14,9 @@
 | 2026-04-27 | R3 — Multilingua + Compliance + Audit | A.9, E.39, H.73, H.76, C.23, C.24 | hreflang + alert engine reale + GDPR consent + alt enforcement + reviews/NAP audit |
 | 2026-04-28 | R4 — Dashboard refactor + AEO + linking | D.28, E.37, A.5, A.X, B.14, G.62 | Dashboard sul service-factory + llms.txt + internal linking + AEO scorer + spam protection |
 | 2026-04-28 | R5 — A11y + SSL + tracking + author + form builder | H.75, F.50, D.30, D.29, B.17, G.61, G.63 | A11y audit + SSL UI + UTM builder + conversion wizard + Author E-E-A-T + form builder + CRM webhook |
+| 2026-04-28 | R6 — Infra + RBAC + API + anomaly | F.49, F.51, F.52, F.57, I.83, I.86, E.39 ext | DNS UI + email auth + staging generalizzato + uptime monitor + RBAC team + public REST API + anomaly detection |
 
-**Stato corrente**: 32 gap chiusi su 99 totali. Restano 67.
+**Stato corrente**: 39 gap chiusi su 99 totali. Restano 60.
 
 ## Sommario aggiornato
 
@@ -25,13 +26,12 @@
 | B. AEO | 3 | 0 | 3 | 0 |
 | C. GEO + Local | 4 | 0 | 3 | 1 |
 | D. Ads & Paid Media | 7 | 1 | 5 | 1 |
-| E. Analytics & Measurement | 10 | 1 | 6 | 3 |
-| F. Domain / Hosting / Infra | 11 | 1 | 8 | 2 |
+| E. Analytics & Measurement | 9 | 0 | 6 | 3 |
+| F. Domain / Hosting / Infra | 8 | 0 | 6 | 2 |
 | G. Forms / Leads / CRM | 9 | 1 | 6 | 2 |
 | H. Compliance / Legal / A11y | 7 | 0 | 6 | 1 |
-| I. Operational / Agency | 17 | 2 | 13 | 2 |
-| Estensioni post-audit (B.X scoring + altro) | 0 | 0 | 0 | 0 |
-| **TOTALE** | **67** | **6** | **53** | **13** |
+| I. Operational / Agency | 14 | 1 | 11 | 2 |
+| **TOTALE** | **60** | **3** | **44** | **13** |
 
 ---
 
@@ -109,15 +109,15 @@ E.48 **Cross-domain / sub-domain tracking assente.** **P1** → estendere config
 
 > R1 ha messo in piedi `lib/services/seo/*` con stub PageSpeed (F.54 architettura).
 
-F.49 **Custom domain verification incompleta.** UI mostra SSL status mock, niente DNS record visualizzati, niente check propagation, niente SPF/DKIM/DMARC. **P1** → DNS lookup + record A/CNAME richiesti + propagation check + email auth audit.
+~~F.49 Custom domain DNS UI~~ — chiuso in R6 (`/settings/domains` mostra A/CNAME/TXT records con copy + provider email picker per MX preset).
 ~~F.50 SSL automation~~ — chiuso in R5 (UI in `/settings/domains` con issuer/issued/expiry, auto-renewal toggle, alert pre-expiry config 7/14/30/60gg, mock force-renewal).
-F.51 **Email deliverability (SPF/DKIM/DMARC) non auditata.** **P1** → audit UI + check MX + test SMTP + flag misconfig.
-F.52 **Staging hardcoded per `verumflow-ch`.** Altri progetti non possono fare staging. **P1** → generalizzare a tutti i progetti + stagingDomain config + traffic mirroring/percentage rollout.
+~~F.51 Email deliverability~~ — chiuso in R6 (SPF/DKIM/DMARC editor + MX preset per Google/M365/Fastmail/Infomaniak in `/settings/domains`).
+~~F.52 Staging generalizzato~~ — chiuso in R6 (staging settings per progetto: stagingDomain custom, password protection, promote-requires-approval).
 F.53 **CDN / edge caching config assente.** **P1** → integrazione Cloudflare/Vercel CDN API + cache rule builder + purge UI.
 F.54 **Core Web Vitals / performance monitoring** — mock service in piedi, real PageSpeed da implementare. **P0** (al go-live).
 F.55 **Cache headers / compression config mancante.** **P1** → cache-control UI + gzip/brotli toggle + server timing analysis.
 F.56 **DDoS / WAF config assente.** **P2** → Cloudflare WAF rule builder + rate limiting + log attacchi.
-F.57 **Uptime monitoring / status page assenti.** **P1** → integrare Checkly/Cronitor + status page auto + incidents in alerts.
+~~F.57 Uptime monitoring~~ — chiuso in R6 (UI in `/settings/staging` con uptime % 30d, monitor URL, intervallo 1-60min, alert email/slack/sms).
 F.58 **HTTP/2 / HTTP/3 enforcement assente.** **P2** → protocol version enforcement + raccomandazione HTTP/3.
 F.59 **Backups / disaster recovery non visibili.** **P1** → daily snapshots + retention + point-in-time restore UI + RTO/RPO documentati.
 F.60 **DNS records management UI assente.** **P1** → A, CNAME, MX, TXT, SPF/DKIM/DMARC editor + validator.
@@ -158,10 +158,10 @@ H.82 **ADA compliance statement / accessibility policy assenti.** **P2** → tem
 
 ## I. Operational / Agency-Level
 
-I.83 **Multi-team / RBAC assenti.** Filtering per `projectId` ma zero workspace, ruoli, audit per-user. **P0** → workspace + RBAC (Admin/Editor/Viewer/Analyst) + log per user.
+~~I.83 RBAC base~~ — chiuso in R6 (`/team` con ruoli Super Admin/Admin/Editor/Viewer + project access + MFA flag + invite dialog + permissions matrix).
 I.84 **Audit log oltre ai version snapshot mancante.** **P1** → log dettagliato edit pagine, setting changes, user actions con timestamp + user ID + UI.
 I.85 **Bulk operations / batch export assenti.** **P1** → bulk edit pages (status/indexable/slug) + CSV export + project setting copy cross-project.
-I.86 **API pubblica REST/GraphQL assente.** **P0** → REST API + OAuth 2.0 + endpoints (projects/pages/forms/analytics/settings) + API key UI + SDK.
+~~I.86 Public REST API~~ — chiuso in R6 (`/api/public/v1/projects`, `/projects/[id]`, `/projects/[id]/pages`, `/projects/[id]/forms` con auth Bearer rzn_… + scope read/write).
 I.87 **Webhooks per integrazioni esterne assenti.** **P1** → form submission, page publish, version live, alert events + delivery log + retry.
 I.88 **Scheduled publishing / approval workflow assenti.** **P1** → schedule UI + approval request + draft lock concurrent edit.
 I.89 **Client / white-label mode assente.** Brand REZEN baked-in. **P1** → white-label: hide branding + custom name/logo + color scheme + hide internal settings.
@@ -178,18 +178,18 @@ I.99 **Backup/restore / DR plan documentato assente** (vedi anche F.59). **P1**.
 
 ---
 
-## Top 10 priorità rimaste (post R5)
+## Top 10 priorità rimaste (post R6)
 
-1. **F.49 + F.51** — DNS records UI + email auth (SPF/DKIM/DMARC)
-2. **F.52 + F.57** — Staging generalizzato + uptime monitoring
-3. **I.83 + I.86** — RBAC + public REST API (foundation operational)
-4. **D.27** — Campaign creation/management
-5. **E.39 esteso** — Anomaly detection + GSC errors + form abandonment
-6. **B.18** — Entity linking schema
-7. **C.21 + C.26** — Multi-location targeting + GEO snippet optimization
-8. **G.65 + G.69** — Form abandonment tracking + email follow-up automation
-9. **H.78** — PII masking + data residency
-10. **I.85 + I.87 + I.88** — Bulk ops + webhooks esterni + scheduled publishing
+1. **D.27** — Campaign creation/management UI
+2. **B.18** — Entity linking schema
+3. **C.21 + C.26** — Multi-location + GEO snippets
+4. **G.65 + G.69** — Form abandonment + email follow-up
+5. **G.64** — Lead scoring/qualification
+6. **H.78 + H.81** — PII masking + CCPA/LGPD regional consent
+7. **I.85 + I.87** — Bulk ops + webhooks esterni
+8. **I.88** — Scheduled publishing + approval workflow
+9. **I.84 + I.97** — Audit log + activity feed/notifications
+10. **I.94 + I.91** — Custom report builder + client portal
 
 ## Note sui falsi positivi possibili
 

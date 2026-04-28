@@ -19,6 +19,9 @@ import { useSettingsStore } from "@/lib/stores/settings-store";
 import { StatusPill } from "@/components/luminous/status-pill";
 import { GradientButton } from "@/components/luminous/gradient-button";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { UptimeMonitor } from "@/components/seo/uptime-monitor";
 
 export default function SettingsStagingPage({
   params,
@@ -53,6 +56,10 @@ export default function SettingsStagingPage({
         </GradientButton>
       </div>
 
+      <div className="mb-5">
+        <UptimeMonitor projectId={projectId} />
+      </div>
+
       <div className="grid gap-5 grid-cols-1 lg:grid-cols-[1fr_1.3fr]">
         <section className="flex flex-col rounded-xl bg-surface-container-high p-6">
           <div className="mb-4 flex items-center gap-2.5">
@@ -66,7 +73,7 @@ export default function SettingsStagingPage({
             URL protetto da password.
           </p>
 
-          <div className="mb-5 flex items-center justify-between rounded-lg bg-surface-container-lowest px-4 py-3.5">
+          <div className="mb-3 flex items-center justify-between rounded-lg bg-surface-container-lowest px-4 py-3.5">
             <div className="flex flex-col leading-tight">
               <span className="text-body-md font-semibold text-on-surface">
                 {settings.staging.stagingEnabled
@@ -74,7 +81,7 @@ export default function SettingsStagingPage({
                   : "Staging disabilitato"}
               </span>
               <span className="font-mono text-label-sm text-text-muted">
-                {project.stagingDomain}
+                {settings.staging.stagingDomain || project.stagingDomain}
               </span>
             </div>
             <Switch
@@ -84,6 +91,76 @@ export default function SettingsStagingPage({
               }
             />
           </div>
+
+          {settings.staging.stagingEnabled && (
+            <div className="mb-3 flex flex-col gap-3 rounded-lg border border-outline/20 bg-surface-container-low p-3">
+              <div className="space-y-1">
+                <Label className="text-label-md text-secondary-text">
+                  Staging domain
+                </Label>
+                <Input
+                  value={settings.staging.stagingDomain}
+                  onChange={(e) =>
+                    updateSection(projectId, "staging", {
+                      stagingDomain: e.target.value,
+                    })
+                  }
+                  placeholder={`staging-${projectId}.rezen.sites`}
+                  className="font-mono text-body-sm"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-body-sm font-semibold text-on-surface">
+                    Password protection
+                  </p>
+                  <p className="text-label-md text-text-muted">
+                    Basic Auth a livello edge — staging non visibile senza
+                    credenziali
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.staging.passwordProtected}
+                  onCheckedChange={(v) =>
+                    updateSection(projectId, "staging", {
+                      passwordProtected: v,
+                    })
+                  }
+                />
+              </div>
+              {settings.staging.passwordProtected && (
+                <Input
+                  type="text"
+                  value={settings.staging.stagingPassword}
+                  onChange={(e) =>
+                    updateSection(projectId, "staging", {
+                      stagingPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Password staging"
+                  className="font-mono text-body-sm"
+                />
+              )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-body-sm font-semibold text-on-surface">
+                    Promote richiede approvazione
+                  </p>
+                  <p className="text-label-md text-text-muted">
+                    Deploy in prod richiede review esplicita di un Admin
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.staging.promoteRequiresApproval}
+                  onCheckedChange={(v) =>
+                    updateSection(projectId, "staging", {
+                      promoteRequiresApproval: v,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
 
           {settings.staging.stagingEnabled ? (
             <div

@@ -4,6 +4,7 @@ import type { Redirect } from "@/types";
 import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
 import { detectOrphanPages } from "./internal-linking";
 import { auditProject } from "./a11y-audit";
+import { generatePageviews } from "@/lib/mocks/pageviews";
 
 /**
  * Rule-based alert engine. Computes live alerts from the actual project
@@ -323,6 +324,51 @@ const ruleA11y: Rule = ({ project, pages }) => {
   ];
 };
 
+/**
+ * Anomaly detection: z-score based on rolling 7-day vs 28-day baseline.
+ * Flags pageview spike or drop > 2σ.
+ */
+const ruleAnomalyDetection: Rule = ({ project }) => {
+  // MOCK: read pageviews from the same generators the dashboards use
+  const points = generatePageviews(project.id, 30);
+  if (points.length < 14) return [];
+
+  const recent = points.slice(-7).map((p) => p.pageviews);
+  const baseline = points.slice(0, -7).map((p) => p.pageviews);
+  if (baseline.length === 0) return [];
+
+  const recentAvg = recent.reduce((s, n) => s + n, 0) / recent.length;
+  const baselineAvg =
+    baseline.reduce((s, n) => s + n, 0) / baseline.length;
+  const baselineStd = Math.sqrt(
+    baseline.reduce((s, n) => s + Math.pow(n - baselineAvg, 2), 0) /
+      baseline.length,
+  );
+
+  if (baselineStd === 0 || baselineAvg === 0) return [];
+  const zScore = (recentAvg - baselineAvg) / baselineStd;
+  const pctChange = ((recentAvg - baselineAvg) / baselineAvg) * 100;
+
+  if (Math.abs(zScore) < 2 || Math.abs(pctChange) < 25) return [];
+
+  const isSpike = zScore > 0;
+  return [
+    mkAlert({
+      id: `anomaly-${project.id}`,
+      projectId: project.id,
+      severity: isSpike ? "info" : "warning",
+      title: isSpike
+        ? `Spike traffico organico (+${pctChange.toFixed(0)}%)`
+        : `Drop traffico organico (${pctChange.toFixed(0)}%)`,
+      description: `Pageviews ultimi 7gg = ${recentAvg.toFixed(0)}, baseline 23gg = ${baselineAvg.toFixed(0)} (z-score ${zScore.toFixed(2)}). ${
+        isSpike
+          ? "Identifica fonte (referrer, social, news mention) per amplificare."
+          : "Verifica Search Console per crawl errors o keyword cannibalization."
+      }`,
+    }),
+  ];
+};
+
 const RULES: Rule[] = [
   ruleMissingMetaDescription,
   ruleTitleLength,
@@ -335,6 +381,7 @@ const RULES: Rule[] = [
   ruleNapConsistency,
   ruleOrphanPages,
   ruleA11y,
+  ruleAnomalyDetection,
 ];
 
 export function computeAlerts(ctx: AlertContext): Alert[] {

@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { GradientButton } from "@/components/luminous/gradient-button";
+import { DnsRecordsPanel } from "@/components/seo/dns-records";
 
 export default function SettingsDomainsPage({
   params,
@@ -250,6 +251,8 @@ export default function SettingsDomainsPage({
             Forza rinnovo manuale
           </button>
         </section>
+
+        <DnsRecordsPanel projectId={projectId} />
 
         <section className="rounded-xl bg-surface-container-high p-6 lg:col-span-2">
           <button

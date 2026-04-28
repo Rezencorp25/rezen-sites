@@ -67,9 +67,22 @@ export type ProjectSettings = {
       autoRenew: boolean;
       alertDaysBeforeExpiry: number;
     };
+    /** Email deliverability records */
+    emailAuth: {
+      spf: string;
+      dkim: string;
+      dmarc: string;
+      mxProvider: "google" | "microsoft365" | "fastmail" | "infomaniak" | "custom" | "none";
+    };
   };
   staging: {
     stagingEnabled: boolean;
+    stagingDomain: string;
+    /** Optional password protection for staging URL */
+    passwordProtected: boolean;
+    stagingPassword: string;
+    /** Promote-to-prod flow */
+    promoteRequiresApproval: boolean;
   };
   tracking: {
     ga4: { id: string; verified: boolean };
@@ -101,6 +114,20 @@ export type ProjectSettings = {
       marketing: boolean;
       social: boolean;
     };
+  };
+  uptime: {
+    enabled: boolean;
+    /** URL to ping (defaults to canonical site URL) */
+    monitorUrl: string;
+    /** Minutes between checks */
+    checkInterval: number;
+    /** Where to send incident alerts */
+    alertChannel: "email" | "slack" | "sms" | "none";
+    alertEmail: string;
+    /** Mock incident log (real provider at go-live) */
+    lastIncidentAt?: string;
+    /** 0-100 uptime % over 30d (mock today) */
+    uptime30d: number;
   };
 };
 
@@ -138,9 +165,20 @@ function defaultsFor(projectId: string): ProjectSettings {
         autoRenew: true,
         alertDaysBeforeExpiry: 30,
       },
+      emailAuth: {
+        spf: "",
+        dkim: "",
+        dmarc: "v=DMARC1; p=none; rua=mailto:dmarc@example.ch",
+        mxProvider: "none",
+      },
     },
     staging: {
+      // Generalised: any project can opt-in to staging
       stagingEnabled: projectId === "verumflow-ch",
+      stagingDomain: `staging-${projectId}.rezen.sites`,
+      passwordProtected: false,
+      stagingPassword: "",
+      promoteRequiresApproval: false,
     },
     tracking: {
       ga4: { id: "", verified: false },
@@ -184,6 +222,15 @@ function defaultsFor(projectId: string): ProjectSettings {
         social: false,
       },
     },
+    uptime: {
+      enabled: false,
+      monitorUrl: "",
+      checkInterval: 5,
+      alertChannel: "email",
+      alertEmail: "",
+      // MOCK: realistic uptime for demo
+      uptime30d: 99.97,
+    },
   };
 }
 
@@ -210,8 +257,12 @@ export const useSettingsStore = create<SettingsStore>()(
             ...fresh.domain,
             ...existing.domain,
             ssl: { ...fresh.domain.ssl, ...(existing.domain?.ssl ?? {}) },
+            emailAuth: {
+              ...fresh.domain.emailAuth,
+              ...(existing.domain?.emailAuth ?? {}),
+            },
           },
-          staging: { ...fresh.staging, ...existing.staging },
+          staging: { ...fresh.staging, ...(existing.staging ?? {}) },
           tracking: { ...fresh.tracking, ...existing.tracking },
           robots: { ...fresh.robots, ...(existing.robots ?? {}) },
           localBusiness: {
@@ -219,6 +270,7 @@ export const useSettingsStore = create<SettingsStore>()(
             ...(existing.localBusiness ?? {}),
           },
           consent: { ...fresh.consent, ...(existing.consent ?? {}) },
+          uptime: { ...fresh.uptime, ...(existing.uptime ?? {}) },
         };
         return merged;
       },
