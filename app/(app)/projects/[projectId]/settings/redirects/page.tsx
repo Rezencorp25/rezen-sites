@@ -1,8 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateShort } from "@/lib/utils/format-date";
 import {
   GitMerge,
   Plus,
@@ -198,7 +197,7 @@ export default function SettingsRedirectsPage({
                   </StatusPill>
                 </span>
                 <span className="text-body-sm text-secondary-text">
-                  {format(r.createdAt, "d MMM", { locale: it })}
+                  {fmtDateShort(r.createdAt)}
                 </span>
                 <span className="flex justify-center">
                   <Switch

@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calendar, CheckCircle2, X, ThumbsUp, ThumbsDown } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateLong, fmtTime } from "@/lib/utils/format-date";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -138,17 +137,8 @@ export function ScheduledReleases({ projectId }: { projectId: string }) {
                 </div>
                 <div className="flex items-center gap-3 text-label-md text-text-muted">
                   <Calendar className="h-3 w-3" />
-                  <span>
-                    {format(new Date(r.scheduledFor), "d MMM yyyy 'alle' HH:mm", {
-                      locale: it,
-                    })}
-                    {" "}
-                    (
-                    {formatDistanceToNow(new Date(r.scheduledFor), {
-                      locale: it,
-                      addSuffix: true,
-                    })}
-                    )
+                  <span suppressHydrationWarning>
+                    {fmtDateLong(r.scheduledFor)} alle {fmtTime(r.scheduledFor)}
                   </span>
                   {isPast && r.status === "scheduled" && (
                     <span className="rounded bg-success-container px-1.5 py-0.5 text-success">

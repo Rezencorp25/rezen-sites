@@ -1,8 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateLong, fmtTime } from "@/lib/utils/format-date";
 import {
   AlertTriangle,
   AlertCircle,
@@ -161,11 +160,11 @@ export default function AlertsPage({
                 <div className="min-w-0 flex-1">
                   <div className="mb-1.5 flex items-center gap-3">
                     <SeverityPill severity={a.severity} />
-                    <span className="text-label-sm text-text-muted">
-                      {formatDistanceToNow(a.createdAt, {
-                        addSuffix: true,
-                        locale: it,
-                      })}
+                    <span
+                      className="text-label-sm text-text-muted"
+                      suppressHydrationWarning
+                    >
+                      {fmtDateLong(a.createdAt)} {fmtTime(a.createdAt)}
                     </span>
                   </div>
                   <h3 className="text-body-md font-semibold text-on-surface">

@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck, ScrollText } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateLong, fmtTime } from "@/lib/utils/format-date";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,11 +85,11 @@ export function NotificationsBell() {
                     {" — "}
                     {e.description}
                   </p>
-                  <p className="mt-0.5 text-label-sm text-text-muted">
-                    {formatDistanceToNow(new Date(e.at), {
-                      locale: it,
-                      addSuffix: true,
-                    })}
+                  <p
+                    className="mt-0.5 text-label-sm text-text-muted"
+                    suppressHydrationWarning
+                  >
+                    {fmtDateLong(e.at)} {fmtTime(e.at)}
                   </p>
                 </li>
               ))}

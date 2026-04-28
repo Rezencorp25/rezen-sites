@@ -2,8 +2,7 @@
 
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateTime, fmtDateLong } from "@/lib/utils/format-date";
 import {
   ArrowLeft,
   Plus,
@@ -187,7 +186,7 @@ export default function CollectionDetailPage({
                   );
                 })}
                 <span className="text-label-sm text-text-muted">
-                  {format(item.updatedAt, "d MMM · HH:mm", { locale: it })}
+                  {fmtDateTime(item.updatedAt)}
                 </span>
               </div>
             ))}
@@ -213,7 +212,7 @@ export default function CollectionDetailPage({
             <div className="flex justify-between">
               <span>Created</span>
               <span className="text-on-surface">
-                {format(collection.createdAt, "d MMMM yyyy", { locale: it })}
+                {fmtDateLong(collection.createdAt)}
               </span>
             </div>
             <div className="flex justify-between">

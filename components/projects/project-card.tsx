@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateShort } from "@/lib/utils/format-date";
 import { ArrowUpRight } from "lucide-react";
 import { PageStatusPill } from "@/components/luminous/status-pill";
 import { gradientFor, initialsFor } from "@/lib/utils/hash-gradient";
@@ -72,9 +71,7 @@ export function ProjectCard({ project }: { project: Project }) {
           <span>
             {project.kpis.pagesPublished} pagine
           </span>
-          <span>
-            {formatDistanceToNow(project.updatedAt, { addSuffix: true, locale: it })}
-          </span>
+          <span suppressHydrationWarning>{fmtDateShort(project.updatedAt)}</span>
         </div>
       </div>
     </Link>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatDistanceToNow, format } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateLong, fmtTime } from "@/lib/utils/format-date";
 import { ScrollText, Filter } from "lucide-react";
 import { useAuditStore, type AuditAction } from "@/lib/stores/audit-store";
 
@@ -157,14 +156,10 @@ export default function AuditLogPage() {
                 </span>
                 <span
                   className="text-right font-mono text-label-md text-text-muted"
-                  title={format(new Date(e.at), "d MMM yyyy HH:mm:ss", {
-                    locale: it,
-                  })}
+                  title={`${fmtDateLong(e.at)} ${fmtTime(e.at)}`}
+                  suppressHydrationWarning
                 >
-                  {formatDistanceToNow(new Date(e.at), {
-                    locale: it,
-                    addSuffix: true,
-                  })}
+                  {fmtDateLong(e.at)} {fmtTime(e.at)}
                 </span>
               </li>
             ))}

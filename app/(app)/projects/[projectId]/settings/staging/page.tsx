@@ -1,8 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateTime } from "@/lib/utils/format-date";
 import {
   GitBranch,
   Rocket,
@@ -240,7 +239,7 @@ export default function SettingsStagingPage({
                     )}
                   </div>
                   <span className="text-label-sm text-text-muted">
-                    {format(v.publishedAt, "d MMM · HH:mm", { locale: it })}
+                    {fmtDateTime(v.publishedAt)}
                   </span>
                 </div>
                 <p className="text-body-sm text-secondary-text">

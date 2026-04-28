@@ -3,8 +3,7 @@
 import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { Plus, Database, ArrowUpRight, Sparkles } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateShort } from "@/lib/utils/format-date";
 import { useCMSStore } from "@/lib/stores/cms-store";
 import { NewCollectionDialog } from "@/components/cms/new-collection-dialog";
 import { GradientButton } from "@/components/luminous/gradient-button";
@@ -74,11 +73,11 @@ export default function CMSListPage({
                     Items
                   </span>
                 </div>
-                <span className="text-label-sm text-text-muted">
-                  {formatDistanceToNow(c.createdAt, {
-                    addSuffix: true,
-                    locale: it,
-                  })}
+                <span
+                  className="text-label-sm text-text-muted"
+                  suppressHydrationWarning
+                >
+                  {fmtDateShort(c.createdAt)}
                 </span>
               </div>
             </Link>

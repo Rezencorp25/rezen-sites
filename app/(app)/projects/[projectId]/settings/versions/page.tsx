@@ -1,8 +1,7 @@
 "use client";
 
 import { use, useMemo } from "react";
-import { formatDistanceToNow, format } from "date-fns";
-import { it } from "date-fns/locale";
+import { fmtDateLong, fmtTime } from "@/lib/utils/format-date";
 import { GitBranch, RotateCcw, CheckCircle2, Clock, CircleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useVersionsStore } from "@/lib/stores/versions-store";
@@ -110,11 +109,14 @@ export default function VersionsPage({
                   </span>
                   <span className="text-label-sm text-text-muted">
                     da {v.publishedBy} ·{" "}
-                    {format(v.publishedAt, "d MMM yyyy, HH:mm", { locale: it })}
+                    {fmtDateLong(v.publishedAt)}, {fmtTime(v.publishedAt)}
                   </span>
                 </div>
-                <span className="text-label-sm text-text-muted">
-                  {formatDistanceToNow(v.publishedAt, { addSuffix: true, locale: it })}
+                <span
+                  className="text-label-sm text-text-muted"
+                  suppressHydrationWarning
+                >
+                  {fmtDateLong(v.publishedAt)}
                 </span>
                 {isLive ? (
                   <span className="text-right text-label-sm text-success">In produzione</span>
