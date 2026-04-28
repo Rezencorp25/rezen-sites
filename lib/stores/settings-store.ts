@@ -241,37 +241,48 @@ export const useSettingsStore = create<SettingsStore>()(
       get: (projectId) => {
         const existing = getState().byProject[projectId];
         const fresh = defaultsFor(projectId);
-        if (!existing) {
-          set((state) => ({
-            byProject: { ...state.byProject, [projectId]: fresh },
-          }));
-          return fresh;
+        // Detect if backfill needed (missing sections from previous shape).
+        const needsBackfill =
+          !existing ||
+          !existing.consent ||
+          !existing.uptime ||
+          !existing.robots ||
+          !existing.localBusiness ||
+          !existing.domain?.ssl ||
+          !existing.domain?.emailAuth ||
+          !existing.staging?.stagingDomain;
+        if (!needsBackfill) {
+          // Stable reference — Zustand selectors stay equal, no re-render loop.
+          return existing as ProjectSettings;
         }
-        // Forward-compat merge: inject any new sections (robots, localBusiness)
-        // that may be missing from settings persisted by previous versions.
+        // Forward-compat merge: inject missing sections, persist once.
         const merged: ProjectSettings = {
           ...fresh,
-          ...existing,
-          general: { ...fresh.general, ...existing.general },
+          ...(existing ?? {}),
+          general: { ...fresh.general, ...(existing?.general ?? {}) },
           domain: {
             ...fresh.domain,
-            ...existing.domain,
-            ssl: { ...fresh.domain.ssl, ...(existing.domain?.ssl ?? {}) },
+            ...(existing?.domain ?? {}),
+            ssl: { ...fresh.domain.ssl, ...(existing?.domain?.ssl ?? {}) },
             emailAuth: {
               ...fresh.domain.emailAuth,
-              ...(existing.domain?.emailAuth ?? {}),
+              ...(existing?.domain?.emailAuth ?? {}),
             },
           },
-          staging: { ...fresh.staging, ...(existing.staging ?? {}) },
-          tracking: { ...fresh.tracking, ...existing.tracking },
-          robots: { ...fresh.robots, ...(existing.robots ?? {}) },
+          staging: { ...fresh.staging, ...(existing?.staging ?? {}) },
+          tracking: { ...fresh.tracking, ...(existing?.tracking ?? {}) },
+          robots: { ...fresh.robots, ...(existing?.robots ?? {}) },
           localBusiness: {
             ...fresh.localBusiness,
-            ...(existing.localBusiness ?? {}),
+            ...(existing?.localBusiness ?? {}),
           },
-          consent: { ...fresh.consent, ...(existing.consent ?? {}) },
-          uptime: { ...fresh.uptime, ...(existing.uptime ?? {}) },
+          consent: { ...fresh.consent, ...(existing?.consent ?? {}) },
+          uptime: { ...fresh.uptime, ...(existing?.uptime ?? {}) },
         };
+        // Persist so next call returns stable reference.
+        set((state) => ({
+          byProject: { ...state.byProject, [projectId]: merged },
+        }));
         return merged;
       },
       update: (projectId, patch) =>
@@ -302,6 +313,15 @@ export const useSettingsStore = create<SettingsStore>()(
     {
       name: "rezen-settings-store",
       storage: createJSONStorage(() => localStorage),
+      version: 7,
+      migrate: (persisted: unknown, fromVersion: number) => {
+        // Cumulative migrations across batches R1-R7. Forward-compat merge
+        // in get() handles most shape drift, but if the cache is older than
+        // R5 (added consent + uptime + ssl + emailAuth + many sub-fields)
+        // start fresh to avoid type mismatches.
+        if (fromVersion < 5) return { byProject: {} };
+        return persisted as { byProject: Record<string, ProjectSettings> };
+      },
     },
   ),
 );
