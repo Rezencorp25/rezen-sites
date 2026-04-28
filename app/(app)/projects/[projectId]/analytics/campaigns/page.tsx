@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { Megaphone, Plus, Pause, Play, Trash2 } from "lucide-react";
@@ -42,7 +42,11 @@ export default function CampaignsPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = use(params);
-  const campaigns = useCampaignsStore((s) => s.list(projectId));
+  const allCampaigns = useCampaignsStore((s) => s.campaigns);
+  const campaigns = useMemo(
+    () => allCampaigns.filter((c) => c.projectId === projectId),
+    [allCampaigns, projectId],
+  );
   const update = useCampaignsStore((s) => s.update);
   const remove = useCampaignsStore((s) => s.remove);
   const log = useAuditStore((s) => s.log);

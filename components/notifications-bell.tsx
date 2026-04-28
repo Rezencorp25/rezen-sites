@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck, ScrollText } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -13,9 +13,16 @@ import {
 import { useAuditStore } from "@/lib/stores/audit-store";
 
 export function NotificationsBell() {
-  const entries = useAuditStore((s) => s.list({ limit: 8 }));
-  const unread = useAuditStore((s) => s.unreadCount());
+  // Subscribe to stable entries reference; derive slice/count via useMemo
+  // so we don't return a new array from the selector every render (would
+  // cause React error #185 — infinite re-render loop).
+  const allEntries = useAuditStore((s) => s.entries);
   const markAllRead = useAuditStore((s) => s.markAllRead);
+  const entries = useMemo(() => allEntries.slice(0, 8), [allEntries]);
+  const unread = useMemo(
+    () => allEntries.filter((e) => !e.read).length,
+    [allEntries],
+  );
   const [open, setOpen] = useState(false);
 
   return (

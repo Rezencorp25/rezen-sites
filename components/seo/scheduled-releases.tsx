@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Calendar, CheckCircle2, X, ThumbsUp, ThumbsDown } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
@@ -28,7 +28,13 @@ const STATUS_VARIANT: Record<
 };
 
 export function ScheduledReleases({ projectId }: { projectId: string }) {
-  const releases = useScheduleStore((s) => s.list(projectId));
+  // Subscribe to raw releases (stable ref); filter via useMemo to avoid
+  // creating a new array on every render (React error #185 cause).
+  const allReleases = useScheduleStore((s) => s.releases);
+  const releases = useMemo(
+    () => allReleases.filter((r) => r.projectId === projectId),
+    [allReleases, projectId],
+  );
   const schedule = useScheduleStore((s) => s.schedule);
   const approve = useScheduleStore((s) => s.approve);
   const reject = useScheduleStore((s) => s.reject);

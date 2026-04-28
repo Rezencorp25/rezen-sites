@@ -45,7 +45,7 @@ const ACTION_TONE: Record<AuditAction, string> = {
 };
 
 export default function AuditLogPage() {
-  const entries = useAuditStore((s) => s.list());
+  const entries = useAuditStore((s) => s.entries);
   const [filterAction, setFilterAction] = useState<AuditAction | "all">("all");
   const [filterActor, setFilterActor] = useState<string>("all");
 
