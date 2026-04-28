@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { useProjectData } from "@/lib/hooks/use-project-data";
 import { UtmPills } from "@/components/forms/utm-pills";
+import { FormHeatmap, FormAbTest } from "@/components/forms/form-heatmap";
 import { StatusPill } from "@/components/luminous/status-pill";
 import { KpiCard } from "@/components/luminous/kpi-card";
 import { scoreLead, TIER_META } from "@/lib/seo/lead-scoring";
@@ -222,6 +223,11 @@ export default function FormsPage({
           icon={Users}
           deltaLabel="ultimi 30 giorni"
         />
+      </div>
+
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <FormHeatmap projectId={projectId} />
+        <FormAbTest projectId={projectId} />
       </div>
 
       <div className="overflow-hidden rounded-xl bg-surface-container-high">

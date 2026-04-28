@@ -8,9 +8,13 @@ import {
   ShieldOff,
   Trash2,
   ExternalLink,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useSeoResearchStore } from "@/lib/stores/seo-research-store";
+import {
+  useSeoResearchStore,
+  type Citation,
+} from "@/lib/stores/seo-research-store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GradientButton } from "@/components/luminous/gradient-button";
@@ -25,11 +29,15 @@ export default function SeoResearchPage({
   const { projectId } = use(params);
   const allBacklinks = useSeoResearchStore((s) => s.backlinks);
   const allCompetitors = useSeoResearchStore((s) => s.competitors);
+  const allCitations = useSeoResearchStore((s) => s.citations);
   const addBacklink = useSeoResearchStore((s) => s.addBacklink);
   const toggleDisavow = useSeoResearchStore((s) => s.toggleDisavow);
   const removeBacklink = useSeoResearchStore((s) => s.removeBacklink);
   const addCompetitor = useSeoResearchStore((s) => s.addCompetitor);
   const removeCompetitor = useSeoResearchStore((s) => s.removeCompetitor);
+  const addCitation = useSeoResearchStore((s) => s.addCitation);
+  const updateCitation = useSeoResearchStore((s) => s.updateCitation);
+  const removeCitation = useSeoResearchStore((s) => s.removeCitation);
 
   const backlinks = useMemo(
     () => allBacklinks.filter((b) => b.projectId === projectId),
@@ -38,6 +46,10 @@ export default function SeoResearchPage({
   const competitors = useMemo(
     () => allCompetitors.filter((c) => c.projectId === projectId),
     [allCompetitors, projectId],
+  );
+  const citations = useMemo(
+    () => allCitations.filter((c) => c.projectId === projectId),
+    [allCitations, projectId],
   );
 
   const stats = useMemo(() => {
@@ -61,6 +73,8 @@ export default function SeoResearchPage({
   const [bSourceUrl, setBSourceUrl] = useState("");
   const [bAnchor, setBAnchor] = useState("");
   const [cDomain, setCDomain] = useState("");
+  const [citDir, setCitDir] = useState("");
+  const [citUrl, setCitUrl] = useState("");
 
   return (
     <div className="mx-auto max-w-7xl px-10 py-10">
@@ -327,7 +341,180 @@ export default function SeoResearchPage({
           </>
         )}
       </section>
+
+      <CitationsSection
+        citations={citations}
+        citDir={citDir}
+        setCitDir={setCitDir}
+        citUrl={citUrl}
+        setCitUrl={setCitUrl}
+        addCitation={addCitation}
+        updateCitation={updateCitation}
+        removeCitation={removeCitation}
+        projectId={projectId}
+      />
     </div>
+  );
+}
+
+// Local citations (placed before Stat helper)
+function CitationsSection({
+  citations,
+  citDir,
+  setCitDir,
+  citUrl,
+  setCitUrl,
+  addCitation,
+  updateCitation,
+  removeCitation,
+  projectId,
+}: {
+  citations: Citation[];
+  citDir: string;
+  setCitDir: (v: string) => void;
+  citUrl: string;
+  setCitUrl: (v: string) => void;
+  addCitation: (c: Omit<Citation, "id" | "lastCheckedAt">) => string;
+  updateCitation: (id: string, patch: Partial<Citation>) => void;
+  removeCitation: (id: string) => void;
+  projectId: string;
+}) {
+  return (
+    <section className="mt-5 overflow-hidden rounded-xl bg-surface-container-high">
+      <div className="flex items-center gap-2.5 px-6 py-3">
+        <MapPin className="h-4 w-4 text-molten-primary" />
+        <h2 className="text-title-md font-semibold text-on-surface">
+          Local citations ({citations.length})
+        </h2>
+        <span className="ml-auto text-label-md text-text-muted">
+          NAP consistency cross-directory
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-2 px-6 pb-3 md:grid-cols-[1fr_1.5fr_auto]">
+        <Input
+          value={citDir}
+          onChange={(e) => setCitDir(e.target.value)}
+          placeholder="Directory (es. Yelp)"
+        />
+        <Input
+          value={citUrl}
+          onChange={(e) => setCitUrl(e.target.value)}
+          placeholder="https://yelp.com/biz/..."
+          className="font-mono text-body-sm"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            if (!citDir) return;
+            addCitation({
+              projectId,
+              directory: citDir,
+              listingUrl: citUrl,
+              status: citUrl ? "pending" : "missing",
+              notes: "",
+            });
+            toast.success("Citation aggiunta");
+            setCitDir("");
+            setCitUrl("");
+          }}
+          className="rounded-md bg-surface-container-lowest px-3 py-2 text-body-sm font-semibold text-molten-primary hover:bg-surface-container"
+        >
+          <Plus className="mr-1 inline h-3.5 w-3.5" />
+          Aggiungi
+        </button>
+      </div>
+      {citations.length === 0 ? (
+        <p className="px-6 py-8 text-center text-body-md text-text-muted">
+          Nessuna citation. Inizia con Google Business Profile + Apple
+          Business Connect.
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-[1.5fr_1fr_120px_1fr_50px] gap-3 px-6 py-2 text-label-sm uppercase tracking-wider text-text-muted">
+            <span>Directory</span>
+            <span>URL</span>
+            <span className="text-center">Status</span>
+            <span>Note</span>
+            <span />
+          </div>
+          {citations.map((c, i) => (
+            <div
+              key={c.id}
+              className={`grid grid-cols-[1.5fr_1fr_120px_1fr_50px] items-center gap-3 px-6 py-2 ${
+                i % 2 === 0
+                  ? "bg-surface-container-lowest"
+                  : "bg-surface-container-low"
+              }`}
+            >
+              <span className="text-body-sm font-semibold text-on-surface">
+                {c.directory}
+              </span>
+              <span className="truncate font-mono text-label-md text-secondary-text">
+                {c.listingUrl ? (
+                  <a
+                    href={c.listingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-molten-primary"
+                  >
+                    Apri
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </span>
+              <select
+                value={c.status}
+                onChange={(e) =>
+                  updateCitation(c.id, {
+                    status: e.target.value as
+                      | "verified"
+                      | "pending"
+                      | "missing"
+                      | "inconsistent",
+                  })
+                }
+                className="h-7 rounded-md bg-surface-container px-2 text-label-md"
+                style={{
+                  color:
+                    c.status === "verified"
+                      ? "#5ec27f"
+                      : c.status === "pending"
+                        ? "#6ea8ff"
+                        : c.status === "inconsistent"
+                          ? "#e6b340"
+                          : "#e66b6b",
+                }}
+              >
+                <option value="verified">verified</option>
+                <option value="pending">pending</option>
+                <option value="inconsistent">inconsistent</option>
+                <option value="missing">missing</option>
+              </select>
+              <Input
+                value={c.notes}
+                onChange={(e) =>
+                  updateCitation(c.id, { notes: e.target.value })
+                }
+                placeholder="Note"
+                className="h-7 text-label-md"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  removeCitation(c.id);
+                  toast.success("Citation rimossa");
+                }}
+                className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-container-highest"
+                aria-label="Rimuovi"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-error" />
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+    </section>
   );
 }
 

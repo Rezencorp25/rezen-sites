@@ -101,6 +101,27 @@ export type ProjectSettings = {
       /** Bypass cache for these path patterns (regex-friendly) */
       bypassPaths: string[];
     };
+    /** WAF / DDoS protection */
+    waf: {
+      enabled: boolean;
+      /** Rate limit requests per minute per IP */
+      rateLimitPerMin: number;
+      /** Block country list (ISO codes) */
+      geoBlock: string[];
+      /** Challenge bots via JS challenge (Cloudflare-style) */
+      jsChallenge: boolean;
+    };
+    /** Backup & disaster recovery */
+    backup: {
+      frequency: "off" | "daily" | "hourly";
+      retentionDays: number;
+      /** Recovery Point Objective (target max data loss) in minutes */
+      rpoMinutes: number;
+      /** Recovery Time Objective (target downtime) in minutes */
+      rtoMinutes: number;
+      /** Region per backup storage */
+      backupRegion: "eu-west" | "eu-central" | "us-east" | "swiss";
+    };
   };
   staging: {
     stagingEnabled: boolean;
@@ -224,6 +245,19 @@ function defaultsFor(projectId: string): ProjectSettings {
         edgeCacheSeconds: 86400,
         bypassPaths: ["/api", "/admin"],
       },
+      waf: {
+        enabled: false,
+        rateLimitPerMin: 60,
+        geoBlock: [],
+        jsChallenge: false,
+      },
+      backup: {
+        frequency: "daily",
+        retentionDays: 30,
+        rpoMinutes: 60,
+        rtoMinutes: 30,
+        backupRegion: "eu-west",
+      },
     },
     staging: {
       // Generalised: any project can opt-in to staging
@@ -320,6 +354,8 @@ export const useSettingsStore = create<SettingsStore>()(
           !existing.domain?.ssl ||
           !existing.domain?.emailAuth ||
           !existing.domain?.cdn ||
+          !existing.domain?.waf ||
+          !existing.domain?.backup ||
           !existing.staging?.stagingDomain;
         if (!needsBackfill) {
           // Stable reference — Zustand selectors stay equal, no re-render loop.
@@ -339,6 +375,11 @@ export const useSettingsStore = create<SettingsStore>()(
               ...(existing?.domain?.emailAuth ?? {}),
             },
             cdn: { ...fresh.domain.cdn, ...(existing?.domain?.cdn ?? {}) },
+            waf: { ...fresh.domain.waf, ...(existing?.domain?.waf ?? {}) },
+            backup: {
+              ...fresh.domain.backup,
+              ...(existing?.domain?.backup ?? {}),
+            },
           },
           staging: { ...fresh.staging, ...(existing?.staging ?? {}) },
           tracking: { ...fresh.tracking, ...(existing?.tracking ?? {}) },

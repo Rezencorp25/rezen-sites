@@ -7,6 +7,7 @@ import {
   Settings,
   Inbox,
   Telescope,
+  FileBarChart,
 } from "lucide-react";
 
 export type NavItem = {
@@ -58,6 +59,12 @@ export const PROJECT_NAV: NavItem[] = [
     href: (id) => `/projects/${id}/alerts`,
     icon: AlertTriangle,
     matchPath: "alerts",
+  },
+  {
+    label: "Reports",
+    href: (id) => `/projects/${id}/reports`,
+    icon: FileBarChart,
+    matchPath: "reports",
   },
   {
     label: "Site Settings",

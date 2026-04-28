@@ -325,6 +325,75 @@ const ruleA11y: Rule = ({ project, pages }) => {
 };
 
 /**
+ * External link rel audit (A.7): scans Puck Button/CTA hrefs and flags
+ * external links that should carry rel attributes.
+ */
+const ruleExternalLinkRel: Rule = ({ project, pages }) => {
+  const projectDomain = project.domain;
+  const externalLinks: string[] = [];
+  for (const p of pages) {
+    for (const item of p.puckData.content ?? []) {
+      const props = item.props as Record<string, unknown>;
+      const href = (props.href ?? props.buttonHref) as string | undefined;
+      if (!href) continue;
+      try {
+        const url = new URL(href);
+        if (
+          url.hostname &&
+          !url.hostname.includes(projectDomain) &&
+          !url.hostname.includes("rezen.sites")
+        ) {
+          externalLinks.push(`${p.slug || "/"} → ${url.hostname}`);
+        }
+      } catch {
+        // ignore relative URLs
+      }
+    }
+  }
+  if (externalLinks.length === 0) return [];
+  return [
+    mkAlert({
+      id: `ext-rel-${project.id}`,
+      projectId: project.id,
+      severity: "info",
+      title: `${externalLinks.length} link esterno/i senza rel review`,
+      description:
+        "Verifica rel=nofollow per link sponsorizzati, rel=ugc per UGC, " +
+        "rel=noopener target=_blank sempre. Esempi: " +
+        externalLinks.slice(0, 3).join(", ") +
+        (externalLinks.length > 3 ? ` (+${externalLinks.length - 3})` : ""),
+    }),
+  ];
+};
+
+/**
+ * Cookie inventory audit (H.80): controls that consent banner is enabled
+ * if any tracking IDs are configured (GA4, Meta, Ads, AdSense).
+ */
+const ruleCookieInventory: Rule = ({ project }) => {
+  // Without access to tracking settings here we use a coarse heuristic:
+  // if the project has googleAnalytics/meta/etc verified, it should have
+  // consent enabled. We can't access settings store from here without
+  // making this a hook, so we use project.integrations as proxy.
+  const integrations = project.integrations ?? {};
+  const trackers: string[] = [];
+  if (integrations.googleAnalytics?.verified) trackers.push("GA4");
+  if (integrations.metaPixel?.verified) trackers.push("Meta Pixel");
+  if (integrations.googleAdsense?.verified) trackers.push("AdSense");
+  if (integrations.googleAds?.verified) trackers.push("Google Ads");
+  if (trackers.length === 0) return [];
+  return [
+    mkAlert({
+      id: `cookie-inv-${project.id}`,
+      projectId: project.id,
+      severity: "info",
+      title: `${trackers.length} tracker attivo/i — verifica consent gating`,
+      description: `Trovati: ${trackers.join(", ")}. Verifica che il banner consent sia attivo (Settings → Cookie banner) e che gli script siano caricati solo dopo grant.`,
+    }),
+  ];
+};
+
+/**
  * Anomaly detection: z-score based on rolling 7-day vs 28-day baseline.
  * Flags pageview spike or drop > 2σ.
  */
@@ -382,6 +451,8 @@ const RULES: Rule[] = [
   ruleOrphanPages,
   ruleA11y,
   ruleAnomalyDetection,
+  ruleExternalLinkRel,
+  ruleCookieInventory,
 ];
 
 export function computeAlerts(ctx: AlertContext): Alert[] {

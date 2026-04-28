@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Cloud,
   Zap,
+  ShieldHalf,
+  Database,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectsStore } from "@/lib/stores/projects-store";
@@ -359,6 +361,188 @@ export default function SettingsDomainsPage({
             I path bypass cache: {settings.domain.cdn.bypassPaths.join(", ") || "—"}.
             Configurazione applicata via headers nelle pagine esportate.
           </p>
+        </section>
+
+        <section className="rounded-xl bg-surface-container-high p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <ShieldHalf className="h-4 w-4 text-molten-primary" />
+              <h2 className="text-title-md font-semibold text-on-surface">
+                WAF / DDoS protection
+              </h2>
+            </div>
+            <Switch
+              checked={settings.domain.waf.enabled}
+              onCheckedChange={(v) =>
+                updateSection(projectId, "domain", {
+                  waf: { ...settings.domain.waf, enabled: v },
+                })
+              }
+            />
+          </div>
+          {!settings.domain.waf.enabled ? (
+            <p className="text-body-sm text-text-muted">
+              Attiva per abilitare rate-limit, geo-block e bot challenge
+              al livello edge (Cloudflare-style).
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <span className="text-label-md text-secondary-text">
+                  Rate limit (req/min/IP)
+                </span>
+                <input
+                  type="number"
+                  value={settings.domain.waf.rateLimitPerMin}
+                  onChange={(e) =>
+                    updateSection(projectId, "domain", {
+                      waf: {
+                        ...settings.domain.waf,
+                        rateLimitPerMin: parseInt(e.target.value, 10) || 0,
+                      },
+                    })
+                  }
+                  className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-outline/20 px-3 py-2">
+                <span className="text-body-sm text-on-surface">
+                  JS challenge
+                </span>
+                <Switch
+                  checked={settings.domain.waf.jsChallenge}
+                  onCheckedChange={(v) =>
+                    updateSection(projectId, "domain", {
+                      waf: { ...settings.domain.waf, jsChallenge: v },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl bg-surface-container-high p-6">
+          <div className="mb-4 flex items-center gap-2.5">
+            <Database className="h-4 w-4 text-molten-primary" />
+            <h2 className="text-title-md font-semibold text-on-surface">
+              Backup &amp; DR
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Frequenza
+              </span>
+              <select
+                value={settings.domain.backup.frequency}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    backup: {
+                      ...settings.domain.backup,
+                      frequency: e.target.value as
+                        | "off"
+                        | "daily"
+                        | "hourly",
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+              >
+                <option value="off">Off</option>
+                <option value="daily">Daily 03:00</option>
+                <option value="hourly">Ogni ora</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Retention (giorni)
+              </span>
+              <input
+                type="number"
+                value={settings.domain.backup.retentionDays}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    backup: {
+                      ...settings.domain.backup,
+                      retentionDays: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                RPO (min)
+              </span>
+              <input
+                type="number"
+                value={settings.domain.backup.rpoMinutes}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    backup: {
+                      ...settings.domain.backup,
+                      rpoMinutes: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                RTO (min)
+              </span>
+              <input
+                type="number"
+                value={settings.domain.backup.rtoMinutes}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    backup: {
+                      ...settings.domain.backup,
+                      rtoMinutes: parseInt(e.target.value, 10) || 0,
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 font-mono text-body-sm"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-1.5">
+              <span className="text-label-md text-secondary-text">
+                Backup region
+              </span>
+              <select
+                value={settings.domain.backup.backupRegion}
+                onChange={(e) =>
+                  updateSection(projectId, "domain", {
+                    backup: {
+                      ...settings.domain.backup,
+                      backupRegion: e.target.value as
+                        | "eu-west"
+                        | "eu-central"
+                        | "us-east"
+                        | "swiss",
+                    },
+                  })
+                }
+                className="h-10 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+              >
+                <option value="eu-west">EU West (Belgio)</option>
+                <option value="eu-central">EU Central (Frankfurt)</option>
+                <option value="swiss">Switzerland (Zurigo)</option>
+                <option value="us-east">US East (Virginia)</option>
+              </select>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => toast.success("Restore avviato (mock)")}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-surface-container-lowest px-3 py-2 text-body-sm font-medium text-molten-primary hover:bg-surface-container"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Test restore
+          </button>
         </section>
 
         <DnsRecordsPanel projectId={projectId} />
