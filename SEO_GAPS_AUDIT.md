@@ -13,23 +13,25 @@
 | 2026-04-27 | R2-B — Schema + technical | A.3, A.6, A.8 (enforcement), A.13, B.19, C.20 | JSON-LD auto-iniettato + robots/sitemap + LocalBusiness editor |
 | 2026-04-27 | R3 — Multilingua + Compliance + Audit | A.9, E.39, H.73, H.76, C.23, C.24 | hreflang + alert engine reale + GDPR consent + alt enforcement + reviews/NAP audit |
 | 2026-04-28 | R4 — Dashboard refactor + AEO + linking | D.28, E.37, A.5, A.X, B.14, G.62 | Dashboard sul service-factory + llms.txt + internal linking + AEO scorer + spam protection |
+| 2026-04-28 | R5 — A11y + SSL + tracking + author + form builder | H.75, F.50, D.30, D.29, B.17, G.61, G.63 | A11y audit + SSL UI + UTM builder + conversion wizard + Author E-E-A-T + form builder + CRM webhook |
 
-**Stato corrente**: 25 gap chiusi su 99 totali. Restano 74.
+**Stato corrente**: 32 gap chiusi su 99 totali. Restano 67.
 
 ## Sommario aggiornato
 
 | Area | Gap aperti | P0 | P1 | P2 |
 |------|----:|---:|---:|---:|
 | A. SEO classico | 4 | 0 | 3 | 1 |
-| B. AEO | 4 | 0 | 4 | 0 |
+| B. AEO | 3 | 0 | 3 | 0 |
 | C. GEO + Local | 4 | 0 | 3 | 1 |
-| D. Ads & Paid Media | 9 | 1 | 7 | 1 |
+| D. Ads & Paid Media | 7 | 1 | 5 | 1 |
 | E. Analytics & Measurement | 10 | 1 | 6 | 3 |
-| F. Domain / Hosting / Infra | 12 | 2 | 8 | 2 |
-| G. Forms / Leads / CRM | 11 | 3 | 6 | 2 |
-| H. Compliance / Legal / A11y | 8 | 1 | 6 | 1 |
+| F. Domain / Hosting / Infra | 11 | 1 | 8 | 2 |
+| G. Forms / Leads / CRM | 9 | 1 | 6 | 2 |
+| H. Compliance / Legal / A11y | 7 | 0 | 6 | 1 |
 | I. Operational / Agency | 17 | 2 | 13 | 2 |
-| **TOTALE** | **74** | **10** | **56** | **13** |
+| Estensioni post-audit (B.X scoring + altro) | 0 | 0 | 0 | 0 |
+| **TOTALE** | **67** | **6** | **53** | **13** |
 
 ---
 
@@ -49,10 +51,9 @@ A.Y **Image SEO automatico.** Vision AI auto-alt + dimensioni + formats moderni 
 
 ## B. AEO (Answer Engine Optimization)
 
-> Chiusi: B.14 (R4 AEO scorer con tab "AEO" in SEO editor), B.16 (R4 passage-level scoring incluso), B.19 (FAQ Puck + auto FAQPage schema).
+> Chiusi: B.14, B.16 (R4 AEO scorer + passage-level), B.17 (R5 author/reviewedBy + schemaType per Article/NewsArticle/BlogPosting), B.19 (FAQ).
 
 B.15 **AI overview traffic risk modeling assente.** **P1** → integrare Semrush/Moz AEO API o classifier interno + raccomandazioni difensive.
-B.17 **Attribution / citation markup assente.** Niente Author / Reviewed-By / dates schema per credibilità LLM. **P1** → auto-inject Author/CreativeWork/NewsArticle schema + date prominenti.
 B.18 **Entity optimization assente.** Nessun linking a entità definite (persone, org, concetti). **P1** → entity recognition + entity schema + linking interno a entity pages.
 
 ---
@@ -74,8 +75,8 @@ C.26 **GEO snippet optimization assente.** Zero ottimizzazione per query "near m
 
 D.27 **Campaign creation/management assente.** Tracking config esiste ma zero capacità di creare/pausare/ottimizzare campagne. **P0** → campaign builder con Google Ads API + Meta Ads API + Microsoft Ads API.
 ~~D.28 Dashboards Google Ads/AdSense mock~~ — chiuso in R4 (dashboard consumano `useAdsData` / `useAdSenseData` async dal service-factory, swap automatico al go-live).
-D.29 **Conversion tracking setup wizard assente.** Inserimento ID manuale senza validazione. **P1** → wizard step-by-step: GA4 events, Meta pixels, Google Ads conversion actions + debug tools.
-D.30 **UTM auto-generation/validation mancante.** Form catturano UTM/GCLID ma niente builder/validator. **P1** → UTM builder + library con naming convention + warning incoerenze.
+~~D.29 Conversion tracking setup wizard~~ — chiuso in R5 (`/settings/tracking` ha wizard collassabile con 4 step + validazione formati ID GA4/Meta/Ads/AdSense).
+~~D.30 UTM auto-generation/validation~~ — chiuso in R5 (UTM builder card in `/settings/tracking` con normalizzazione, warning, copy URL).
 D.31 **Ad copy A/B testing infrastruttura assente.** **P1** → headline/copy testing dashboard + automation variant creation via API.
 D.32 **Audience segmentation / lookalike export assente.** **P1** → export audiences a Meta/Google da form submissions, behavior, segmenti.
 D.33 **Bid strategy optimization mancante.** Solo CPC manuale, niente target CPA/ROAS/maximize conversions. **P1** → config UI + raccomandazioni basate su conv volume + ROAS target.
@@ -109,7 +110,7 @@ E.48 **Cross-domain / sub-domain tracking assente.** **P1** → estendere config
 > R1 ha messo in piedi `lib/services/seo/*` con stub PageSpeed (F.54 architettura).
 
 F.49 **Custom domain verification incompleta.** UI mostra SSL status mock, niente DNS record visualizzati, niente check propagation, niente SPF/DKIM/DMARC. **P1** → DNS lookup + record A/CNAME richiesti + propagation check + email auth audit.
-F.50 **SSL automation non visibile.** Toggle "SSL Active" cosmetico. **P0** → auto-renewal Let's Encrypt o ACM + manual cert upload + warning 30/7/1gg pre-scadenza.
+~~F.50 SSL automation~~ — chiuso in R5 (UI in `/settings/domains` con issuer/issued/expiry, auto-renewal toggle, alert pre-expiry config 7/14/30/60gg, mock force-renewal).
 F.51 **Email deliverability (SPF/DKIM/DMARC) non auditata.** **P1** → audit UI + check MX + test SMTP + flag misconfig.
 F.52 **Staging hardcoded per `verumflow-ch`.** Altri progetti non possono fare staging. **P1** → generalizzare a tutti i progetti + stagingDomain config + traffic mirroring/percentage rollout.
 F.53 **CDN / edge caching config assente.** **P1** → integrazione Cloudflare/Vercel CDN API + cache rule builder + purge UI.
@@ -125,9 +126,9 @@ F.60 **DNS records management UI assente.** **P1** → A, CNAME, MX, TXT, SPF/DK
 
 ## G. Forms / Leads / CRM
 
-G.61 **Form builder assente.** Tracking submission funziona ma niente creator custom field/validation/conditional logic. **P0** → builder Puck-integrated drag-drop fields + validation + conditional + auto-save.
+~~G.61 Form builder~~ — chiuso in R5 (ContactForm Puck con field types text/email/tel/textarea/select/checkbox/url/number, required toggle, placeholder, options select, label custom, success message).
 ~~G.62 Spam protection~~ — chiuso in R4 (ContactForm Puck con honeypot, scelta CAPTCHA v3/hcaptcha/turnstile, rate-limit hint soft/strict).
-G.63 **CRM integration mancante.** Submissions in tabella ma zero sync HubSpot/Salesforce/Pipedrive/webhook. **P0** → integration hub + native connectors + generic webhook con payload builder + test fire.
+~~G.63 CRM integration~~ — chiuso in R5 (ContactForm con webhookUrl + CRM selector hubspot/pipedrive/salesforce/mailchimp + email notify; route `/api/forms/submit` con webhook fan-out + CRM stub. Native API call in DOC 3 con credenziali per progetto).
 G.64 **Lead scoring / qualification assenti.** **P1** → rules UI + scoring per source/behavior/engagement + segment by score.
 G.65 **Form abandonment tracking mancante.** **P1** → field interaction + timeout tracking + abandonment heatmap.
 G.66 **Form data encryption in transit/rest non garantito.** **P0** → HTTPS forced + field-level encryption per PII + audit log.
@@ -144,7 +145,7 @@ G.72 **Progressive profiling / enrichment assenti.** **P2** → hide known field
 
 ~~H.73 GDPR consent banner~~ — chiuso in R3 (`lib/seo/consent-banner.ts`, banner self-contained con Consent Mode v2, 4 lingue, gating per categoria; UI editor in `/settings/general`).
 H.74 **`robots.txt` builder UI** (vedi A.6) — chiuso in R2 (preview live in settings).
-H.75 **Accessibility audit / WCAG reporting assente.** **P0** → integrare axe-core o WAVE API + audit on publish + report WCAG 2.2 AA.
+~~H.75 Accessibility audit / WCAG~~ — chiuso in R5 (`lib/seo/a11y-audit.ts` con regole H1 unico, hierarchy no-skip, alt enforcement, descriptive link text; alert engine surface count + severity).
 ~~H.76 Alt text enforcement~~ — chiuso in R3 (badge "Alt mancante" in editor Puck + alert rule cross-pagine). Estensione P2: auto-generate alt via vision AI.
 H.77 **ToS / privacy / disclaimer template assenti.** **P1** → integrare iubenda/Termly/TermsFeed o template interno + sync custom domain.
 H.78 **PII masking / data residency config assenti.** **P1** → field-level encryption + PII detection in analytics + residency selection (EU/US/CH).
@@ -177,18 +178,18 @@ I.99 **Backup/restore / DR plan documentato assente** (vedi anche F.59). **P1**.
 
 ---
 
-## Top 10 priorità rimaste (post R4)
+## Top 10 priorità rimaste (post R5)
 
-1. **G.61 + G.63** — Form builder + CRM webhook (oggi i form sono solo capture, zero valore lead-gen)
-2. **H.75** — Accessibility audit con axe-core
-3. **F.50** — SSL automation + cert renewal alerts
-4. **F.49 + F.51** — DNS records UI + email auth (SPF/DKIM/DMARC)
-5. **D.29 + D.30** — Conversion tracking wizard + UTM builder
-6. **I.83 + I.86** — RBAC + public REST API (foundation operational)
-7. **B.17 + B.18** — Author/citation schema + entity linking (post-2024 LLM credibility)
-8. **C.21 + C.26** — Multi-location targeting + GEO snippet optimization
-9. **F.52 + F.57** — Staging generalizzato + uptime monitoring
-10. **G.65 + G.69** — Form abandonment tracking + email follow-up automation
+1. **F.49 + F.51** — DNS records UI + email auth (SPF/DKIM/DMARC)
+2. **F.52 + F.57** — Staging generalizzato + uptime monitoring
+3. **I.83 + I.86** — RBAC + public REST API (foundation operational)
+4. **D.27** — Campaign creation/management
+5. **E.39 esteso** — Anomaly detection + GSC errors + form abandonment
+6. **B.18** — Entity linking schema
+7. **C.21 + C.26** — Multi-location targeting + GEO snippet optimization
+8. **G.65 + G.69** — Form abandonment tracking + email follow-up automation
+9. **H.78** — PII masking + data residency
+10. **I.85 + I.87 + I.88** — Bulk ops + webhooks esterni + scheduled publishing
 
 ## Note sui falsi positivi possibili
 

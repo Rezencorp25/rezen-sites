@@ -12,6 +12,8 @@ import {
   Copy,
   CheckCircle2,
   AlertCircle,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProjectsStore } from "@/lib/stores/projects-store";
@@ -25,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { GradientButton } from "@/components/luminous/gradient-button";
 
 export default function SettingsDomainsPage({
@@ -39,6 +42,20 @@ export default function SettingsDomainsPage({
   const [open, setOpen] = useState(false);
 
   if (!project) return null;
+
+  const ssl = settings.domain.ssl;
+  const expiresDate = ssl.expiresAt ? new Date(ssl.expiresAt) : null;
+  const daysToExpiry = expiresDate
+    ? Math.floor((expiresDate.getTime() - Date.now()) / 86400000)
+    : null;
+  const expiryTone =
+    daysToExpiry === null
+      ? "muted"
+      : daysToExpiry <= 7
+        ? "error"
+        : daysToExpiry <= ssl.alertDaysBeforeExpiry
+          ? "warning"
+          : "success";
 
   return (
     <div className="mx-auto max-w-5xl px-10 pb-12 pt-2">
@@ -102,6 +119,136 @@ export default function SettingsDomainsPage({
           <p className="mt-3 text-label-sm text-text-muted">
             Certificato Let&apos;s Encrypt auto-rinnovato ogni 90 giorni.
           </p>
+        </section>
+
+        <section className="rounded-xl bg-surface-container-high p-6 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="h-4 w-4 text-molten-primary" />
+              <h2 className="text-title-md font-semibold text-on-surface">
+                SSL / TLS
+              </h2>
+            </div>
+            <span
+              className="rounded-full px-2 py-0.5 text-label-sm font-bold uppercase"
+              style={{
+                background:
+                  expiryTone === "success"
+                    ? "rgba(94,194,127,0.15)"
+                    : expiryTone === "warning"
+                      ? "rgba(230,179,64,0.15)"
+                      : expiryTone === "error"
+                        ? "rgba(230,107,107,0.15)"
+                        : "rgba(179,181,185,0.15)",
+                color:
+                  expiryTone === "success"
+                    ? "#5ec27f"
+                    : expiryTone === "warning"
+                      ? "#e6b340"
+                      : expiryTone === "error"
+                        ? "#e66b6b"
+                        : "#b3b5b9",
+              }}
+            >
+              {daysToExpiry !== null
+                ? `Scade in ${daysToExpiry}gg`
+                : "Non emesso"}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-md bg-surface-container-lowest p-3">
+              <p className="text-label-sm uppercase text-text-muted">Issuer</p>
+              <p className="mt-1 font-mono text-body-sm text-on-surface">
+                {ssl.issuer === "letsencrypt"
+                  ? "Let's Encrypt"
+                  : ssl.issuer === "cloudflare"
+                    ? "Cloudflare"
+                    : "Manuale"}
+              </p>
+            </div>
+            <div className="rounded-md bg-surface-container-lowest p-3">
+              <p className="text-label-sm uppercase text-text-muted">Emesso</p>
+              <p className="mt-1 font-mono text-body-sm text-on-surface">
+                {ssl.issuedAt
+                  ? new Date(ssl.issuedAt).toLocaleDateString("it-IT")
+                  : "—"}
+              </p>
+            </div>
+            <div className="rounded-md bg-surface-container-lowest p-3">
+              <p className="text-label-sm uppercase text-text-muted">Scadenza</p>
+              <p className="mt-1 font-mono text-body-sm text-on-surface">
+                {ssl.expiresAt
+                  ? new Date(ssl.expiresAt).toLocaleDateString("it-IT")
+                  : "—"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between rounded-md border border-outline/20 px-3 py-2">
+            <div>
+              <p className="text-body-sm font-semibold text-on-surface">
+                Auto-renewal
+              </p>
+              <p className="text-label-md text-text-muted">
+                Rinnovo automatico 30gg prima della scadenza (Let&apos;s Encrypt
+                ACME).
+              </p>
+            </div>
+            <Switch
+              checked={ssl.autoRenew}
+              onCheckedChange={(v) =>
+                updateSection(projectId, "domain", {
+                  ssl: { ...ssl, autoRenew: v },
+                })
+              }
+            />
+          </div>
+          <div className="mt-3 flex items-center justify-between rounded-md border border-outline/20 px-3 py-2">
+            <div>
+              <p className="text-body-sm font-semibold text-on-surface">
+                Alert pre-scadenza
+              </p>
+              <p className="text-label-md text-text-muted">
+                Notifica via email/Slack {ssl.alertDaysBeforeExpiry} giorni
+                prima della scadenza.
+              </p>
+            </div>
+            <select
+              value={ssl.alertDaysBeforeExpiry}
+              onChange={(e) =>
+                updateSection(projectId, "domain", {
+                  ssl: {
+                    ...ssl,
+                    alertDaysBeforeExpiry: parseInt(e.target.value, 10),
+                  },
+                })
+              }
+              className="rounded-md bg-surface-container-low px-3 py-1.5 text-body-sm"
+            >
+              <option value={7}>7 giorni</option>
+              <option value={14}>14 giorni</option>
+              <option value={30}>30 giorni</option>
+              <option value={60}>60 giorni</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const issued = new Date();
+              const expires = new Date(Date.now() + 90 * 86400000);
+              updateSection(projectId, "domain", {
+                ssl: {
+                  ...ssl,
+                  issuedAt: issued.toISOString(),
+                  expiresAt: expires.toISOString(),
+                },
+              });
+              toast.success("Certificato rinnovato (mock 90gg)");
+            }}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-surface-container-lowest px-3 py-2 text-body-sm font-medium text-molten-primary hover:bg-surface-container"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Forza rinnovo manuale
+          </button>
         </section>
 
         <section className="rounded-xl bg-surface-container-high p-6 lg:col-span-2">

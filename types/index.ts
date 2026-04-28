@@ -43,6 +43,19 @@ export type PageSEO = {
     description?: string;
     image?: string;
   };
+  /** E-E-A-T author + reviewer (boost AI/Google credibility) */
+  author?: {
+    name: string;
+    url?: string;
+    /** Optional bio for AI engines / featured snippets */
+    description?: string;
+  };
+  reviewedBy?: {
+    name: string;
+    url?: string;
+  };
+  /** Override Article schema content type */
+  schemaType?: "Article" | "NewsArticle" | "BlogPosting";
   schema?: Record<string, unknown>;
 };
 

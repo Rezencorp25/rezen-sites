@@ -242,6 +242,105 @@ export function SeoEditor({
           </section>
 
           <section className="rounded-xl border border-outline/20 bg-surface-container p-5">
+            <h2 className="mb-4 text-title-lg font-semibold">
+              Autore & E-E-A-T
+            </h2>
+            <p className="mb-4 text-label-md text-text-muted">
+              Boost di credibilità per Google + AI engines (citation, author
+              bio, reviewedBy → schema Person/Article).
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="authorName">Autore — nome</Label>
+                <Input
+                  id="authorName"
+                  value={seo.author?.name ?? ""}
+                  onChange={(e) =>
+                    setSeo((cur) => ({
+                      ...cur,
+                      author: { ...cur.author, name: e.target.value },
+                    }))
+                  }
+                  placeholder="Mario Rossi"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="authorUrl">Autore — URL profilo</Label>
+                <Input
+                  id="authorUrl"
+                  value={seo.author?.url ?? ""}
+                  onChange={(e) =>
+                    setSeo((cur) => ({
+                      ...cur,
+                      author: {
+                        name: cur.author?.name ?? "",
+                        ...cur.author,
+                        url: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="https://linkedin.com/in/..."
+                  className="font-mono text-body-sm"
+                />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="authorBio">Bio autore (opz.)</Label>
+                <Textarea
+                  id="authorBio"
+                  rows={2}
+                  value={seo.author?.description ?? ""}
+                  onChange={(e) =>
+                    setSeo((cur) => ({
+                      ...cur,
+                      author: {
+                        name: cur.author?.name ?? "",
+                        ...cur.author,
+                        description: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="Senior SEO consultant, 10 anni di esperienza nel settore tech."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reviewerName">Reviewed by — nome (opz.)</Label>
+                <Input
+                  id="reviewerName"
+                  value={seo.reviewedBy?.name ?? ""}
+                  onChange={(e) =>
+                    setSeo((cur) => ({
+                      ...cur,
+                      reviewedBy: {
+                        ...cur.reviewedBy,
+                        name: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="Dott.ssa Anna Bianchi"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="schemaType">Tipo Article</Label>
+                <select
+                  id="schemaType"
+                  value={seo.schemaType ?? "Article"}
+                  onChange={(e) =>
+                    patch(
+                      "schemaType",
+                      e.target.value as NonNullable<PageSEO["schemaType"]>,
+                    )
+                  }
+                  className="h-9 w-full rounded-md bg-surface-container-low px-3 text-body-sm"
+                >
+                  <option value="Article">Article (default)</option>
+                  <option value="NewsArticle">NewsArticle</option>
+                  <option value="BlogPosting">BlogPosting</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-outline/20 bg-surface-container p-5">
             <h2 className="mb-4 text-title-lg font-semibold">Open Graph / Social</h2>
             <div className="space-y-4">
               <div className="space-y-1.5">

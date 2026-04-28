@@ -18,6 +18,8 @@ import { useSettingsStore } from "@/lib/stores/settings-store";
 import { StatusPill } from "@/components/luminous/status-pill";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConversionWizard } from "@/components/seo/conversion-wizard";
+import { UtmBuilderCard } from "@/components/seo/utm-builder-card";
 import { cn } from "@/lib/utils";
 
 type IntegrationKey = "ga4" | "metaPixel" | "adsense" | "googleAds";
@@ -99,6 +101,8 @@ export default function SettingsTrackingPage({
 
   return (
     <div className="mx-auto max-w-5xl px-10 pb-12 pt-2">
+      <ConversionWizard projectId={projectId} />
+
       <div className="mb-5 grid gap-4 grid-cols-1 md:grid-cols-2">
         {INTEGRATIONS.map((integration) => {
           const section = settings.tracking[integration.key];
@@ -203,6 +207,12 @@ export default function SettingsTrackingPage({
           </button>
         </div>
       </section>
+
+      <div className="mb-5">
+        <UtmBuilderCard
+          defaultBaseUrl={`https://${project.domain}/landing`}
+        />
+      </div>
 
       <section className="rounded-xl bg-surface-container-high">
         <div className="flex items-center justify-between px-6 py-4">

@@ -59,6 +59,14 @@ export type ProjectSettings = {
     customDomain: string;
     sslActive: boolean;
     canonicalDomain: "apex" | "www";
+    /** Cert details (mock today, real Let's Encrypt at go-live) */
+    ssl: {
+      issuer: "letsencrypt" | "manual" | "cloudflare";
+      issuedAt?: string; // ISO date
+      expiresAt?: string; // ISO date
+      autoRenew: boolean;
+      alertDaysBeforeExpiry: number;
+    };
   };
   staging: {
     stagingEnabled: boolean;
@@ -122,6 +130,14 @@ function defaultsFor(projectId: string): ProjectSettings {
       customDomain: "",
       sslActive: true,
       canonicalDomain: "apex",
+      ssl: {
+        issuer: "letsencrypt",
+        // MOCK: 60 days from now to demo expiry alerts
+        issuedAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+        expiresAt: new Date(Date.now() + 60 * 86400000).toISOString(),
+        autoRenew: true,
+        alertDaysBeforeExpiry: 30,
+      },
     },
     staging: {
       stagingEnabled: projectId === "verumflow-ch",
@@ -190,7 +206,11 @@ export const useSettingsStore = create<SettingsStore>()(
           ...fresh,
           ...existing,
           general: { ...fresh.general, ...existing.general },
-          domain: { ...fresh.domain, ...existing.domain },
+          domain: {
+            ...fresh.domain,
+            ...existing.domain,
+            ssl: { ...fresh.domain.ssl, ...(existing.domain?.ssl ?? {}) },
+          },
           staging: { ...fresh.staging, ...existing.staging },
           tracking: { ...fresh.tracking, ...existing.tracking },
           robots: { ...fresh.robots, ...(existing.robots ?? {}) },

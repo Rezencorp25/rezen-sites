@@ -3,6 +3,7 @@ import { validateRedirects } from "./redirect-validator";
 import type { Redirect } from "@/types";
 import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
 import { detectOrphanPages } from "./internal-linking";
+import { auditProject } from "./a11y-audit";
 
 /**
  * Rule-based alert engine. Computes live alerts from the actual project
@@ -306,6 +307,22 @@ const ruleOrphanPages: Rule = ({ project, pages }) => {
   ];
 };
 
+const ruleA11y: Rule = ({ project, pages }) => {
+  const issues = auditProject(pages);
+  if (issues.length === 0) return [];
+  const critical = issues.filter((i) => i.severity === "critical").length;
+  const warnings = issues.filter((i) => i.severity === "warning").length;
+  return [
+    mkAlert({
+      id: `a11y-${project.id}`,
+      projectId: project.id,
+      severity: critical > 0 ? "critical" : warnings > 0 ? "warning" : "info",
+      title: `${issues.length} problema/i di accessibilità (WCAG 2.2)`,
+      description: `${critical} critici, ${warnings} warning. Heading hierarchy, alt text, link descriptivi, struttura semantica.`,
+    }),
+  ];
+};
+
 const RULES: Rule[] = [
   ruleMissingMetaDescription,
   ruleTitleLength,
@@ -317,6 +334,7 @@ const RULES: Rule[] = [
   ruleNoSchema,
   ruleNapConsistency,
   ruleOrphanPages,
+  ruleA11y,
 ];
 
 export function computeAlerts(ctx: AlertContext): Alert[] {

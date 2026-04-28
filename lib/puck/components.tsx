@@ -686,9 +686,34 @@ export const FAQ: ComponentConfig<FAQProps> = {
 };
 
 // ───────────────────────── ContactForm ─────────────────────────
+export type ContactFormFieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "url"
+  | "number";
+
+export type ContactFormField = {
+  /** Internal name (no spaces) */
+  value: string;
+  /** Visible label */
+  label?: string;
+  /** Field type */
+  fieldType?: ContactFormFieldType;
+  /** Required toggle */
+  required?: boolean;
+  /** Placeholder/example */
+  placeholder?: string;
+  /** For select: comma-separated options */
+  options?: string;
+};
+
 export type ContactFormProps = {
   title: string;
-  fields: Array<{ value: string }>;
+  fields: ContactFormField[];
   submitText: string;
   /** Honeypot: bot-trap hidden field */
   honeypot: boolean;
@@ -696,6 +721,14 @@ export type ContactFormProps = {
   recaptcha: "off" | "v3" | "hcaptcha" | "turnstile";
   /** Submit-rate hint shown to user when blocked */
   rateLimit: "off" | "soft" | "strict";
+  /** Webhook URL for CRM/Slack/Zapier */
+  webhookUrl: string;
+  /** Native CRM connector */
+  crm: "none" | "hubspot" | "pipedrive" | "salesforce" | "mailchimp";
+  /** Email notification recipient */
+  notifyEmail: string;
+  /** Confirmation message after submit */
+  successMessage: string;
 };
 
 export const ContactForm: ComponentConfig<ContactFormProps> = {
@@ -703,12 +736,51 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
   fields: {
     title: { type: "text", label: "Titolo" },
     submitText: { type: "text", label: "Testo bottone" },
+    successMessage: { type: "text", label: "Messaggio di conferma" },
     fields: {
       type: "array",
       label: "Campi",
-      arrayFields: { value: { type: "text", label: "Nome campo" } },
-      defaultItemProps: { value: "nuovo_campo" },
-      getItemSummary: (item) => item?.value ?? "campo",
+      arrayFields: {
+        value: { type: "text", label: "Nome interno (no spazi)" },
+        label: { type: "text", label: "Label visibile" },
+        fieldType: {
+          type: "select",
+          label: "Tipo",
+          options: [
+            { label: "Testo", value: "text" },
+            { label: "Email", value: "email" },
+            { label: "Telefono", value: "tel" },
+            { label: "Textarea", value: "textarea" },
+            { label: "Select", value: "select" },
+            { label: "Checkbox", value: "checkbox" },
+            { label: "URL", value: "url" },
+            { label: "Numero", value: "number" },
+          ],
+        },
+        required: {
+          type: "radio",
+          label: "Required",
+          options: [
+            { label: "Sì", value: true },
+            { label: "No", value: false },
+          ],
+        },
+        placeholder: { type: "text", label: "Placeholder" },
+        options: {
+          type: "text",
+          label: "Opzioni (solo select, separate da ,)",
+        },
+      },
+      defaultItemProps: {
+        value: "nuovo_campo",
+        label: "Nuovo campo",
+        fieldType: "text",
+        required: false,
+        placeholder: "",
+        options: "",
+      },
+      getItemSummary: (item) =>
+        `${item?.label ?? item?.value ?? "campo"}${item?.required ? " *" : ""}`,
     },
     honeypot: {
       type: "radio",
@@ -737,49 +809,146 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
         { label: "Strict (1/min/IP)", value: "strict" },
       ],
     },
+    webhookUrl: { type: "text", label: "Webhook URL (Zapier/Make/Slack)" },
+    crm: {
+      type: "select",
+      label: "CRM connector",
+      options: [
+        { label: "Nessuno", value: "none" },
+        { label: "HubSpot", value: "hubspot" },
+        { label: "Pipedrive", value: "pipedrive" },
+        { label: "Salesforce", value: "salesforce" },
+        { label: "Mailchimp", value: "mailchimp" },
+      ],
+    },
+    notifyEmail: { type: "text", label: "Email per notifica submission" },
   },
   defaultProps: {
     title: "Scrivici",
     submitText: "Invia",
-    fields: [{ value: "name" }, { value: "email" }, { value: "message" }],
+    successMessage: "Grazie! Ti ricontattiamo entro 24h.",
+    fields: [
+      {
+        value: "name",
+        label: "Nome",
+        fieldType: "text",
+        required: true,
+        placeholder: "Mario Rossi",
+        options: "",
+      },
+      {
+        value: "email",
+        label: "Email",
+        fieldType: "email",
+        required: true,
+        placeholder: "tuo@email.it",
+        options: "",
+      },
+      {
+        value: "message",
+        label: "Messaggio",
+        fieldType: "textarea",
+        required: false,
+        placeholder: "Come possiamo aiutarti?",
+        options: "",
+      },
+    ],
     honeypot: true,
     recaptcha: "off",
     rateLimit: "soft",
+    webhookUrl: "",
+    crm: "none",
+    notifyEmail: "",
   },
   resolveData: ({ props }) => {
-    // legacy mock templates may send string[]; normalize to {value}[]
+    // legacy mock templates may send string[]; normalize to ContactFormField[]
     const raw = props.fields as unknown;
     if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "string") {
       return {
         props: {
           ...props,
-          fields: (raw as string[]).map((v) => ({ value: v })),
+          fields: (raw as string[]).map((v) => ({
+            value: v,
+            label: v.charAt(0).toUpperCase() + v.slice(1),
+            fieldType:
+              v === "email"
+                ? ("email" as const)
+                : v === "message"
+                  ? ("textarea" as const)
+                  : ("text" as const),
+            required: v === "name" || v === "email",
+            placeholder: "",
+            options: "",
+          })),
         },
       };
     }
     return { props };
   },
-  render: ({ title, fields, submitText, honeypot, recaptcha, rateLimit }) => (
+  render: ({
+    title,
+    fields,
+    submitText,
+    honeypot,
+    recaptcha,
+    rateLimit,
+    crm,
+    webhookUrl,
+  }) => (
     <div className="mx-auto max-w-2xl px-10 py-10">
       <div className="rounded-2xl bg-surface-container-high p-8">
         <h3 className="mb-6 text-headline-md font-bold text-on-surface">{title}</h3>
         <form className="flex flex-col gap-4" data-rate-limit={rateLimit}>
-          {fields.map(({ value: f }) => (
-            <div key={f} className="flex flex-col gap-1.5">
-              <label className="text-label-md capitalize text-text-muted">{f}</label>
-              {f === "message" ? (
-                <textarea
-                  rows={4}
-                  className="rounded-lg bg-surface-container-lowest px-4 py-3 text-body-sm text-on-surface outline-none focus:ring-1 focus:ring-molten-primary"
-                />
-              ) : (
-                <input
-                  type={f === "email" ? "email" : "text"}
-                  className="rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-sm text-on-surface outline-none focus:ring-1 focus:ring-molten-primary"
-                />
-              )}
-            </div>
-          ))}
+          {fields.map((field) => {
+            const f = field.value;
+            const lbl = field.label || f;
+            const ph = field.placeholder ?? "";
+            const req = !!field.required;
+            const ft = field.fieldType ?? "text";
+            return (
+              <div key={f} className="flex flex-col gap-1.5">
+                <label className="text-label-md text-text-muted">
+                  {lbl}
+                  {req && <span className="ml-1 text-error">*</span>}
+                </label>
+                {ft === "textarea" ? (
+                  <textarea
+                    rows={4}
+                    placeholder={ph}
+                    required={req}
+                    className="rounded-lg bg-surface-container-lowest px-4 py-3 text-body-sm text-on-surface outline-none focus:ring-1 focus:ring-molten-primary"
+                  />
+                ) : ft === "select" ? (
+                  <select
+                    required={req}
+                    className="rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-sm text-on-surface outline-none"
+                  >
+                    {(field.options ?? "")
+                      .split(",")
+                      .map((o) => o.trim())
+                      .filter(Boolean)
+                      .map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                  </select>
+                ) : ft === "checkbox" ? (
+                  <label className="flex items-center gap-2 text-body-sm text-on-surface">
+                    <input type="checkbox" required={req} className="accent-molten-primary" />
+                    {ph || lbl}
+                  </label>
+                ) : (
+                  <input
+                    type={ft}
+                    placeholder={ph}
+                    required={req}
+                    className="rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-sm text-on-surface outline-none focus:ring-1 focus:ring-molten-primary"
+                  />
+                )}
+              </div>
+            );
+          })}
           {honeypot && (
             // Hidden bot trap (off-screen + aria-hidden + tabIndex -1)
             <div
@@ -815,6 +984,21 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
           >
             {submitText}
           </button>
+          {(crm !== "none" || webhookUrl) && (
+            <div className="mt-1 flex flex-wrap items-center gap-1 text-label-sm text-text-muted">
+              <span>Submission inviata a:</span>
+              {crm !== "none" && (
+                <span className="rounded bg-success-container px-1.5 py-0.5 font-mono text-success">
+                  {crm}
+                </span>
+              )}
+              {webhookUrl && (
+                <span className="rounded bg-info-container px-1.5 py-0.5 font-mono text-info">
+                  webhook
+                </span>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>

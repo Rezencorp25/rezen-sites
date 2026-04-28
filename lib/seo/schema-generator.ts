@@ -96,15 +96,31 @@ export function articleSchema(
   } = {},
 ): Record<string, unknown> {
   const url = `https://${project.domain}/${page.slug}`.replace(/\/+$/, "");
+  const seoAuthor = page.seo.author;
+  const reviewer = page.seo.reviewedBy;
+  const author = seoAuthor
+    ? clean({
+        "@type": "Person",
+        name: seoAuthor.name,
+        url: seoAuthor.url,
+        description: seoAuthor.description,
+      })
+    : options.author
+      ? { "@type": "Person", name: options.author }
+      : { "@type": "Organization", name: project.name };
+
+  const schemaType = page.seo.schemaType ?? "Article";
+
   return clean({
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": schemaType,
     headline: page.seo.metaTitle || page.title,
     description: page.seo.metaDescription,
     image: options.image ?? page.seo.og?.image,
-    author: options.author
-      ? { "@type": "Person", name: options.author }
-      : { "@type": "Organization", name: project.name },
+    author,
+    reviewedBy: reviewer
+      ? clean({ "@type": "Person", name: reviewer.name, url: reviewer.url })
+      : undefined,
     publisher: {
       "@type": "Organization",
       name: project.name,
