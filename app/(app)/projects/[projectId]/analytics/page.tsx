@@ -10,10 +10,11 @@ import {
   Target,
   ArrowRight,
 } from "lucide-react";
-import { useProjectData } from "@/lib/hooks/use-project-data";
+import { useAnalyticsData } from "@/lib/hooks/use-analytics-data";
 import { KpiCard } from "@/components/luminous/kpi-card";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { DevicesPie } from "@/components/analytics/devices-pie";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AnalyticsOverviewPage({
   params,
@@ -21,10 +22,11 @@ export default function AnalyticsOverviewPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = use(params);
-  const { pageviews, devices, countries, topPages } = useProjectData(projectId);
+  const { pageviews, devices, countries, topPages, summary, loading } =
+    useAnalyticsData(projectId);
 
-  const totalPv = pageviews.reduce((acc, p) => acc + p.pageviews, 0);
-  const totalSessions = pageviews.reduce((acc, p) => acc + p.sessions, 0);
+  const totalPv = summary?.pageviewsTotal ?? 0;
+  const totalSessions = summary?.sessionsTotal ?? 0;
 
   return (
     <div className="mx-auto max-w-7xl px-10 py-10">
@@ -64,21 +66,21 @@ export default function AnalyticsOverviewPage({
       <div className="mb-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <KpiCard
           label="Pageviews"
-          value={totalPv.toLocaleString("it-IT")}
+          value={loading ? "—" : totalPv.toLocaleString("it-IT")}
           icon={Eye}
           delta={22}
           deltaLabel="vs periodo prec."
         />
         <KpiCard
           label="Sessions"
-          value={totalSessions.toLocaleString("it-IT")}
+          value={loading ? "—" : totalSessions.toLocaleString("it-IT")}
           icon={Users}
           delta={15}
           deltaLabel="unique sessions"
         />
         <KpiCard
           label="Top Page"
-          value={topPages[0]?.path ?? "—"}
+          value={loading ? "—" : (topPages[0]?.path ?? "—")}
           deltaLabel={`${topPages[0]?.views.toLocaleString("it-IT") ?? 0} views`}
         />
       </div>
@@ -93,7 +95,11 @@ export default function AnalyticsOverviewPage({
           </p>
         </div>
         <div className="p-2">
-          <TrafficChart data={pageviews} />
+          {loading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <TrafficChart data={pageviews} />
+          )}
         </div>
       </div>
 

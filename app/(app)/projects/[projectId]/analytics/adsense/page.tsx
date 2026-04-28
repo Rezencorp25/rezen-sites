@@ -8,7 +8,8 @@ import {
   MousePointerClick,
   TrendingUp,
 } from "lucide-react";
-import { useProjectData } from "@/lib/hooks/use-project-data";
+import { useAdSenseData } from "@/lib/hooks/use-adsense-data";
+import { useAdsData } from "@/lib/hooks/use-ads-data";
 import { KpiCard } from "@/components/luminous/kpi-card";
 import {
   PeriodToggle,
@@ -32,7 +33,8 @@ export default function AdSensePage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = use(params);
-  const { adsense, ads } = useProjectData(projectId);
+  const { revenue: adsense } = useAdSenseData(projectId);
+  const { performance: ads } = useAdsData(projectId);
   const [period, setPeriod] = useState<Period>("daily");
 
   const daily = useMemo<RevenuePoint[]>(() => {

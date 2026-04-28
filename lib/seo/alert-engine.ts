@@ -2,6 +2,7 @@ import type { Alert, Page, Project, AlertSeverity } from "@/types";
 import { validateRedirects } from "./redirect-validator";
 import type { Redirect } from "@/types";
 import type { LocalBusinessSettings } from "@/lib/stores/settings-store";
+import { detectOrphanPages } from "./internal-linking";
 
 /**
  * Rule-based alert engine. Computes live alerts from the actual project
@@ -281,6 +282,30 @@ const ruleNapConsistency: Rule = ({ project, pages, localBusiness }) => {
   ];
 };
 
+const ruleOrphanPages: Rule = ({ project, pages }) => {
+  if (pages.length < 3) return [];
+  const orphans = detectOrphanPages(pages);
+  // Don't flag the homepage as orphan
+  const real = orphans.filter((p) => p.slug !== "/" && p.slug !== "");
+  if (real.length === 0) return [];
+  return [
+    mkAlert({
+      id: `orphan-${project.id}`,
+      projectId: project.id,
+      severity: "info",
+      title: `${real.length} pagina/e orfana/e (no inbound link)`,
+      description:
+        "Pagine non linkate da nessun'altra: " +
+        real
+          .slice(0, 5)
+          .map((p) => p.slug || `"${p.title}"`)
+          .join(", ") +
+        (real.length > 5 ? ` (+${real.length - 5})` : "") +
+        ". Aggiungi link interni per topic cluster.",
+    }),
+  ];
+};
+
 const RULES: Rule[] = [
   ruleMissingMetaDescription,
   ruleTitleLength,
@@ -291,6 +316,7 @@ const RULES: Rule[] = [
   ruleRedirectIssues,
   ruleNoSchema,
   ruleNapConsistency,
+  ruleOrphanPages,
 ];
 
 export function computeAlerts(ctx: AlertContext): Alert[] {

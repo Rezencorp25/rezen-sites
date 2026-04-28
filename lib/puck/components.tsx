@@ -690,6 +690,12 @@ export type ContactFormProps = {
   title: string;
   fields: Array<{ value: string }>;
   submitText: string;
+  /** Honeypot: bot-trap hidden field */
+  honeypot: boolean;
+  /** Show reCAPTCHA v3 placeholder (configured at deploy time) */
+  recaptcha: "off" | "v3" | "hcaptcha" | "turnstile";
+  /** Submit-rate hint shown to user when blocked */
+  rateLimit: "off" | "soft" | "strict";
 };
 
 export const ContactForm: ComponentConfig<ContactFormProps> = {
@@ -704,11 +710,41 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
       defaultItemProps: { value: "nuovo_campo" },
       getItemSummary: (item) => item?.value ?? "campo",
     },
+    honeypot: {
+      type: "radio",
+      label: "Honeypot anti-bot",
+      options: [
+        { label: "Sì (hidden field, raccomandato)", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    recaptcha: {
+      type: "select",
+      label: "CAPTCHA",
+      options: [
+        { label: "Nessuno", value: "off" },
+        { label: "Google reCAPTCHA v3", value: "v3" },
+        { label: "hCaptcha", value: "hcaptcha" },
+        { label: "Cloudflare Turnstile", value: "turnstile" },
+      ],
+    },
+    rateLimit: {
+      type: "select",
+      label: "Rate limit",
+      options: [
+        { label: "Off", value: "off" },
+        { label: "Soft (3/min/IP)", value: "soft" },
+        { label: "Strict (1/min/IP)", value: "strict" },
+      ],
+    },
   },
   defaultProps: {
     title: "Scrivici",
     submitText: "Invia",
     fields: [{ value: "name" }, { value: "email" }, { value: "message" }],
+    honeypot: true,
+    recaptcha: "off",
+    rateLimit: "soft",
   },
   resolveData: ({ props }) => {
     // legacy mock templates may send string[]; normalize to {value}[]
@@ -723,11 +759,11 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
     }
     return { props };
   },
-  render: ({ title, fields, submitText }) => (
+  render: ({ title, fields, submitText, honeypot, recaptcha, rateLimit }) => (
     <div className="mx-auto max-w-2xl px-10 py-10">
       <div className="rounded-2xl bg-surface-container-high p-8">
         <h3 className="mb-6 text-headline-md font-bold text-on-surface">{title}</h3>
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" data-rate-limit={rateLimit}>
           {fields.map(({ value: f }) => (
             <div key={f} className="flex flex-col gap-1.5">
               <label className="text-label-md capitalize text-text-muted">{f}</label>
@@ -744,6 +780,34 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
               )}
             </div>
           ))}
+          {honeypot && (
+            // Hidden bot trap (off-screen + aria-hidden + tabIndex -1)
+            <div
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
+            >
+              <label>
+                Lascia vuoto:
+                <input
+                  type="text"
+                  name="rzn_hp_field"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+          )}
+          {recaptcha !== "off" && (
+            <div className="flex items-center gap-2 rounded-md bg-surface-container-lowest px-3 py-2 text-label-sm text-text-muted">
+              <span className="rounded bg-success-container px-1.5 py-0.5 font-mono text-label-sm font-bold text-success">
+                {recaptcha.toUpperCase()}
+              </span>
+              <span>
+                Validazione automatica al submit (no UI utente). Configurare la
+                site key al deploy.
+              </span>
+            </div>
+          )}
           <button
             type="button"
             className="mt-2 rounded-xl px-6 py-3 text-body-md font-semibold text-on-molten"

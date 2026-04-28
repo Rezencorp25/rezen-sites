@@ -7,7 +7,7 @@ import {
   Percent,
   Target,
 } from "lucide-react";
-import { useProjectData } from "@/lib/hooks/use-project-data";
+import { useAdsData } from "@/lib/hooks/use-ads-data";
 import { KpiCard } from "@/components/luminous/kpi-card";
 import {
   PeriodToggle,
@@ -32,7 +32,7 @@ export default function GoogleAdsPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = use(params);
-  const { ads } = useProjectData(projectId);
+  const { performance: ads } = useAdsData(projectId);
   const [period, setPeriod] = useState<Period>("daily");
 
   const byCampaign = useMemo<CampaignRow[]>(() => {

@@ -12,6 +12,7 @@ import {
   buildSitemapEntriesFromPages,
   DEFAULT_ROBOTS_CONFIG,
 } from "@/lib/seo/robots-sitemap";
+import { buildLlmsTxt } from "@/lib/seo/llms-txt";
 
 /**
  * Package all pages of a project into a ready-to-run Next.js 16 scaffold (ZIP).
@@ -48,12 +49,16 @@ export async function buildNextJsZip(opts: {
   app.file("layout.tsx", layoutTsx);
   app.file("globals.css", globalsCss);
 
-  // SEO: robots.txt + sitemap.xml at the project root
+  // SEO: robots.txt + sitemap.xml + llms.txt at the project root
   if (opts.project) {
     const baseUrl = `https://${opts.project.domain}`;
     f.file("public/robots.txt", buildRobotsTxt(DEFAULT_ROBOTS_CONFIG, baseUrl));
     const entries = buildSitemapEntriesFromPages(opts.project, opts.pages);
     f.file("public/sitemap.xml", buildSitemapXml(entries));
+    f.file(
+      "public/llms.txt",
+      buildLlmsTxt({ project: opts.project, pages: opts.pages }),
+    );
   }
 
   // Homepage (either the page with slug "/" or the first one)
