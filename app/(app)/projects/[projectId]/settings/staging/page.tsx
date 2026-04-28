@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UptimeMonitor } from "@/components/seo/uptime-monitor";
+import { ScheduledReleases } from "@/components/seo/scheduled-releases";
 
 export default function SettingsStagingPage({
   params,
@@ -58,6 +59,10 @@ export default function SettingsStagingPage({
 
       <div className="mb-5">
         <UptimeMonitor projectId={projectId} />
+      </div>
+
+      <div className="mb-5">
+        <ScheduledReleases projectId={projectId} />
       </div>
 
       <div className="grid gap-5 grid-cols-1 lg:grid-cols-[1fr_1.3fr]">

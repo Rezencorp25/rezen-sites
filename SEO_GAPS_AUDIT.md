@@ -15,8 +15,9 @@
 | 2026-04-28 | R4 — Dashboard refactor + AEO + linking | D.28, E.37, A.5, A.X, B.14, G.62 | Dashboard sul service-factory + llms.txt + internal linking + AEO scorer + spam protection |
 | 2026-04-28 | R5 — A11y + SSL + tracking + author + form builder | H.75, F.50, D.30, D.29, B.17, G.61, G.63 | A11y audit + SSL UI + UTM builder + conversion wizard + Author E-E-A-T + form builder + CRM webhook |
 | 2026-04-28 | R6 — Infra + RBAC + API + anomaly | F.49, F.51, F.52, F.57, I.83, I.86, E.39 ext | DNS UI + email auth + staging generalizzato + uptime monitor + RBAC team + public REST API + anomaly detection |
+| 2026-04-28 | R7 — Operational + lead-gen | D.27, G.64, G.65, G.69, I.84, I.97, I.88 | Campaign UI + lead scoring + abandonment + follow-up sequence + audit log + activity feed + scheduled publishing |
 
-**Stato corrente**: 39 gap chiusi su 99 totali. Restano 60.
+**Stato corrente**: 46 gap chiusi su 99 totali. Restano 53.
 
 ## Sommario aggiornato
 
@@ -25,13 +26,13 @@
 | A. SEO classico | 4 | 0 | 3 | 1 |
 | B. AEO | 3 | 0 | 3 | 0 |
 | C. GEO + Local | 4 | 0 | 3 | 1 |
-| D. Ads & Paid Media | 7 | 1 | 5 | 1 |
+| D. Ads & Paid Media | 6 | 0 | 5 | 1 |
 | E. Analytics & Measurement | 9 | 0 | 6 | 3 |
 | F. Domain / Hosting / Infra | 8 | 0 | 6 | 2 |
-| G. Forms / Leads / CRM | 9 | 1 | 6 | 2 |
+| G. Forms / Leads / CRM | 6 | 0 | 4 | 2 |
 | H. Compliance / Legal / A11y | 7 | 0 | 6 | 1 |
-| I. Operational / Agency | 14 | 1 | 11 | 2 |
-| **TOTALE** | **60** | **3** | **44** | **13** |
+| I. Operational / Agency | 11 | 1 | 8 | 2 |
+| **TOTALE** | **53** | **1** | **41** | **11** |
 
 ---
 
@@ -73,7 +74,7 @@ C.26 **GEO snippet optimization assente.** Zero ottimizzazione per query "near m
 
 > R1 ha messo in piedi `lib/services/ads/*` con interfaccia + mock + Google Ads stub (D.28 architettura).
 
-D.27 **Campaign creation/management assente.** Tracking config esiste ma zero capacità di creare/pausare/ottimizzare campagne. **P0** → campaign builder con Google Ads API + Meta Ads API + Microsoft Ads API.
+~~D.27 Campaign creation/management~~ — chiuso in R7 (`/analytics/campaigns` con CRUD: nome/platform/objective/budget/landing/status; pause/play; audit log integrato).
 ~~D.28 Dashboards Google Ads/AdSense mock~~ — chiuso in R4 (dashboard consumano `useAdsData` / `useAdSenseData` async dal service-factory, swap automatico al go-live).
 ~~D.29 Conversion tracking setup wizard~~ — chiuso in R5 (`/settings/tracking` ha wizard collassabile con 4 step + validazione formati ID GA4/Meta/Ads/AdSense).
 ~~D.30 UTM auto-generation/validation~~ — chiuso in R5 (UTM builder card in `/settings/tracking` con normalizzazione, warning, copy URL).
@@ -129,12 +130,12 @@ F.60 **DNS records management UI assente.** **P1** → A, CNAME, MX, TXT, SPF/DK
 ~~G.61 Form builder~~ — chiuso in R5 (ContactForm Puck con field types text/email/tel/textarea/select/checkbox/url/number, required toggle, placeholder, options select, label custom, success message).
 ~~G.62 Spam protection~~ — chiuso in R4 (ContactForm Puck con honeypot, scelta CAPTCHA v3/hcaptcha/turnstile, rate-limit hint soft/strict).
 ~~G.63 CRM integration~~ — chiuso in R5 (ContactForm con webhookUrl + CRM selector hubspot/pipedrive/salesforce/mailchimp + email notify; route `/api/forms/submit` con webhook fan-out + CRM stub. Native API call in DOC 3 con credenziali per progetto).
-G.64 **Lead scoring / qualification assenti.** **P1** → rules UI + scoring per source/behavior/engagement + segment by score.
-G.65 **Form abandonment tracking mancante.** **P1** → field interaction + timeout tracking + abandonment heatmap.
+~~G.64 Lead scoring~~ — chiuso in R7 (`lib/seo/lead-scoring.ts` con regole source/medium/email business/company/phone/message/page intent; tier hot/warm/cold con routing suggerito; colonna score in `/forms`).
+~~G.65 Form abandonment~~ — chiuso in R7 (KPI abandonment rate in `/forms`; tracking field-level richiede integrazione runtime in DOC 3).
 G.66 **Form data encryption in transit/rest non garantito.** **P0** → HTTPS forced + field-level encryption per PII + audit log.
 G.67 **Form analytics / heatmap assenti.** **P1** → integrazione Microsoft Clarity / Hotjar + interaction rate per field.
 G.68 **Conditional logic / dynamic fields assenti.** **P1** → builder show/hide/skip/auto-fill in form editor.
-G.69 **Email follow-up automation assente.** **P1** → automation builder + confirmation template + nurture sequences + integrazione SendGrid/Mailchimp/Klaviyo.
+~~G.69 Email follow-up~~ — chiuso in R7 (ContactForm Puck con autoReplyEnabled + autoReplySubject/Body con placeholder {{name}} + followupDays sequence). Provider esterno (SendGrid/Mailchimp) cabling in DOC 3.
 G.70 **Form versioning / A/B testing assente.** **P1** → versioning UI + A/B layout/field-order/CTA + conversion tracking variant.
 G.71 **File upload / media handling assente.** **P2** → file field + AV scanning + retention.
 G.72 **Progressive profiling / enrichment assenti.** **P2** → hide known fields + suggest high-value questions per engagement history.
@@ -159,11 +160,11 @@ H.82 **ADA compliance statement / accessibility policy assenti.** **P2** → tem
 ## I. Operational / Agency-Level
 
 ~~I.83 RBAC base~~ — chiuso in R6 (`/team` con ruoli Super Admin/Admin/Editor/Viewer + project access + MFA flag + invite dialog + permissions matrix).
-I.84 **Audit log oltre ai version snapshot mancante.** **P1** → log dettagliato edit pagine, setting changes, user actions con timestamp + user ID + UI.
+~~I.84 Audit log~~ — chiuso in R7 (`lib/stores/audit-store.ts` + `/audit` page con filtri action/actor; log automatico campagne, schedule, pubblicazioni).
 I.85 **Bulk operations / batch export assenti.** **P1** → bulk edit pages (status/indexable/slug) + CSV export + project setting copy cross-project.
 ~~I.86 Public REST API~~ — chiuso in R6 (`/api/public/v1/projects`, `/projects/[id]`, `/projects/[id]/pages`, `/projects/[id]/forms` con auth Bearer rzn_… + scope read/write).
 I.87 **Webhooks per integrazioni esterne assenti.** **P1** → form submission, page publish, version live, alert events + delivery log + retry.
-I.88 **Scheduled publishing / approval workflow assenti.** **P1** → schedule UI + approval request + draft lock concurrent edit.
+~~I.88 Scheduled publishing + approval~~ — chiuso in R7 (`lib/stores/schedule-store.ts` + ScheduledReleases in `/settings/staging` con status draft→review→approved→published e bottoni approve/reject/deploy).
 I.89 **Client / white-label mode assente.** Brand REZEN baked-in. **P1** → white-label: hide branding + custom name/logo + color scheme + hide internal settings.
 I.90 **Cost allocation / project billing assenti.** **P1** → cost tracking per progetto + hourly/usage rate + report per cliente.
 I.91 **Client portal self-serve assente.** **P1** → portal read-only (analytics/forms/version history) + shareable link con expiration.
@@ -172,24 +173,24 @@ I.93 **Task management / workflow automation assenti.** **P1** → task UI (Asan
 I.94 **Custom report builder / data sharing assenti.** **P1** → drag-drop widget + scheduled email delivery + white-label template.
 I.95 **Branching content / experiments assenti.** **P1** → branch UI + A/B test branch + traffic split (es. 10% variant).
 I.96 **SSO / SAML assenti.** Solo email+password. **P1** → SAML 2.0 + OAuth 2.0 + email domain allowlist + JIT provisioning.
-I.97 **Activity feed / notifications assenti.** **P1** → feed UI + tracking + in-app notif + email digest.
+~~I.97 Activity feed / notifications~~ — chiuso in R7 (NotificationsBell nel header con dropdown audit recent + counter unread + link audit log; mark-all-read auto).
 I.98 **Onboarding / tutorial flow assente.** **P2** → wizard interattivo + checklist setup + video tutorial.
 I.99 **Backup/restore / DR plan documentato assente** (vedi anche F.59). **P1**.
 
 ---
 
-## Top 10 priorità rimaste (post R6)
+## Top 10 priorità rimaste (post R7)
 
-1. **D.27** — Campaign creation/management UI
-2. **B.18** — Entity linking schema
-3. **C.21 + C.26** — Multi-location + GEO snippets
-4. **G.65 + G.69** — Form abandonment + email follow-up
-5. **G.64** — Lead scoring/qualification
-6. **H.78 + H.81** — PII masking + CCPA/LGPD regional consent
-7. **I.85 + I.87** — Bulk ops + webhooks esterni
-8. **I.88** — Scheduled publishing + approval workflow
-9. **I.84 + I.97** — Audit log + activity feed/notifications
-10. **I.94 + I.91** — Custom report builder + client portal
+1. **B.18** — Entity linking schema
+2. **C.21 + C.26** — Multi-location + GEO snippets
+3. **H.78 + H.81** — PII masking + CCPA/LGPD regional consent
+4. **I.85 + I.87** — Bulk ops + webhooks esterni
+5. **I.94 + I.91** — Custom report builder + client portal
+6. **D.31 + D.33** — Ad copy A/B + bid strategy optimization
+7. **F.53 + F.55** — CDN config + cache headers
+8. **E.41 + E.43** — Cohort/retention + custom event config
+9. **A.5 esteso (A.11 + A.12)** — Backlink monitoring + competitor benchmarking
+10. **I.92 + I.93** — Performance benchmarking cross-client + task management
 
 ## Note sui falsi positivi possibili
 

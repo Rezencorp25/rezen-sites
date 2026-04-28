@@ -1,0 +1,144 @@
+"use client";
+
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+
+export type CampaignPlatform =
+  | "google-ads"
+  | "meta-ads"
+  | "linkedin-ads"
+  | "tiktok-ads"
+  | "microsoft-ads";
+
+export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+
+export type CampaignObjective =
+  | "awareness"
+  | "traffic"
+  | "leads"
+  | "sales"
+  | "brand";
+
+export type Campaign = {
+  id: string;
+  projectId: string;
+  name: string;
+  platform: CampaignPlatform;
+  objective: CampaignObjective;
+  status: CampaignStatus;
+  /** CHF daily budget */
+  dailyBudget: number;
+  /** CHF total spent (mock for now) */
+  totalSpent: number;
+  startDate: string;
+  endDate?: string;
+  landingUrl: string;
+  audienceNotes?: string;
+  createdAt: string;
+};
+
+const SEED: Campaign[] = [
+  {
+    id: "camp-1",
+    projectId: "verumflow-ch",
+    name: "Brand search — VerumFlow",
+    platform: "google-ads",
+    objective: "leads",
+    status: "active",
+    dailyBudget: 35,
+    totalSpent: 412.5,
+    startDate: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10),
+    landingUrl: "https://verumflow.ch/contatti",
+    audienceNotes: "Search brand keyword + competitor protect",
+    createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+  },
+  {
+    id: "camp-2",
+    projectId: "verumflow-ch",
+    name: "Lead gen — Audit SEO",
+    platform: "meta-ads",
+    objective: "leads",
+    status: "active",
+    dailyBudget: 50,
+    totalSpent: 612.0,
+    startDate: new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10),
+    landingUrl: "https://verumflow.ch/audit",
+    audienceNotes: "CMO/CEO 30-55 IT/CH, lookalike clienti past",
+    createdAt: new Date(Date.now() - 21 * 86400000).toISOString(),
+  },
+  {
+    id: "camp-3",
+    projectId: "verumflow-ch",
+    name: "Retargeting blog readers",
+    platform: "google-ads",
+    objective: "traffic",
+    status: "paused",
+    dailyBudget: 12,
+    totalSpent: 87.4,
+    startDate: new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10),
+    landingUrl: "https://verumflow.ch/blog",
+    audienceNotes: "Display remarketing list 30d",
+    createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+  },
+];
+
+type State = {
+  campaigns: Campaign[];
+};
+
+type Actions = {
+  list: (projectId: string) => Campaign[];
+  add: (c: Omit<Campaign, "id" | "createdAt" | "totalSpent">) => string;
+  update: (id: string, patch: Partial<Campaign>) => void;
+  remove: (id: string) => void;
+  resetSeed: () => void;
+};
+
+export const useCampaignsStore = create<State & Actions>()(
+  persist(
+    (set, get) => ({
+      campaigns: SEED,
+      list: (projectId) =>
+        get().campaigns.filter((c) => c.projectId === projectId),
+      add: (c) => {
+        const id = `camp-${Date.now()}`;
+        set((s) => ({
+          campaigns: [
+            ...s.campaigns,
+            {
+              ...c,
+              id,
+              totalSpent: 0,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+      update: (id, patch) =>
+        set((s) => ({
+          campaigns: s.campaigns.map((c) =>
+            c.id === id ? { ...c, ...patch } : c,
+          ),
+        })),
+      remove: (id) =>
+        set((s) => ({ campaigns: s.campaigns.filter((c) => c.id !== id) })),
+      resetSeed: () => set({ campaigns: SEED }),
+    }),
+    {
+      name: "rezen-campaigns-store",
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);
+
+export const PLATFORM_META: Record<
+  CampaignPlatform,
+  { label: string; color: string }
+> = {
+  "google-ads": { label: "Google Ads", color: "#4285F4" },
+  "meta-ads": { label: "Meta Ads", color: "#1877F2" },
+  "linkedin-ads": { label: "LinkedIn", color: "#0A66C2" },
+  "tiktok-ads": { label: "TikTok", color: "#000000" },
+  "microsoft-ads": { label: "Microsoft Ads", color: "#00A4EF" },
+};

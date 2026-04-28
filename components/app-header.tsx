@@ -2,8 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Bell, Search, HelpCircle, ChevronRight } from "lucide-react";
+import { Search, HelpCircle, ChevronRight } from "lucide-react";
 import { ProjectSwitcher } from "./project-switcher";
+import { NotificationsBell } from "./notifications-bell";
 import { Input } from "@/components/ui/input";
 
 const SEGMENT_LABELS: Record<string, string> = {
@@ -84,13 +85,7 @@ export function AppHeader() {
         >
           <HelpCircle className="h-4 w-4" />
         </button>
-        <button
-          aria-label="Notifiche"
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-surface-container-high hover:text-on-surface transition-colors"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-molten-primary-container ring-2 ring-surface-dim" />
-        </button>
+        <NotificationsBell />
         <div className="mx-1 h-5 w-px bg-outline/30" />
         <ProjectSwitcher />
       </div>

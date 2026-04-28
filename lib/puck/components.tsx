@@ -729,6 +729,12 @@ export type ContactFormProps = {
   notifyEmail: string;
   /** Confirmation message after submit */
   successMessage: string;
+  /** Auto-reply confirmation email to user */
+  autoReplyEnabled: boolean;
+  autoReplySubject: string;
+  autoReplyBody: string;
+  /** Nurture sequence: comma-separated days from submission, e.g. "1,3,7,14" */
+  followupDays: string;
 };
 
 export const ContactForm: ComponentConfig<ContactFormProps> = {
@@ -822,6 +828,26 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
       ],
     },
     notifyEmail: { type: "text", label: "Email per notifica submission" },
+    autoReplyEnabled: {
+      type: "radio",
+      label: "Auto-reply al lead",
+      options: [
+        { label: "Sì", value: true },
+        { label: "No", value: false },
+      ],
+    },
+    autoReplySubject: {
+      type: "text",
+      label: "Oggetto auto-reply",
+    },
+    autoReplyBody: {
+      type: "textarea",
+      label: "Testo auto-reply (placeholders: {{name}})",
+    },
+    followupDays: {
+      type: "text",
+      label: "Sequenza nurture (giorni separati da virgola, es. 3,7,14)",
+    },
   },
   defaultProps: {
     title: "Scrivici",
@@ -859,6 +885,11 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
     webhookUrl: "",
     crm: "none",
     notifyEmail: "",
+    autoReplyEnabled: true,
+    autoReplySubject: "Grazie per averci scritto",
+    autoReplyBody:
+      "Ciao {{name}},\n\nabbiamo ricevuto il tuo messaggio. Ti rispondiamo entro 24h.\n\nA presto,\nIl team",
+    followupDays: "3,7,14",
   },
   resolveData: ({ props }) => {
     // legacy mock templates may send string[]; normalize to ContactFormField[]
@@ -894,6 +925,8 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
     rateLimit,
     crm,
     webhookUrl,
+    autoReplyEnabled,
+    followupDays,
   }) => (
     <div className="mx-auto max-w-2xl px-10 py-10">
       <div className="rounded-2xl bg-surface-container-high p-8">
@@ -984,7 +1017,7 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
           >
             {submitText}
           </button>
-          {(crm !== "none" || webhookUrl) && (
+          {(crm !== "none" || webhookUrl || autoReplyEnabled || followupDays) && (
             <div className="mt-1 flex flex-wrap items-center gap-1 text-label-sm text-text-muted">
               <span>Submission inviata a:</span>
               {crm !== "none" && (
@@ -995,6 +1028,16 @@ export const ContactForm: ComponentConfig<ContactFormProps> = {
               {webhookUrl && (
                 <span className="rounded bg-info-container px-1.5 py-0.5 font-mono text-info">
                   webhook
+                </span>
+              )}
+              {autoReplyEnabled && (
+                <span className="rounded bg-info-container px-1.5 py-0.5 font-mono text-info">
+                  auto-reply
+                </span>
+              )}
+              {followupDays && (
+                <span className="rounded bg-warning-container px-1.5 py-0.5 font-mono text-warning">
+                  nurture {followupDays}gg
                 </span>
               )}
             </div>

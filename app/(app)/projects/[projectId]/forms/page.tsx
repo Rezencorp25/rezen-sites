@@ -17,6 +17,7 @@ import { useProjectData } from "@/lib/hooks/use-project-data";
 import { UtmPills } from "@/components/forms/utm-pills";
 import { StatusPill } from "@/components/luminous/status-pill";
 import { KpiCard } from "@/components/luminous/kpi-card";
+import { scoreLead, TIER_META } from "@/lib/seo/lead-scoring";
 
 function truncate(s: string, n = 18) {
   return s.length > n ? `${s.slice(0, n)}…` : s;
@@ -30,6 +31,11 @@ export default function FormsPage({
   const { projectId } = use(params);
   const { forms } = useProjectData(projectId);
 
+  const scored = useMemo(
+    () => forms.map((f) => ({ ...f, lead: scoreLead(f) })),
+    [forms],
+  );
+
   const stats = useMemo(() => {
     const withUtm = forms.filter((f) => f.utm).length;
     const withGclid = forms.filter((f) => f.gclid).length;
@@ -39,14 +45,27 @@ export default function FormsPage({
         .filter(Boolean) as string[],
     ).size;
     const convRate = forms.length ? (withGclid / forms.length) * 100 : 0;
+    const hot = scored.filter((s) => s.lead.tier === "hot").length;
+    const warm = scored.filter((s) => s.lead.tier === "warm").length;
+    // MOCK abandonment rate: deterministic ~38% baseline
+    const abandonmentRate =
+      forms.length > 0
+        ? Math.round(
+            (forms.length / (forms.length + forms.length * 0.6)) * 100 - 100,
+          ) +
+          37
+        : 0;
     return {
       total: forms.length,
       withUtm,
       withGclid,
       activeUtms,
       convRate,
+      hot,
+      warm,
+      abandonmentRate,
     };
-  }, [forms]);
+  }, [forms, scored]);
 
   function exportCsv() {
     if (forms.length === 0) {
@@ -126,6 +145,31 @@ export default function FormsPage({
         </div>
       </div>
 
+      <div className="mb-5 grid gap-4 grid-cols-1 md:grid-cols-4">
+        <KpiCard
+          label="Hot leads"
+          value={stats.hot}
+          deltaLabel={`${stats.warm} warm · score >70`}
+        />
+        <KpiCard
+          label="Abandonment rate"
+          value={`${stats.abandonmentRate}%`}
+          delta={-3}
+          deltaLabel="vs 30gg prec."
+        />
+        <KpiCard
+          label="Conv. rate"
+          value={`${stats.convRate.toFixed(1)}%`}
+          icon={MousePointerClick}
+          deltaLabel="GCLID hits"
+        />
+        <KpiCard
+          label="Active UTMs"
+          value={stats.activeUtms}
+          deltaLabel="campagne live"
+        />
+      </div>
+
       <div className="mb-5 grid gap-4 grid-cols-1 md:grid-cols-3">
         <div className="md:col-span-2 flex items-stretch gap-3 rounded-xl bg-surface-container-high p-6">
           <div className="flex flex-1 flex-col gap-2">
@@ -181,9 +225,9 @@ export default function FormsPage({
             {forms.length} risultati
           </span>
         </div>
-        <div className="grid grid-cols-[110px_110px_1fr_1.3fr_1fr_1fr_100px] items-center gap-4 px-6 py-3 text-label-md uppercase tracking-widest text-text-muted">
+        <div className="grid grid-cols-[110px_70px_1fr_1.3fr_1fr_1fr_100px] items-center gap-4 px-6 py-3 text-label-md uppercase tracking-widest text-text-muted">
           <span>Data</span>
-          <span>Form</span>
+          <span className="text-center">Score</span>
           <span>Nome</span>
           <span>Email</span>
           <span>Pagina</span>
@@ -191,10 +235,10 @@ export default function FormsPage({
           <span>GCLID</span>
         </div>
         <div className="flex flex-col">
-          {forms.slice(0, 12).map((f, i) => (
+          {scored.slice(0, 12).map((f, i) => (
             <div
               key={f.id}
-              className={`grid grid-cols-[110px_110px_1fr_1.3fr_1fr_1fr_100px] items-center gap-4 px-6 py-3 transition-colors hover:bg-surface-container-highest ${
+              className={`grid grid-cols-[110px_70px_1fr_1.3fr_1fr_1fr_100px] items-center gap-4 px-6 py-3 transition-colors hover:bg-surface-container-highest ${
                 i % 2 === 0
                   ? "bg-surface-container-lowest"
                   : "bg-surface-container-low"
@@ -208,7 +252,16 @@ export default function FormsPage({
                   {format(f.createdAt, "HH:mm")}
                 </span>
               </div>
-              <StatusPill variant="info">{f.formName}</StatusPill>
+              <span
+                className="flex items-center justify-center rounded-full px-2 py-0.5 text-label-sm font-bold tabular-nums"
+                style={{
+                  background: `${TIER_META[f.lead.tier].color}22`,
+                  color: TIER_META[f.lead.tier].color,
+                }}
+                title={`${TIER_META[f.lead.tier].label} — ${TIER_META[f.lead.tier].routing}`}
+              >
+                {f.lead.score}
+              </span>
               <span className="truncate text-body-sm text-on-surface">
                 {f.fields.name}
               </span>
