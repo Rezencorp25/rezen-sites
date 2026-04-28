@@ -1,3 +1,5 @@
+import { NOW_ANCHOR } from "./now-anchor";
+
 function seeded(seed: number) {
   let s = seed;
   return () => {
@@ -21,9 +23,9 @@ export function generatePageviews(
 ): PageviewPoint[] {
   const rnd = seeded(projectId.length * 239 + 13);
   const points: PageviewPoint[] = [];
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = new Date(NOW_ANCHOR);
+  start.setUTCHours(0, 0, 0, 0);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
   const base =
     projectId === "verumflow-ch"
       ? 180
@@ -32,10 +34,10 @@ export function generatePageviews(
         : 0;
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
-    date.setDate(start.getDate() + i);
+    date.setUTCDate(start.getUTCDate() + i);
     const trend = 1 + (i / days) * 0.55;
     const noise = 0.6 + rnd() * 0.8;
-    const weekend = [0, 6].includes(date.getDay()) ? 0.65 : 1;
+    const weekend = [0, 6].includes(date.getUTCDay()) ? 0.65 : 1;
     const pv = Math.round(base * trend * noise * weekend);
     const sessions = Math.round(pv * (0.6 + rnd() * 0.25));
     points.push({ date, pageviews: pv, sessions });

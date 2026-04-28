@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { NOW_ANCHOR } from "@/lib/mocks/now-anchor";
 
 export type AuditAction =
   | "page.create"
@@ -40,7 +41,7 @@ export type AuditEntry = {
 const SEED: AuditEntry[] = [
   {
     id: "log-1",
-    at: new Date(Date.now() - 2 * 3600000).toISOString(),
+    at: new Date(NOW_ANCHOR - 2 * 3600000).toISOString(),
     actor: { id: "u-anna", name: "Anna Bianchi", email: "anna@rezencorp.com" },
     action: "page.publish",
     description: "Pubblicata pagina Home",
@@ -48,7 +49,7 @@ const SEED: AuditEntry[] = [
   },
   {
     id: "log-2",
-    at: new Date(Date.now() - 6 * 3600000).toISOString(),
+    at: new Date(NOW_ANCHOR - 6 * 3600000).toISOString(),
     actor: {
       id: "u-owner",
       name: "Francesco Lossi",
@@ -60,7 +61,7 @@ const SEED: AuditEntry[] = [
   },
   {
     id: "log-3",
-    at: new Date(Date.now() - 24 * 3600000).toISOString(),
+    at: new Date(NOW_ANCHOR - 24 * 3600000).toISOString(),
     actor: {
       id: "u-owner",
       name: "Francesco Lossi",

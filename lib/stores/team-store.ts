@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { NOW_ANCHOR } from "@/lib/mocks/now-anchor";
 
 export type Role = "super-admin" | "admin" | "editor" | "viewer";
 
@@ -24,7 +25,7 @@ const SEED: TeamMember[] = [
     name: "Francesco Lossi",
     role: "super-admin",
     projectAccess: "*",
-    invitedAt: new Date(Date.now() - 90 * 86400000).toISOString(),
+    invitedAt: new Date(NOW_ANCHOR - 90 * 86400000).toISOString(),
     status: "active",
     mfaEnabled: true,
   },
@@ -34,7 +35,7 @@ const SEED: TeamMember[] = [
     name: "Anna Bianchi",
     role: "editor",
     projectAccess: ["verumflow-ch", "impresa-edile-carfi"],
-    invitedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+    invitedAt: new Date(NOW_ANCHOR - 14 * 86400000).toISOString(),
     status: "active",
     mfaEnabled: false,
   },

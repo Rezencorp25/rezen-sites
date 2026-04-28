@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { NOW_ANCHOR } from "@/lib/mocks/now-anchor";
 
 export type LocalReview = {
   /** 1-5 */
@@ -159,9 +160,9 @@ function defaultsFor(projectId: string): ProjectSettings {
       canonicalDomain: "apex",
       ssl: {
         issuer: "letsencrypt",
-        // MOCK: 60 days from now to demo expiry alerts
-        issuedAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-        expiresAt: new Date(Date.now() + 60 * 86400000).toISOString(),
+        // MOCK: 60 days from anchor to demo expiry alerts
+        issuedAt: new Date(NOW_ANCHOR - 30 * 86400000).toISOString(),
+        expiresAt: new Date(NOW_ANCHOR + 60 * 86400000).toISOString(),
         autoRenew: true,
         alertDaysBeforeExpiry: 30,
       },

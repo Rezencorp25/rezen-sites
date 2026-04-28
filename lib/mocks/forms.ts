@@ -1,4 +1,5 @@
 import type { FormSubmission } from "@/types";
+import { NOW_ANCHOR } from "./now-anchor";
 
 const UTM_SOURCES = ["google", "linkedin", "meta", "newsletter", "direct"];
 const UTM_MEDIUMS = ["cpc", "social", "email", "organic"];
@@ -41,13 +42,9 @@ function rnd<T>(arr: T[], seed: number): T {
 }
 
 /**
- * Deterministic submission generator. Anchors `now` to a fixed date so
+ * Deterministic submission generator. Anchors `now` to NOW_ANCHOR so
  * SSR and CSR produce identical output (no hydration mismatches).
- *
- * NOTE: also avoids Math.random everywhere — uses index-derived seeds.
  */
-const NOW_ANCHOR = new Date("2026-04-28T12:00:00Z").getTime();
-
 export function generateFormSubmissions(
   projectId: string,
   count: number,

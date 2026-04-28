@@ -1,4 +1,5 @@
 import type { AdSenseRevenue, GoogleAdsPerformance } from "@/types";
+import { NOW_ANCHOR } from "./now-anchor";
 
 /**
  * Deterministic RNG so mock data stays stable across runs.
@@ -23,13 +24,13 @@ export function generateDailyAdSense(
     "/resources/free-keyword-planner",
     "/blog/ai-content-2026",
   ];
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = new Date(NOW_ANCHOR);
+  start.setUTCHours(0, 0, 0, 0);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
   const results: AdSenseRevenue[] = [];
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
-    date.setDate(start.getDate() + i);
+    date.setUTCDate(start.getUTCDate() + i);
     const trend = 1 + (i / days) * 0.4; // 40% growth over window
     const noise = 0.7 + rnd() * 0.6;
     const impressions = Math.round(3800 * trend * noise);
@@ -88,13 +89,13 @@ export function generateGoogleAds(
     "/blog/ai-seo",
     "/",
   ];
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = new Date(NOW_ANCHOR);
+  start.setUTCHours(0, 0, 0, 0);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
   const results: GoogleAdsPerformance[] = [];
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
-    date.setDate(start.getDate() + i);
+    date.setUTCDate(start.getUTCDate() + i);
     for (const campaign of GOOGLE_ADS_CAMPAIGNS) {
       const baseSpend = {
         brand_search: 12,

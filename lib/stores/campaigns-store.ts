@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { NOW_ANCHOR } from "@/lib/mocks/now-anchor";
 
 export type CampaignPlatform =
   | "google-ads"
@@ -47,10 +48,10 @@ const SEED: Campaign[] = [
     status: "active",
     dailyBudget: 35,
     totalSpent: 412.5,
-    startDate: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10),
+    startDate: new Date(NOW_ANCHOR - 30 * 86400000).toISOString().slice(0, 10),
     landingUrl: "https://verumflow.ch/contatti",
     audienceNotes: "Search brand keyword + competitor protect",
-    createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+    createdAt: new Date(NOW_ANCHOR - 30 * 86400000).toISOString(),
   },
   {
     id: "camp-2",
@@ -61,10 +62,10 @@ const SEED: Campaign[] = [
     status: "active",
     dailyBudget: 50,
     totalSpent: 612.0,
-    startDate: new Date(Date.now() - 21 * 86400000).toISOString().slice(0, 10),
+    startDate: new Date(NOW_ANCHOR - 21 * 86400000).toISOString().slice(0, 10),
     landingUrl: "https://verumflow.ch/audit",
     audienceNotes: "CMO/CEO 30-55 IT/CH, lookalike clienti past",
-    createdAt: new Date(Date.now() - 21 * 86400000).toISOString(),
+    createdAt: new Date(NOW_ANCHOR - 21 * 86400000).toISOString(),
   },
   {
     id: "camp-3",
@@ -75,10 +76,10 @@ const SEED: Campaign[] = [
     status: "paused",
     dailyBudget: 12,
     totalSpent: 87.4,
-    startDate: new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10),
+    startDate: new Date(NOW_ANCHOR - 14 * 86400000).toISOString().slice(0, 10),
     landingUrl: "https://verumflow.ch/blog",
     audienceNotes: "Display remarketing list 30d",
-    createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+    createdAt: new Date(NOW_ANCHOR - 14 * 86400000).toISOString(),
   },
 ];
 
