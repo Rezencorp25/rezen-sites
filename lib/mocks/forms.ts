@@ -40,20 +40,33 @@ function rnd<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length]!;
 }
 
+/**
+ * Deterministic submission generator. Anchors `now` to a fixed date so
+ * SSR and CSR produce identical output (no hydration mismatches).
+ *
+ * NOTE: also avoids Math.random everywhere — uses index-derived seeds.
+ */
+const NOW_ANCHOR = new Date("2026-04-28T12:00:00Z").getTime();
+
 export function generateFormSubmissions(
   projectId: string,
   count: number,
   daysBack = 30,
 ): FormSubmission[] {
   const out: FormSubmission[] = [];
+  const projectSeed = projectId.length * 17;
   for (let i = 0; i < count; i++) {
-    const daysAgo = Math.floor(Math.random() * daysBack);
-    const hoursAgo = Math.floor(Math.random() * 24);
-    const createdAt = new Date();
-    createdAt.setDate(createdAt.getDate() - daysAgo);
-    createdAt.setHours(createdAt.getHours() - hoursAgo);
-    const hasUtm = Math.random() > 0.35;
-    const hasGclid = Math.random() > 0.7;
+    const daysAgo = (i * 7 + projectSeed) % daysBack;
+    const hoursAgo = (i * 13 + projectSeed) % 24;
+    const minutesAgo = (i * 31 + projectSeed) % 60;
+    const createdAt = new Date(
+      NOW_ANCHOR -
+        daysAgo * 86400000 -
+        hoursAgo * 3600000 -
+        minutesAgo * 60000,
+    );
+    const hasUtm = (i * 11 + projectSeed) % 3 !== 0;
+    const hasGclid = (i * 7 + projectSeed) % 4 === 0;
     const name = rnd(ITALIAN_NAMES, i * 3 + 1);
     out.push({
       id: `${projectId}-sub-${i.toString().padStart(3, "0")}`,
@@ -82,7 +95,7 @@ export function generateFormSubmissions(
           }
         : undefined,
       gclid: hasGclid
-        ? `CjwKCAiA${Math.random().toString(36).slice(2, 14)}`
+        ? `CjwKCAiA${(i * 9999 + projectSeed).toString(36).padEnd(12, "x").slice(0, 12)}`
         : undefined,
       createdAt,
     });
