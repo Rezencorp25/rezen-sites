@@ -9,7 +9,7 @@ import {
   DollarSign,
   Target,
   ArrowRight,
-  Megaphone,
+  ExternalLink,
 } from "lucide-react";
 import { useAnalyticsData } from "@/lib/hooks/use-analytics-data";
 import { KpiCard } from "@/components/luminous/kpi-card";
@@ -66,14 +66,16 @@ export default function AnalyticsOverviewPage({
             Google Ads
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
-          <Link
-            href={`/projects/${projectId}/analytics/campaigns`}
+          <a
+            href="https://business.facebook.com/adsmanager"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-lg bg-surface-container-high px-3.5 py-2.5 text-body-sm font-semibold text-on-surface hover:bg-surface-container-highest transition-colors"
           >
-            <Megaphone className="h-4 w-4 text-molten-primary" />
-            Campagne
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+            <Target className="h-4 w-4 text-molten-primary" />
+            Meta Ads
+            <ExternalLink className="h-3.5 w-3.5 text-text-muted" />
+          </a>
         </div>
       </div>
 
