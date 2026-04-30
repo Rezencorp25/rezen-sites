@@ -291,3 +291,23 @@
   background: rgba(179, 181, 185, 0.1);
   color: #b3b5b9;
 }
+
+@keyframes verumflow-v-spin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+.verumflow-v-spin {
+  animation: verumflow-v-spin 18s linear infinite;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .verumflow-v-spin {
+    animation: none;
+  }
+}
