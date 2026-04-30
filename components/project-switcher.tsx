@@ -6,6 +6,7 @@ import { useAppStore } from "@/lib/stores/app-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -22,7 +23,9 @@ export function ProjectSwitcher() {
   const setCurrent = useAppStore((s) => s.setCurrentProjectId);
 
   const activeId = params?.projectId ?? null;
-  const active = projects.find((p) => p.id === activeId) ?? projects[0]!;
+  if (!activeId) return null;
+  const active = projects.find((p) => p.id === activeId);
+  if (!active) return null;
   const activeGrad = gradientFor(active.id);
 
   return (
@@ -46,45 +49,47 @@ export function ProjectSwitcher() {
         align="end"
         className="w-80 bg-popover border-none p-1.5"
       >
-        <DropdownMenuLabel className="text-label-md uppercase tracking-wider text-text-muted">
-          Switch project
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {projects.map((p) => {
-          const g = gradientFor(p.id);
-          const isActive = p.id === active.id;
-          return (
-            <DropdownMenuItem
-              key={p.id}
-              onSelect={() => {
-                setCurrent(p.id);
-                router.push(`/projects/${p.id}/dashboard`);
-              }}
-              className="flex items-center gap-3 rounded-lg px-2 py-2 focus:bg-surface-container-high"
-            >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-label-md font-bold text-on-surface"
-                style={{ background: g.css }}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-label-md uppercase tracking-wider text-text-muted">
+            Switch project
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {projects.map((p) => {
+            const g = gradientFor(p.id);
+            const isActive = p.id === active.id;
+            return (
+              <DropdownMenuItem
+                key={p.id}
+                onSelect={() => {
+                  setCurrent(p.id);
+                  router.push(`/projects/${p.id}/dashboard`);
+                }}
+                className="flex items-center gap-3 rounded-lg px-2 py-2 focus:bg-surface-container-high"
               >
-                {initialsFor(p.name)}
-              </span>
-              <div className="flex flex-1 flex-col leading-tight min-w-0">
-                <span className="truncate font-semibold text-on-surface">
-                  {p.name}
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-label-md font-bold text-on-surface"
+                  style={{ background: g.css }}
+                >
+                  {initialsFor(p.name)}
                 </span>
-                <span className="truncate font-mono text-label-sm text-text-muted">
-                  {p.domain}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <PageStatusPill status={p.status} />
-                {isActive && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-molten-primary-container" />
-                )}
-              </div>
-            </DropdownMenuItem>
-          );
-        })}
+                <div className="flex flex-1 flex-col leading-tight min-w-0">
+                  <span className="truncate font-semibold text-on-surface">
+                    {p.name}
+                  </span>
+                  <span className="truncate font-mono text-label-sm text-text-muted">
+                    {p.domain}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PageStatusPill status={p.status} />
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-molten-primary-container" />
+                  )}
+                </div>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
