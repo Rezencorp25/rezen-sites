@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GradientButton } from "@/components/luminous/gradient-button";
 
-const V_DEPTH_LAYERS = 14;
-const V_DEPTH_STEP_PX = 3;
+const V_DEPTH_LAYERS = 6;
+const V_DEPTH_STEP_PX = 6;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -126,7 +126,9 @@ export default function LoginPage() {
           <div className="verumflow-v-spin relative h-[68%] w-[68%] max-h-[640px] max-w-[640px]">
             {Array.from({ length: V_DEPTH_LAYERS }).map((_, i) => {
               const offset = (i - (V_DEPTH_LAYERS - 1) / 2) * V_DEPTH_STEP_PX;
-              const isEdge = i === 0 || i === V_DEPTH_LAYERS - 1;
+              const isFront = i === V_DEPTH_LAYERS - 1;
+              const isBack = i === 0;
+              const opacity = isFront ? 1 : isBack ? 0.6 : 0.35;
               return (
                 <div
                   key={i}
@@ -134,7 +136,8 @@ export default function LoginPage() {
                   style={{
                     backgroundImage: "url('/login-hero-v.png')",
                     transform: `translateZ(${offset}px)`,
-                    opacity: isEdge ? 1 : 0.18,
+                    opacity,
+                    filter: isFront ? undefined : "blur(0.4px)",
                   }}
                 />
               );

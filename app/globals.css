@@ -292,16 +292,13 @@
   color: #b3b5b9;
 }
 
-@keyframes verumflow-v-spin {
-  from {
-    transform: rotateY(0deg);
-  }
-  to {
-    transform: rotateY(360deg);
-  }
+@keyframes verumflow-v-oscillate {
+  0%   { transform: rotateY(-28deg); }
+  50%  { transform: rotateY( 28deg); }
+  100% { transform: rotateY(-28deg); }
 }
 .verumflow-v-spin {
-  animation: verumflow-v-spin 18s linear infinite;
+  animation: verumflow-v-oscillate 8s ease-in-out infinite;
   transform-style: preserve-3d;
   backface-visibility: visible;
   will-change: transform;
