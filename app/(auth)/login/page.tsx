@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { toast } from "sonner";
 import { Flame, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GradientButton } from "@/components/luminous/gradient-button";
+
+const V_DEPTH_LAYERS = 14;
+const V_DEPTH_STEP_PX = 3;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -118,28 +120,26 @@ export default function LoginPage() {
       <aside
         aria-hidden
         className="relative hidden overflow-hidden bg-black lg:block"
-        style={{ perspective: "1200px" }}
+        style={{ perspective: "1400px" }}
       >
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="verumflow-v-spin relative h-[68%] w-[68%] max-h-[640px] max-w-[640px]">
-            <Image
-              src="/login-hero-v.png"
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 1024px) 55vw, 0px"
-              className="object-contain select-none pointer-events-none"
-            />
+            {Array.from({ length: V_DEPTH_LAYERS }).map((_, i) => {
+              const offset = (i - (V_DEPTH_LAYERS - 1) / 2) * V_DEPTH_STEP_PX;
+              const isEdge = i === 0 || i === V_DEPTH_LAYERS - 1;
+              return (
+                <div
+                  key={i}
+                  className="absolute inset-0 bg-center bg-no-repeat bg-contain"
+                  style={{
+                    backgroundImage: "url('/login-hero-v.png')",
+                    transform: `translateZ(${offset}px)`,
+                    opacity: isEdge ? 1 : 0.18,
+                  }}
+                />
+              );
+            })}
           </div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-10 flex flex-col items-center gap-1 text-center">
-          <p className="text-label-md uppercase tracking-[0.4em] text-white/60">
-            VerumFlow
-          </p>
-          <p className="text-label-sm uppercase tracking-[0.3em] text-white/30">
-            powered by REZEN
-          </p>
         </div>
       </aside>
     </div>
