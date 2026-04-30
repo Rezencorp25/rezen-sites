@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useProjectsStore } from "@/lib/stores/projects-store";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 import { ProjectCard } from "@/components/projects/project-card";
+import { QuickActionsFab } from "@/components/quick-actions-fab";
 import { Plus, TrendingUp } from "lucide-react";
 
 export default function ProjectsListPage() {
@@ -61,6 +62,8 @@ export default function ProjectsListPage() {
       </div>
 
       <NewProjectDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      <QuickActionsFab />
     </div>
   );
 }
