@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { PROJECT_NAV } from "@/lib/constants/nav";
+import { GLOBAL_NAV, PROJECT_NAV } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Flame } from "lucide-react";
@@ -11,6 +11,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const params = useParams<{ projectId?: string }>();
   const projectId = params?.projectId ?? "verumflow-ch";
+  const inProjectScope = Boolean(params?.projectId);
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col bg-surface-container border-r border-outline/20">
@@ -37,13 +38,14 @@ export function AppSidebar() {
 
       <nav className="flex-1 overflow-y-auto px-2.5 py-2">
         <ul className="flex flex-col gap-0.5">
-          {PROJECT_NAV.map(({ label, href, icon: Icon, matchPath }) => {
-            const target = href(projectId);
-            const active = pathname?.includes(`/${matchPath}`);
+          {GLOBAL_NAV.map(({ label, href, icon: Icon }) => {
+            const active =
+              pathname === href || pathname === `${href}/`;
             return (
               <li key={label}>
                 <Link
-                  href={target}
+                  href={href}
+                  data-testid={`nav-global-${label.toLowerCase()}`}
                   className={cn(
                     "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-body-sm font-medium transition-all",
                     active
@@ -68,6 +70,46 @@ export function AppSidebar() {
             );
           })}
         </ul>
+
+        {inProjectScope && (
+          <>
+            <div className="mt-4 mb-2 px-2.5 text-[0.625rem] font-semibold uppercase tracking-widest text-text-muted">
+              Progetto
+            </div>
+            <ul className="flex flex-col gap-0.5">
+              {PROJECT_NAV.map(({ label, href, icon: Icon, matchPath }) => {
+                const target = href(projectId);
+                const active = pathname?.includes(`/${matchPath}`);
+                return (
+                  <li key={label}>
+                    <Link
+                      href={target}
+                      className={cn(
+                        "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-body-sm font-medium transition-all",
+                        active
+                          ? "bg-surface-container-high text-on-surface"
+                          : "text-secondary-text hover:bg-surface-container-low hover:text-on-surface",
+                      )}
+                    >
+                      {active && (
+                        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-molten-primary-container" />
+                      )}
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition-colors",
+                          active
+                            ? "text-molten-primary"
+                            : "text-text-muted group-hover:text-on-surface",
+                        )}
+                      />
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
       </nav>
 
       <div className="m-2.5 flex items-center gap-2.5 rounded-xl bg-surface-container-high p-2 pr-3">

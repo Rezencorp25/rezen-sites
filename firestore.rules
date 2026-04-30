@@ -1,8 +1,83 @@
-// ⚠️ PROTOTIPO — rules aperte. NON DEPLOYARE IN PRODUZIONE.
-// Le rules production saranno riscritte in DOC 3 con auth + role checks.
+// REZEN Sites — Firestore Security Rules
+//
+// ⚠️ STATO IBRIDO (Sprint S0):
+// - Le NUOVE collection introdotte in v.2 (audit immutabile, seo cache,
+//   ai logs, rate limits, leads) hanno rules production-grade.
+// - Il resto del prototipo mantiene rules aperte come da DOC 1.
+// - DOC 3 / Sprint dedicato: stringere TUTTE le rules a default-deny + RBAC,
+//   coerente con Compliance Playbook §3.2.
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.role == 'admin';
+    }
+
+    // ── Internal collections (Admin SDK / Cloud Functions only) ────────
+
+    // SEO data cache — popolata da Cloud Functions (DataForSEO sync).
+    // Client può leggere; nessuno scrive da client.
+    match /_seo_cache/{cacheId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // AI Visibility logs — popolato da multi-LLM client server-side.
+    // Solo admin legge (privacy: prompt completi possono contenere dati cliente).
+    match /_ai_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Rate limits — touch-only da Admin SDK con runTransaction.
+    match /_rate_limits/{key} {
+      allow read, write: if false;
+    }
+
+    // ── Audit (project-scoped, immutabile) ─────────────────────────────
+
+    // Audit eventi sui leads di un progetto.
+    // - read: utente autenticato (in DOC 3: solo project member)
+    // - create: Admin SDK (Cloud Functions); update/delete sempre deny
+    match /projects/{projectId}/leads/{leadId}/_audit/{eventId} {
+      allow read: if isSignedIn();
+      allow create: if false; // solo Admin SDK
+      allow update, delete: if false;
+    }
+
+    // Storico audit progetto (Site Audit Lighthouse — Sprint S2)
+    match /projects/{projectId}/audits/{auditId} {
+      allow read: if isSignedIn();
+      allow create, update: if false;
+      allow delete: if false;
+    }
+
+    // ── Leads (Sprint S3 — Lead Pipeline interno) ──────────────────────
+
+    // CRUD permesso a utenti autenticati.
+    // DOC 3 stringerà a `isProjectMember(projectId)`.
+    match /projects/{projectId}/leads/{leadId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.resource.data.keys().hasAll(['status', 'createdAt', 'updatedAt']);
+      allow delete: if isAdmin(); // solo admin può cancellare lead
+    }
+
+    // ── Fallback prototipo (rules aperte) ──────────────────────────────
+    //
+    // ⚠️ PROTOTIPO — DOC 3 dovrà rimuovere questo fallback e stringere ogni
+    // collection. Mantenuto qui solo per non rompere il prototipo esistente
+    // mentre le nuove collection v.2 hanno già le rules corrette.
     match /{document=**} {
       allow read, write: if true;
     }

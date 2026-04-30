@@ -19,6 +19,7 @@ import {
   AdsenseRevenueChart,
   type RevenuePoint,
 } from "@/components/analytics/adsense-revenue-chart";
+import { PlatformRedirect } from "@/components/analytics/platform-redirect";
 
 type RollupRow = {
   page: string;
@@ -133,13 +134,16 @@ export default function AdSensePage({
 
   return (
     <div className="mx-auto max-w-7xl px-10 py-10">
-      <div className="mb-6 flex flex-col gap-1">
-        <div className="text-label-md uppercase tracking-widest text-text-muted">
-          Analytics › AdSense Performance
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <div className="text-label-md uppercase tracking-widest text-text-muted">
+            Analytics › AdSense Performance
+          </div>
+          <h1 className="text-headline-md font-bold text-on-surface">
+            AdSense Revenue Engine
+          </h1>
         </div>
-        <h1 className="text-headline-md font-bold text-on-surface">
-          AdSense Revenue Engine
-        </h1>
+        <PlatformRedirect platform="adsense" variant="inline" />
       </div>
 
       <div className="mb-5 grid gap-4 grid-cols-2 lg:grid-cols-4">

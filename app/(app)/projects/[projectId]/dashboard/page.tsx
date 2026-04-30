@@ -15,6 +15,7 @@ import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { ActiveAlerts } from "@/components/dashboard/active-alerts";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { GradientButton } from "@/components/luminous/gradient-button";
+import { KPI_DEFINITIONS } from "@/lib/constants/kpi-definitions";
 import { toast } from "sonner";
 
 export default function DashboardPage({
@@ -55,6 +56,7 @@ export default function DashboardPage({
           value={project.kpis.pagesPublished}
           icon={FileText}
           deltaLabel="Totale live"
+          tooltip={KPI_DEFINITIONS.pagesPublished}
         />
         <KpiCard
           label="Traffico Organico"
@@ -62,6 +64,7 @@ export default function DashboardPage({
           delta={pvDelta}
           deltaLabel="vs 30gg precedenti"
           icon={TrendingUp}
+          tooltip={KPI_DEFINITIONS.organicTraffic}
         />
         <KpiCard
           label="Revenue AdSense"
@@ -69,6 +72,7 @@ export default function DashboardPage({
           icon={Coins}
           deltaLabel="ultimi 30 giorni"
           progress={Math.min((project.kpis.adsenseRevenue30d / 500) * 100, 100)}
+          tooltip={KPI_DEFINITIONS.adsenseRevenue}
         />
         <KpiCard
           label="SEO Score"
@@ -76,6 +80,7 @@ export default function DashboardPage({
           icon={Search}
           deltaLabel="indice aggregato"
           progress={project.kpis.seoScore}
+          tooltip={KPI_DEFINITIONS.seoScore}
         />
       </div>
 

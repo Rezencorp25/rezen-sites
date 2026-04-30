@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { KpiTooltip } from "@/components/dashboard/kpi-tooltip";
 
 export function KpiCard({
   label,
@@ -9,6 +10,7 @@ export function KpiCard({
   icon: Icon,
   progress,
   className,
+  tooltip,
 }: {
   label: string;
   value: React.ReactNode;
@@ -17,6 +19,7 @@ export function KpiCard({
   icon?: LucideIcon;
   progress?: number;
   className?: string;
+  tooltip?: string;
 }) {
   const deltaPositive = (delta ?? 0) >= 0;
   return (
@@ -27,9 +30,12 @@ export function KpiCard({
       )}
     >
       <div className="flex items-start justify-between">
-        <p className="text-label-md font-semibold uppercase tracking-widest text-text-muted">
-          {label}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-label-md font-semibold uppercase tracking-widest text-text-muted">
+            {label}
+          </p>
+          {tooltip ? <KpiTooltip text={tooltip} /> : null}
+        </div>
         {Icon ? (
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container">
             <Icon className="h-4 w-4 text-molten-primary" />

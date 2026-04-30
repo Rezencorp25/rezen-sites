@@ -17,6 +17,7 @@ import {
   GoogleAdsChart,
   type CampaignRow,
 } from "@/components/analytics/google-ads-chart";
+import { PlatformRedirect } from "@/components/analytics/platform-redirect";
 
 type LandingRow = {
   landingPage: string;
@@ -111,7 +112,10 @@ export default function GoogleAdsPage({
             Google Ads Performance
           </h1>
         </div>
-        <PeriodToggle value={period} onChange={setPeriod} />
+        <div className="flex items-center gap-2">
+          <PlatformRedirect platform="google-ads" variant="inline" />
+          <PeriodToggle value={period} onChange={setPeriod} />
+        </div>
       </div>
 
       <div className="mb-5 grid gap-4 grid-cols-2 lg:grid-cols-4">

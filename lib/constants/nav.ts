@@ -9,6 +9,7 @@ import {
   Telescope,
   FileBarChart,
   ListTodo,
+  FolderKanban,
 } from "lucide-react";
 
 export type NavItem = {
@@ -17,6 +18,22 @@ export type NavItem = {
   icon: typeof LayoutDashboard;
   matchPath: string;
 };
+
+export type GlobalNavItem = {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  matchPath: string;
+};
+
+export const GLOBAL_NAV: GlobalNavItem[] = [
+  {
+    label: "Progetti",
+    href: "/projects",
+    icon: FolderKanban,
+    matchPath: "/projects",
+  },
+];
 
 export const PROJECT_NAV: NavItem[] = [
   {
