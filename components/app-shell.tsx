@@ -4,17 +4,19 @@ import type { ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
+import { cn } from "@/lib/utils";
 
 /**
- * Layout shell client-side che decide se renderizzare la sidebar
- * in base al fatto che siamo o no dentro lo scope di un singolo progetto.
+ * Layout shell client-side che gestisce la presenza della sidebar in modo
+ * animato premium quando si entra/esce dallo scope di un progetto.
  *
- * Routes con sidebar: /projects/[projectId]/...
- * Routes senza sidebar: /projects (lista), /onboarding, /team, /audit, /admin
+ * Pattern: la sidebar è SEMPRE montata (no conditional mount, evita flicker e
+ * preserva auth/state). Si anima il wrapper esterno con `width + opacity` e
+ * il wrapper interno con `translate-x` per un effetto layered ease-out.
  *
- * Quando si entra in un progetto, la sidebar appare con slide-in da sinistra
- * + fade-in (animazione CSS via tw-animate-css). Il pannello principale slitta
- * a destra grazie alla width animation della sidebar.
+ * Curva: cubic-bezier(0.22, 1, 0.36, 1) — easeOutExpo, sensazione "premium".
+ * Durata: 500ms — abbastanza lunga da percepire il movimento, abbastanza
+ * corta da non rallentare la navigazione.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const params = useParams<{ projectId?: string }>();
@@ -22,14 +24,27 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-surface-dim">
-      {inProjectScope && (
+      <div
+        aria-hidden={!inProjectScope}
+        className={cn(
+          "shrink-0 overflow-hidden",
+          "transition-[width,opacity] duration-500",
+          "ease-[cubic-bezier(0.22,1,0.36,1)]",
+          inProjectScope ? "w-56 opacity-100" : "w-0 opacity-0",
+        )}
+      >
         <div
-          key="project-sidebar"
-          className="animate-in slide-in-from-left fade-in duration-300 ease-out"
+          className={cn(
+            "h-full",
+            "transition-transform duration-500",
+            "ease-[cubic-bezier(0.22,1,0.36,1)]",
+            "will-change-transform",
+            inProjectScope ? "translate-x-0" : "-translate-x-4",
+          )}
         >
           <AppSidebar />
         </div>
-      )}
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
         <main className="flex-1 overflow-y-auto">{children}</main>
