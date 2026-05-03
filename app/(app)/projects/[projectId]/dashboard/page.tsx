@@ -14,6 +14,7 @@ import { KpiCard } from "@/components/luminous/kpi-card";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { ActiveAlerts } from "@/components/dashboard/active-alerts";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { SiteAuditCard } from "@/components/dashboard/site-audit-card";
 import { GradientButton } from "@/components/luminous/gradient-button";
 import { KPI_DEFINITIONS } from "@/lib/constants/kpi-definitions";
 import { toast } from "sonner";
@@ -121,6 +122,14 @@ export default function DashboardPage({
         </div>
 
         <div className="flex flex-col gap-4">
+          <SiteAuditCard
+            projectId={projectId}
+            url={
+              project.domain.startsWith("http")
+                ? project.domain
+                : `https://${project.domain}`
+            }
+          />
           <ActiveAlerts alerts={alerts} projectId={projectId} />
           <QuickActions />
         </div>

@@ -14,5 +14,8 @@ initializeApp();
 // Scheduled
 export { probeHourly } from "./scheduled/probe";
 
+// Callable
+export { runSiteAudit } from "./callable/run-site-audit";
+
 // Triggers
 export { leadOnFormSubmitted } from "./triggers/lead-on-form-submitted";
