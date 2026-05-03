@@ -82,6 +82,13 @@ export default function SeoPageClient({ projectId }: { projectId: string }) {
     [snapshot],
   );
 
+  const keywordsById = useMemo(() => {
+    const map = new Map<string, (typeof snapshot.keywords)[number]>();
+    if (!snapshot) return map;
+    for (const kw of snapshot.keywords) map.set(kw.id, kw);
+    return map;
+  }, [snapshot]);
+
   if (!project) {
     return (
       <div className="p-10 text-body-md text-text-muted">Progetto non trovato.</div>
@@ -419,8 +426,8 @@ export default function SeoPageClient({ projectId }: { projectId: string }) {
               </tr>
             </thead>
             <tbody>
-              {decomposition.map((row, i) => {
-                const kw = snapshot.keywords[i];
+              {decomposition.map((row) => {
+                const kw = keywordsById.get(row.keywordId);
                 const pills = kw ? featurePills(kw.features) : [];
                 return (
                   <tr

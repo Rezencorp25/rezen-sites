@@ -53,6 +53,7 @@ export function calcDistribution(
 }
 
 export type KeywordContribution = {
+  keywordId: string;
   keyword: string;
   position: number;
   searchVolume: number;
@@ -72,6 +73,7 @@ export function decomposeContribution(
   const totalEarned = calcEstimatedTraffic(keywords);
   if (totalEarned === 0) {
     return keywords.map((kw) => ({
+      keywordId: kw.id,
       keyword: kw.keyword,
       position: kw.position,
       searchVolume: kw.searchVolume,
@@ -87,6 +89,7 @@ export function decomposeContribution(
       const adjustedCtr = adjustCtrForFeatures(baseCtr, kw.features);
       const estimatedClicks = adjustedCtr * kw.searchVolume;
       return {
+        keywordId: kw.id,
         keyword: kw.keyword,
         position: kw.position,
         searchVolume: kw.searchVolume,
