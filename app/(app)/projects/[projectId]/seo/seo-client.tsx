@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   ArrowDownRight,
+  ArrowRight,
   ArrowUpRight,
   Info,
   Loader2,
   RefreshCw,
   Search,
   Sparkles,
+  Target,
   TrendingUp,
 } from "lucide-react";
 import {
@@ -340,10 +343,22 @@ export default function SeoPageClient({ projectId }: { projectId: string }) {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl bg-surface-container-high p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-title-md font-semibold text-on-surface">
-              Distribuzione posizioni
-            </h2>
-            <span className="text-label-sm text-text-muted">{totalKw} keyword</span>
+            <div className="flex flex-col">
+              <h2 className="text-title-md font-semibold text-on-surface">
+                Distribuzione posizioni
+              </h2>
+              <span className="text-label-sm text-text-muted">
+                {totalKw} keyword
+              </span>
+            </div>
+            <Link
+              href={`/projects/${projectId}/seo/rank-tracking`}
+              className="flex items-center gap-1 text-label-sm text-molten-primary transition-colors hover:text-molten-primary/80"
+            >
+              <Target className="h-3.5 w-3.5" />
+              Rank tracking dettagliato
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
           <div className="flex flex-col gap-2">
             {distEntries.map((d) => (
