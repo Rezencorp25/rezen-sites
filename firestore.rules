@@ -79,6 +79,16 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // GEO Tracking snapshots (Sprint S6b.3).
+    // Path: projects/{id}/geo_snapshots/{YYYY-Www}__{queryId}
+    // - read: utente autenticato (in DOC 3: solo project member)
+    // - write: solo Admin SDK (Cloud Function runGeoTracking)
+    // - TTL 365gg via Firestore TTL policy su `createdAt`.
+    match /projects/{projectId}/geo_snapshots/{snapshotId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
     // ── Leads (Sprint S3 — Lead Pipeline interno) ──────────────────────
 
     // CRUD permesso a utenti autenticati.

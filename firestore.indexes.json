@@ -17,20 +17,6 @@
       ]
     },
     {
-      "collectionGroup": "audits",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "_audit",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "rank_snapshots",
       "queryScope": "COLLECTION",
       "fields": [
@@ -53,6 +39,23 @@
         { "fieldPath": "date", "order": "DESCENDING" },
         { "fieldPath": "aeo.hasOpportunity", "order": "DESCENDING" },
         { "fieldPath": "aeo.opportunityScore", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "geo_snapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "queryId", "order": "ASCENDING" },
+        { "fieldPath": "weekIso", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "geo_snapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "weekIso", "order": "DESCENDING" },
+        { "fieldPath": "geo.hasOpportunity", "order": "DESCENDING" },
+        { "fieldPath": "geo.opportunityScore", "order": "DESCENDING" }
       ]
     }
   ],

@@ -14,6 +14,7 @@ initializeApp();
 // Scheduled
 export { probeHourly } from "./scheduled/probe";
 export { runRankAndAeoTracking } from "./scheduled/run-rank-and-aeo-tracking";
+export { runGeoTracking } from "./scheduled/run-geo-tracking";
 
 // Callable
 export { runSiteAudit } from "./callable/run-site-audit";

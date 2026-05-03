@@ -5,6 +5,7 @@ import {
   LineChart,
   AlertTriangle,
   Settings,
+  Globe,
   Inbox,
   Sparkles,
   Telescope,
@@ -73,6 +74,12 @@ export const PROJECT_NAV: NavItem[] = [
     href: (id) => `/projects/${id}/aeo`,
     icon: Sparkles,
     matchPath: "aeo",
+  },
+  {
+    label: "GEO",
+    href: (id) => `/projects/${id}/geo`,
+    icon: Globe,
+    matchPath: "geo",
   },
   {
     label: "Leads",
