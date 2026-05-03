@@ -62,10 +62,10 @@ export const PROJECT_NAV: NavItem[] = [
     matchPath: "analytics",
   },
   {
-    label: "SEO Research",
-    href: (id) => `/projects/${id}/seo-research`,
+    label: "SEO",
+    href: (id) => `/projects/${id}/seo`,
     icon: Telescope,
-    matchPath: "seo-research",
+    matchPath: "seo",
   },
   {
     label: "Leads",
