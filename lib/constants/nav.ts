@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Settings,
   Inbox,
+  Sparkles,
   Telescope,
   FileBarChart,
   ListTodo,
@@ -66,6 +67,12 @@ export const PROJECT_NAV: NavItem[] = [
     href: (id) => `/projects/${id}/seo`,
     icon: Telescope,
     matchPath: "seo",
+  },
+  {
+    label: "AEO",
+    href: (id) => `/projects/${id}/aeo`,
+    icon: Sparkles,
+    matchPath: "aeo",
   },
   {
     label: "Leads",

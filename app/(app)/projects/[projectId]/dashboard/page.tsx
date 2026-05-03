@@ -16,6 +16,7 @@ import { ActiveAlerts } from "@/components/dashboard/active-alerts";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { SiteAuditCard } from "@/components/dashboard/site-audit-card";
 import { SeoOverviewCard } from "@/components/dashboard/seo-overview-card";
+import { AeoScoreCard } from "@/components/dashboard/aeo-score-card";
 import { LeadsSummaryCard } from "@/components/dashboard/leads-summary-card";
 import { GradientButton } from "@/components/luminous/gradient-button";
 import { KPI_DEFINITIONS } from "@/lib/constants/kpi-definitions";
@@ -133,6 +134,7 @@ export default function DashboardPage({
             }
           />
           <SeoOverviewCard projectId={projectId} domain={project.domain} />
+          <AeoScoreCard projectId={projectId} domain={project.domain} />
           <LeadsSummaryCard projectId={projectId} />
           <ActiveAlerts alerts={alerts} projectId={projectId} />
           <QuickActions />
