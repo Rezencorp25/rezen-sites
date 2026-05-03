@@ -656,6 +656,63 @@ Flag controllato da Super Admin REZEN in Site Settings → Features.
 - 🟡 `npm run test:e2e` — pronto, richiede `npm run dev` in parallelo
 - 🟡 `cd functions && npm install && npm run build` — pronto, richiede prima install
 
+### Sprint S1.5 — Premium workspace UX — ✅ CHIUSO 2026-04-30
+
+**Branch**: `main` (no feature branch, merge diretto post-S0/S1)
+
+**Delivered**:
+- `components/app-shell.tsx` — sidebar slide-in/fade-out animata (cubic-bezier easeOutExpo, 500ms) all'ingresso/uscita progetto; sempre montata, no flicker
+- `components/quick-actions-fab.tsx` — FAB liquid-glass molten bottom-right su `/projects` con dropdown 6 azioni
+- `components/quick-actions-target-modal.tsx` — modal selezione progetto target post-azione
+- `lib/constants/quick-actions.ts` — 6 azioni rapide (new-page-ai, publish-pending, run-site-audit, new-task, add-lead, generate-report)
+
+**Bug fix collegati**:
+- `components/project-switcher.tsx` — wrap `DropdownMenuLabel` in `DropdownMenuGroup` (Base UI error #31 al click); inoltre nascosto switcher quando `!params.projectId` (era confondibile con menu profilo utente)
+- `proxy.ts` — gate auth sostituito al redirect incondizionato `/login → /projects` che rendeva la login irraggiungibile
+
+### Sprint S1.6 + S1.7 — Login premium — ✅ CHIUSO 2026-05-03
+
+**Branch**: `main`
+
+**Delivered**:
+- `app/(auth)/login/page.tsx` — split-screen layout (form sinistra + hero destra)
+- `components/reactbits/cubes.tsx` + `cubes.css` — vendored MIT da `DavidHDev/react-bits` (pattern copy-into-tree), `"use client"` aggiunto
+- Hero destro: griglia Cubes interattiva (GSAP tilt + idle auto-animate + click ripple) custom-branded molten orange + claim "The way you make websites is about to change forever"
+- Override responsive width al 88% del pannello + radial vignette per leggibilità
+
+**Pending**:
+- Verifica visuale finale di Francesco (browser MCP era down post-deploy)
+
+### Sprint S2 — Site Audit (Lighthouse PSI) — ✅ CHIUSO 2026-05-03
+
+**Branch**: `main`
+**Tempo effettivo**: ~1h vs 4gg stimati.
+
+**Delivered (backend)**:
+- `functions/src/audit/psi-types.ts` — shape normalizzata + weights health-score
+- `functions/src/audit/psi-client.ts` — wrapper PSI v5 + stub-mode hash-based deterministico
+- `functions/src/callable/run-site-audit.ts` — onCall europe-west1 (90s, 512MiB) auth-gated + rate-limit 10/h + persistenza `projects/{id}/audits` immutable + audit log
+- `functions/src/index.ts` — export `runSiteAudit`
+- bump `firebase-functions ^7.2.5` (^6.7.0 unpublished)
+
+**Delivered (frontend)**:
+- `lib/audit/audit-types.ts` — mirror client-side dei tipi server
+- `lib/audit/audit-stub.ts` — port stub generator (prototype senza Firebase auth)
+- `lib/stores/audits-store.ts` — Zustand persistence per-project (max 50)
+- `lib/audit/use-site-audit.ts` — hook orchestratore (toast + delay sim + persist)
+- `components/dashboard/site-audit-card.tsx` — card riepilogo con health ring + score breakdown + CTA
+- `app/(app)/projects/[projectId]/dashboard/site-audit/page.tsx` — modulo completo: 4 score rings, CWV table, recharts trend, top-10 raccomandazioni, history list, empty state, switch mobile/desktop
+
+**Acceptance**:
+- ✅ Click "Lancia audit" → audit completa con metriche realistiche (~2s simulati)
+- ✅ Storico ultimo 30gg renderizzato come trend chart
+- ✅ Rules immutable già coperte da S0
+- 🟡 Verifica live in browser MCP (server disconnesso post-S1.7, da rifare)
+
+**Pending**:
+- PSI_API_KEY in Secret Manager → switch automatico da stub a live PSI quando configurato
+- Scheduled weekly per progetto (rinviato: il modello richiede prima la lista progetti su Firestore reale, non Zustand)
+
 **Nessun deploy eseguito**: tutto rimane locale, branch `feature/v2-foundation-uxquickwins` non mergeato. Compliance Playbook §7.2 — qualsiasi `firebase deploy` richiederà nuova FASE 0.
 
 ---
