@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight, Users } from "lucide-react";
 import { useLeadsStore } from "@/lib/stores/leads-store";
@@ -8,7 +9,11 @@ import type { LeadStatus } from "@/lib/leads/types";
 import { cn } from "@/lib/utils";
 
 export function LeadsSummaryCard({ projectId }: { projectId: string }) {
-  const leads = useLeadsStore((s) => s.list(projectId));
+  const allLeads = useLeadsStore((s) => s.byProject[projectId]);
+  const leads = useMemo(
+    () => (allLeads ?? []).filter((l) => !l.deleted),
+    [allLeads],
+  );
   const counts = LEAD_STATUSES.reduce(
     (acc, s) => {
       acc[s] = leads.filter((l) => l.status === s).length;

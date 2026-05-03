@@ -27,8 +27,13 @@ export default function LeadsPageClient({
   projectId: string;
 }) {
   const project = useProjectsStore((s) => s.getById(projectId));
-  const leads = useLeadsStore((s) => s.list(projectId));
+  const allLeads = useLeadsStore((s) => s.byProject[projectId]);
   const setStatus = useLeadsStore((s) => s.setStatus);
+
+  const leads = useMemo(
+    () => (allLeads ?? []).filter((l) => !l.deleted),
+    [allLeads],
+  );
 
   const search = useSearchParams();
   const [openNew, setOpenNew] = useState(false);
