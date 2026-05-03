@@ -19,3 +19,4 @@ export { runSiteAudit } from "./callable/run-site-audit";
 
 // Triggers
 export { leadOnFormSubmitted } from "./triggers/lead-on-form-submitted";
+export { leadOnStatusChanged } from "./triggers/lead-on-status-changed";

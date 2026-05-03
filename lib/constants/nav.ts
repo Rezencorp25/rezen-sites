@@ -10,6 +10,7 @@ import {
   FileBarChart,
   ListTodo,
   FolderKanban,
+  Users,
 } from "lucide-react";
 
 export type NavItem = {
@@ -65,6 +66,12 @@ export const PROJECT_NAV: NavItem[] = [
     href: (id) => `/projects/${id}/seo-research`,
     icon: Telescope,
     matchPath: "seo-research",
+  },
+  {
+    label: "Leads",
+    href: (id) => `/projects/${id}/leads`,
+    icon: Users,
+    matchPath: "leads",
   },
   {
     label: "Forms",

@@ -16,6 +16,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   adsense: "AdSense",
   "google-ads": "Google Ads",
   alerts: "Alerts",
+  leads: "Leads",
   forms: "Forms",
   settings: "Settings",
   general: "Generali",

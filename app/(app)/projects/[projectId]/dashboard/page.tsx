@@ -15,6 +15,7 @@ import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { ActiveAlerts } from "@/components/dashboard/active-alerts";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { SiteAuditCard } from "@/components/dashboard/site-audit-card";
+import { LeadsSummaryCard } from "@/components/dashboard/leads-summary-card";
 import { GradientButton } from "@/components/luminous/gradient-button";
 import { KPI_DEFINITIONS } from "@/lib/constants/kpi-definitions";
 import { toast } from "sonner";
@@ -130,6 +131,7 @@ export default function DashboardPage({
                 : `https://${project.domain}`
             }
           />
+          <LeadsSummaryCard projectId={projectId} />
           <ActiveAlerts alerts={alerts} projectId={projectId} />
           <QuickActions />
         </div>

@@ -55,7 +55,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
     label: "Aggiungi lead manuale",
     description: "Inserisci un contatto fuori dai form.",
     icon: Inbox,
-    targetRoute: (id) => `/projects/${id}/forms?action=add-lead`,
+    targetRoute: (id) => `/projects/${id}/leads?action=new`,
   },
   {
     id: "generate-report",
