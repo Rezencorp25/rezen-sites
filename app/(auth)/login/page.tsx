@@ -116,7 +116,7 @@ export default function LoginPage() {
       </section>
 
       <aside className="relative hidden overflow-hidden bg-black lg:block">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 flex items-center justify-center [&_.default-animation]:!w-[88%]">
           <Cubes
             gridSize={9}
             maxAngle={55}
@@ -130,12 +130,18 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-12">
-          <div className="max-w-xl text-center">
-            <p className="mb-4 text-label-md uppercase tracking-[0.45em] text-white/40">
+        <div
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-12"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, transparent 70%)",
+          }}
+        >
+          <div className="max-w-2xl text-center">
+            <p className="mb-4 text-label-md uppercase tracking-[0.45em] text-white/50">
               VerumFlow · REZEN
             </p>
-            <h2 className="text-balance text-display-md font-bold leading-[1.05] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
+            <h2 className="text-balance text-4xl font-bold leading-[1.05] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] xl:text-5xl 2xl:text-6xl">
               The way you make websites is about to change forever
             </h2>
           </div>
