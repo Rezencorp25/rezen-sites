@@ -7,9 +7,7 @@ import { Flame, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GradientButton } from "@/components/luminous/gradient-button";
-
-const V_DEPTH_LAYERS = 6;
-const V_DEPTH_STEP_PX = 6;
+import Cubes from "@/components/reactbits/cubes";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -117,31 +115,29 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <aside
-        aria-hidden
-        className="relative hidden overflow-hidden bg-black lg:block"
-        style={{ perspective: "1400px" }}
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="verumflow-v-spin relative h-[68%] w-[68%] max-h-[640px] max-w-[640px]">
-            {Array.from({ length: V_DEPTH_LAYERS }).map((_, i) => {
-              const offset = (i - (V_DEPTH_LAYERS - 1) / 2) * V_DEPTH_STEP_PX;
-              const isFront = i === V_DEPTH_LAYERS - 1;
-              const isBack = i === 0;
-              const opacity = isFront ? 1 : isBack ? 0.6 : 0.35;
-              return (
-                <div
-                  key={i}
-                  className="absolute inset-0 bg-center bg-no-repeat bg-contain"
-                  style={{
-                    backgroundImage: "url('/login-hero-v.png')",
-                    transform: `translateZ(${offset}px)`,
-                    opacity,
-                    filter: isFront ? undefined : "blur(0.4px)",
-                  }}
-                />
-              );
-            })}
+      <aside className="relative hidden overflow-hidden bg-black lg:block">
+        <div className="absolute inset-0">
+          <Cubes
+            gridSize={9}
+            maxAngle={55}
+            radius={4}
+            borderStyle="1px solid rgba(255,133,51,0.35)"
+            faceColor="#0a0a0a"
+            rippleColor="#ff8533"
+            rippleSpeed={1.6}
+            autoAnimate
+            rippleOnClick
+          />
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-12">
+          <div className="max-w-xl text-center">
+            <p className="mb-4 text-label-md uppercase tracking-[0.45em] text-white/40">
+              VerumFlow · REZEN
+            </p>
+            <h2 className="text-balance text-display-md font-bold leading-[1.05] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
+              The way you make websites is about to change forever
+            </h2>
           </div>
         </div>
       </aside>
