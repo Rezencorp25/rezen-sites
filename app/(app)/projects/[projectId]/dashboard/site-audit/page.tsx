@@ -4,13 +4,18 @@ import { use } from "react";
 import Link from "next/link";
 import {
   Activity,
+  AlertCircle,
+  AlertTriangle,
   ArrowLeft,
-  ChevronRight,
   Clock,
+  Info,
   Loader2,
   Sparkles,
   TriangleAlert,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -30,10 +35,25 @@ import {
 } from "@/lib/audit/audit-types";
 import { cn } from "@/lib/utils";
 
-const SEV_STYLE: Record<AuditSeverity, string> = {
-  critical: "bg-rose-500/10 text-rose-400 ring-rose-500/30",
-  warning: "bg-amber-500/10 text-amber-400 ring-amber-500/30",
-  info: "bg-sky-500/10 text-sky-400 ring-sky-500/30",
+const SEV_META: Record<
+  AuditSeverity,
+  { label: string; tone: string; icon: LucideIcon }
+> = {
+  critical: {
+    label: "Critico",
+    tone: "text-rose-400",
+    icon: AlertCircle,
+  },
+  warning: {
+    label: "Warning",
+    tone: "text-amber-400",
+    icon: AlertTriangle,
+  },
+  info: {
+    label: "Info",
+    tone: "text-sky-400",
+    icon: Info,
+  },
 };
 
 const BUCKET_COLOR = {
@@ -94,7 +114,7 @@ export default function SiteAuditPage({
             {running ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="h-4 w-4" />
+              <Monitor className="h-4 w-4" />
             )}
             Desktop
           </button>
@@ -107,7 +127,7 @@ export default function SiteAuditPage({
             {running ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="h-4 w-4" />
+              <Smartphone className="h-4 w-4" />
             )}
             Mobile
           </button>
@@ -350,85 +370,134 @@ function HistoryChart({ audits }: { audits: SiteAuditDoc[] }) {
 }
 
 function OpportunitiesPanel({ latest }: { latest: SiteAuditDoc }) {
+  const counts = latest.opportunities.reduce(
+    (acc, o) => {
+      acc[o.severity] += 1;
+      return acc;
+    },
+    { critical: 0, warning: 0, info: 0 } as Record<AuditSeverity, number>,
+  );
+
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-surface-container-high p-6 lg:col-span-2">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4 rounded-xl bg-surface-container-high p-6 lg:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-title-md font-semibold text-on-surface">
           Raccomandazioni
         </h3>
-        <span className="text-label-sm text-text-muted">
-          Top {latest.opportunities.length}
-        </span>
+        <div className="flex items-center gap-3 text-label-sm">
+          {(Object.keys(counts) as AuditSeverity[])
+            .filter((s) => counts[s] > 0)
+            .map((s) => {
+              const { icon: Icon, tone, label } = SEV_META[s];
+              return (
+                <span
+                  key={s}
+                  className={cn("flex items-center gap-1.5", tone)}
+                >
+                  <Icon className="h-3 w-3" />
+                  <span className="font-semibold">{counts[s]}</span>
+                  <span className="text-text-muted">{label}</span>
+                </span>
+              );
+            })}
+        </div>
       </div>
-      <div className="flex flex-col gap-2">
-        {latest.opportunities.map((opp) => (
-          <div
-            key={opp.id}
-            className="flex items-start gap-3 rounded-lg bg-surface-container-low px-4 py-3"
-          >
-            <span
-              className={cn(
-                "mt-0.5 flex h-6 items-center justify-center rounded-full px-2 ring-1 text-label-sm font-semibold uppercase tracking-widest",
-                SEV_STYLE[opp.severity],
-              )}
-            >
-              {opp.severity}
-            </span>
-            <div className="flex flex-1 flex-col gap-0.5">
-              <span className="text-body-sm font-semibold text-on-surface">
-                {opp.title}
-              </span>
-              <span className="text-label-sm text-secondary-text">
-                {opp.description}
-              </span>
-            </div>
-            {opp.estimatedSavingsMs !== undefined && (
-              <span className="flex items-center gap-1 text-label-sm text-text-muted">
-                <Clock className="h-3 w-3" />-{opp.estimatedSavingsMs}ms
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function HistoryList({ audits }: { audits: SiteAuditDoc[] }) {
-  return (
-    <div className="flex flex-col gap-2 rounded-xl bg-surface-container-high p-6 lg:col-span-1">
-      <h3 className="text-title-md font-semibold text-on-surface">Storico</h3>
-      <div className="flex flex-col gap-1">
-        {audits.map((a) => {
-          const bucket = healthBucket(a.healthScore);
+      <div className="flex flex-col gap-1.5">
+        {latest.opportunities.map((opp) => {
+          const { icon: Icon, tone } = SEV_META[opp.severity];
           return (
             <div
-              key={a.id}
-              className="flex items-center gap-3 rounded-md bg-surface-container-low px-3 py-2"
+              key={opp.id}
+              className="group flex items-start gap-3 rounded-lg bg-surface-container-low px-4 py-3 hover:bg-surface-container-lowest"
             >
-              <span
-                className={cn(
-                  "text-title-md font-bold",
-                  BUCKET_COLOR[bucket],
-                )}
-              >
-                {a.healthScore}
-              </span>
-              <div className="flex flex-1 flex-col leading-tight">
-                <span className="text-label-md text-on-surface">
-                  {a.strategy} · {a.createdAt.toLocaleDateString("it-IT")}
+              <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", tone)} />
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-body-sm font-semibold text-on-surface">
+                  {opp.title}
                 </span>
-                <span className="text-label-sm text-text-muted">
-                  {a.opportunities.length} raccomandazioni · {a.source}
+                <span className="text-label-sm leading-relaxed text-secondary-text">
+                  {opp.description}
                 </span>
               </div>
-              <ChevronRight className="h-3 w-3 text-text-muted" />
+              {opp.estimatedSavingsMs !== undefined && (
+                <span className="flex shrink-0 items-center gap-1 rounded-md bg-surface-container px-2 py-0.5 font-mono text-label-sm text-text-muted">
+                  <Clock className="h-3 w-3" />
+                  −{opp.estimatedSavingsMs}ms
+                </span>
+              )}
             </div>
           );
         })}
       </div>
     </div>
   );
+}
+
+function HistoryList({ audits }: { audits: SiteAuditDoc[] }) {
+  const currentId = audits[0]?.id;
+  return (
+    <div className="flex flex-col gap-3 rounded-xl bg-surface-container-high p-6 lg:col-span-1">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-title-md font-semibold text-on-surface">Storico</h3>
+        <span className="text-label-sm text-text-muted">{audits.length}</span>
+      </div>
+      <div className="flex flex-col gap-1">
+        {audits.map((a) => {
+          const bucket = healthBucket(a.healthScore);
+          const isCurrent = a.id === currentId;
+          return (
+            <div
+              key={a.id}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors",
+                isCurrent
+                  ? "bg-molten-primary/10 ring-1 ring-molten-primary/25"
+                  : "bg-surface-container-low hover:bg-surface-container-lowest",
+              )}
+            >
+              <span
+                className={cn(
+                  "text-title-md font-bold tabular-nums",
+                  BUCKET_COLOR[bucket],
+                )}
+              >
+                {a.healthScore}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                <span className="flex items-center gap-1.5 text-label-md text-on-surface">
+                  <span className="capitalize">{a.strategy}</span>
+                  <span className="text-text-muted">·</span>
+                  <span className="font-mono">{formatDateTime(a.createdAt)}</span>
+                </span>
+                <span className="text-label-sm text-text-muted">
+                  {a.opportunities.length} raccomandazioni
+                  {a.source === "psi-stub" && (
+                    <span className="ml-1.5 rounded-sm bg-surface-container px-1 py-0.5 font-mono text-[10px] uppercase text-text-muted">
+                      stub
+                    </span>
+                  )}
+                </span>
+              </div>
+              {isCurrent && (
+                <span className="rounded-full bg-molten-primary/20 px-2 py-0.5 text-label-sm font-semibold uppercase tracking-widest text-molten-primary">
+                  in vista
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function formatDateTime(d: Date): string {
+  const date = d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
+  const time = d.toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${date} ${time}`;
 }
 
 function EmptyState({
