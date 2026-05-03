@@ -29,6 +29,22 @@
       "fields": [
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "rank_snapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "keywordId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rank_snapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "DESCENDING" },
+        { "fieldPath": "position", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

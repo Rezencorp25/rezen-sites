@@ -13,6 +13,7 @@ initializeApp();
 
 // Scheduled
 export { probeHourly } from "./scheduled/probe";
+export { runRankTracking } from "./scheduled/run-rank-tracking";
 
 // Callable
 export { runSiteAudit } from "./callable/run-site-audit";
