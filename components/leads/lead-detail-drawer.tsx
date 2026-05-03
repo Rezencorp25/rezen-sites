@@ -27,7 +27,7 @@ import { toast } from "sonner";
 const ACTOR = { uid: "demo-user", name: "Admin" };
 
 export function LeadDetailDrawer({
-  lead,
+  lead: initialLead,
   onClose,
 }: {
   lead: Lead | null;
@@ -40,13 +40,22 @@ export function LeadDetailDrawer({
   const removeTag = useLeadsStore((s) => s.removeTag);
   const softDelete = useLeadsStore((s) => s.softDelete);
 
+  // Resta sempre allineato al lead vivo nello store, così le modifiche
+  // (status/note/tag/value) si vedono subito.
+  const liveLead = useLeadsStore((s) =>
+    initialLead
+      ? s.byProject[initialLead.projectId]?.find((l) => l.id === initialLead.id)
+      : undefined,
+  );
+  const lead = liveLead ?? initialLead;
+
   const [tab, setTab] = useState<"details" | "notes" | "history">("details");
   const [draftNote, setDraftNote] = useState("");
   const [draftTag, setDraftTag] = useState("");
   const [valueInput, setValueInput] = useState<string>("");
 
   if (!lead) return null;
-  const open = lead !== null;
+  const open = initialLead !== null;
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
