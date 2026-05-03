@@ -45,6 +45,15 @@
         { "fieldPath": "date", "order": "DESCENDING" },
         { "fieldPath": "position", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "rank_snapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "DESCENDING" },
+        { "fieldPath": "aeo.hasOpportunity", "order": "DESCENDING" },
+        { "fieldPath": "aeo.opportunityScore", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

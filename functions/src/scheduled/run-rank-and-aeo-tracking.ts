@@ -7,15 +7,19 @@ import {
 } from "../utils/secrets";
 
 /**
- * Rank Tracking — scheduled daily 03:00 Europe/Rome.
+ * Rank + AEO Tracking — scheduled daily 03:00 Europe/Rome.
  *
  * Per ogni progetto con feature-flag `rank_tracking` abilitato:
  *   1. Legge il keyword set da `projects/{id}/seo_keywords/{keywordId}`
  *      (popolato dall'onboarding wizard S6d).
  *   2. Per ogni keyword chiama `serp/google/organic/live/regular` (DataForSEO).
- *   3. Estrae posizione cliente + presenza SERP feature + top 10 risultati.
+ *   3. Estrae:
+ *      - posizione cliente + presenza SERP feature + top 10 (modulo /seo S5)
+ *      - flags AEO denormalizzati + opportunity score (modulo /aeo S6)
  *   4. Persiste in `projects/{id}/rank_snapshots/{date}__{keywordId}`
  *      (immutable da Firestore rules, TTL 90gg su `createdAt`).
+ *
+ * Una sola chiamata SERP popola entrambi i moduli (brief §S6: costo marginale zero).
  *
  * Stub-mode di default — attiva live mode quando i secrets DATAFORSEO_LOGIN/
  * DATAFORSEO_PASSWORD sono presenti AND la EU residency è confermata
@@ -23,7 +27,7 @@ import {
  *
  * Costo target a regime: ~$1.80/cliente/mese per 50kw (brief §5).
  *
- * NOTA S5.3: TTL 90gg sulla collection `rank_snapshots` da configurare
+ * NOTA TTL: TTL 90gg sulla collection `rank_snapshots` da configurare
  * post-deploy via:
  *   gcloud firestore fields ttls update createdAt \
  *     --collection-group=rank_snapshots \
@@ -57,6 +61,30 @@ type SerpFeatureFlags = {
   adsPack?: boolean;
 };
 
+/**
+ * Vista AEO denormalizzata sullo snapshot. Permette query top-opportunità
+ * sull'intero progetto con singolo composite index, senza dover ri-leggere
+ * tutti gli snapshot e ricomputare lato client.
+ *
+ * Mirror di `lib/seo/aeo-types.ts` (lato client) — keep in sync.
+ */
+type AeoFields = {
+  /** Una qualsiasi SERP feature (AIO/Snippet/PAA/KP) presente in SERP */
+  hasFeature: boolean;
+  /** Cliente possiede AIO o Featured Snippet */
+  hasOwnership: boolean;
+  /** True se hasFeature && !hasOwnership su AIO o Snippet (worth optimizing) */
+  hasOpportunity: boolean;
+  /**
+   * Score = searchVolume × winProbability(feature, position)
+   * Per kw con 2 opportunità (AIO + Snippet entrambe non-owned) prendiamo il max.
+   * 0 se hasOpportunity = false. Ordinabile per "top opportunità" UI.
+   */
+  opportunityScore: number;
+  /** Quale feature ha generato lo score (per drill UI). null se nessuna. */
+  primaryFeature: "aiOverview" | "featuredSnippet" | null;
+};
+
 type RankSnapshotDoc = {
   keywordId: string;
   keyword: string;
@@ -72,11 +100,12 @@ type RankSnapshotDoc = {
     title: string;
     isOwner: boolean;
   }>;
+  aeo: AeoFields;
   source: "stub" | "dataforseo";
   createdAt: FirebaseFirestore.FieldValue;
 };
 
-export const runRankTracking = onSchedule(
+export const runRankAndAeoTracking = onSchedule(
   {
     schedule: "0 3 * * *",
     timeZone: "Europe/Rome",
@@ -95,7 +124,7 @@ export const runRankTracking = onSchedule(
       : false;
 
     if (!globalEnabled) {
-      logger.info("runRankTracking:skipped", {
+      logger.info("runRankAndAeoTracking:skipped", {
         reason: "feature flag _config/features.rank_tracking is OFF",
         date: isoDate,
       });
@@ -106,7 +135,7 @@ export const runRankTracking = onSchedule(
     const dfs = liveMode ? await loadDataForSeoClient() : null;
 
     const projects = await listEnabledProjects(db);
-    logger.info("runRankTracking:start", {
+    logger.info("runRankAndAeoTracking:start", {
       date: isoDate,
       projectCount: projects.length,
       mode: liveMode ? "live" : "stub",
@@ -118,7 +147,7 @@ export const runRankTracking = onSchedule(
     for (const project of projects) {
       const keywords = await listProjectKeywords(db, project.projectId);
       if (keywords.length === 0) {
-        logger.info("runRankTracking:project:noKeywords", {
+        logger.info("runRankAndAeoTracking:project:noKeywords", {
           projectId: project.projectId,
         });
         continue;
@@ -139,7 +168,7 @@ export const runRankTracking = onSchedule(
           totalKeywords++;
         } catch (err) {
           totalErrors++;
-          logger.error("runRankTracking:keywordError", {
+          logger.error("runRankAndAeoTracking:keywordError", {
             projectId: project.projectId,
             keywordId: kw.id,
             error: (err as Error).message,
@@ -148,7 +177,7 @@ export const runRankTracking = onSchedule(
       }
     }
 
-    logger.info("runRankTracking:done", {
+    logger.info("runRankAndAeoTracking:done", {
       date: isoDate,
       keywords: totalKeywords,
       errors: totalErrors,
@@ -180,7 +209,7 @@ async function resolveLiveMode(
  * non porta dentro le dipendenze.
  */
 async function loadDataForSeoClient(): Promise<null> {
-  logger.warn("runRankTracking:loadDataForSeoClient", {
+  logger.warn("runRankAndAeoTracking:loadDataForSeoClient", {
     msg: "live mode requested but DataForSEO client wrapper not bundled in functions/ — falling back to stub",
   });
   return null;
@@ -234,7 +263,74 @@ async function fetchSnapshot(input: {
   }
   // S5.3-bis: chiamata live a serp/google/organic/live/regular.
   // Per ora il loader ritorna sempre null → mai raggiunto.
+  // Quando implementato:
+  //   - parse posizione cliente + features (deriva aiOverview/featuredSnippet/paa
+  //     da items[].type)
+  //   - chiama computeAeoFields(features, position, searchVolume) per popolare aeo
   throw new Error("live mode not implemented yet");
+}
+
+/**
+ * Probability euristica posizione-based di vincere una SERP feature.
+ * Mirror di `lib/seo/aeo-score.ts:winProbability` (lato client) — keep in sync.
+ */
+function winProbability(
+  feature: "aiOverview" | "featuredSnippet",
+  position: number,
+): number {
+  if (position === 0) return feature === "aiOverview" ? 0.05 : 0;
+  if (position <= 3) return feature === "aiOverview" ? 0.65 : 0.85;
+  if (position <= 10) return feature === "aiOverview" ? 0.4 : 0.45;
+  if (position <= 20) return feature === "aiOverview" ? 0.18 : 0.1;
+  return feature === "aiOverview" ? 0.05 : 0.02;
+}
+
+function computeAeoFields(
+  features: SerpFeatureFlags,
+  position: number,
+  searchVolume: number,
+): AeoFields {
+  const hasFeature = !!(
+    features.aiOverview ||
+    features.featuredSnippet ||
+    features.paa ||
+    features.knowledgePanel
+  );
+  const hasOwnership = !!(
+    features.aiOverviewOwner || features.featuredSnippetOwner
+  );
+
+  // Opportunità = SERP feature presente non owned (su AIO o Snippet, le 2
+  // feature attaccabili). PAA non rientra: ownership su PAA non è una metrica
+  // standard (PAA mostra sempre risposte da multiple fonti).
+  const aioOpp = !!features.aiOverview && !features.aiOverviewOwner;
+  const snipOpp = !!features.featuredSnippet && !features.featuredSnippetOwner;
+  const hasOpportunity = aioOpp || snipOpp;
+
+  let opportunityScore = 0;
+  let primaryFeature: AeoFields["primaryFeature"] = null;
+  if (aioOpp) {
+    const s = searchVolume * winProbability("aiOverview", position);
+    if (s > opportunityScore) {
+      opportunityScore = s;
+      primaryFeature = "aiOverview";
+    }
+  }
+  if (snipOpp) {
+    const s = searchVolume * winProbability("featuredSnippet", position);
+    if (s > opportunityScore) {
+      opportunityScore = s;
+      primaryFeature = "featuredSnippet";
+    }
+  }
+
+  return {
+    hasFeature,
+    hasOwnership,
+    hasOpportunity,
+    opportunityScore: Math.round(opportunityScore * 10) / 10,
+    primaryFeature,
+  };
 }
 
 function stubSnapshot(
@@ -257,6 +353,10 @@ function stubSnapshot(
   if (featRoll < 0.25) features.aiOverview = true;
   if (featRoll > 0.85) features.featuredSnippet = true;
   if (featRoll > 0.55 && featRoll < 0.7) features.paa = true;
+  if (rand() < 0.12 && (features.aiOverview || features.featuredSnippet)) {
+    if (features.aiOverview) features.aiOverviewOwner = true;
+    if (features.featuredSnippet) features.featuredSnippetOwner = true;
+  }
   if (rand() < 0.18) features.adsPack = true;
 
   const top10 = Array.from({ length: 10 }, (_, i) => {
@@ -272,15 +372,21 @@ function stubSnapshot(
     };
   });
 
+  const aeo = computeAeoFields(features, position, keyword.searchVolume);
+
   return {
     keywordId: keyword.id,
     keyword: keyword.keyword,
     date,
     projectId: project.projectId,
     position,
-    url: position > 0 ? `https://${project.domain}/${keyword.keyword.replace(/\s+/g, "-")}` : null,
+    url:
+      position > 0
+        ? `https://${project.domain}/${keyword.keyword.replace(/\s+/g, "-")}`
+        : null,
     features,
     top10,
+    aeo,
     source: "stub",
     createdAt: FieldValue.serverTimestamp(),
   };
