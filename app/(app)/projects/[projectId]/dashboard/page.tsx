@@ -18,6 +18,8 @@ import { SiteAuditCard } from "@/components/dashboard/site-audit-card";
 import { SeoOverviewCard } from "@/components/dashboard/seo-overview-card";
 import { AeoScoreCard } from "@/components/dashboard/aeo-score-card";
 import { LeadsSummaryCard } from "@/components/dashboard/leads-summary-card";
+import { TodayActionsWidget } from "@/components/widgets/today-actions-widget";
+import { RoasSummaryCard } from "@/components/cpl/roas-summary-card";
 import { GradientButton } from "@/components/luminous/gradient-button";
 import { KPI_DEFINITIONS } from "@/lib/constants/kpi-definitions";
 import { toast } from "sonner";
@@ -53,6 +55,10 @@ export default function DashboardPage({
           </p>
         </div>
       </div>
+
+      <RoasSummaryCard projectId={projectId} />
+      <div className="mb-2" />
+      <TodayActionsWidget projectId={projectId} maxItems={5} className="mb-6 mt-4" />
 
       <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard

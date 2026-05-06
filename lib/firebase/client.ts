@@ -11,6 +11,11 @@ import {
   connectFirestoreEmulator,
   type Firestore,
 } from "firebase/firestore";
+import {
+  getFunctions,
+  connectFunctionsEmulator,
+  type Functions,
+} from "firebase/functions";
 
 const config = {
   apiKey:
@@ -34,6 +39,7 @@ const config = {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let functions: Functions;
 let emulatorsConnected = false;
 
 export function getFirebase() {
@@ -45,6 +51,8 @@ export function getFirebase() {
 
   auth = getAuth(app);
   db = getFirestore(app);
+  // Cloud Functions deployate in europe-west1 (S0 + tutti gli sprint).
+  functions = getFunctions(app, "europe-west1");
 
   if (
     typeof window !== "undefined" &&
@@ -56,11 +64,12 @@ export function getFirebase() {
         disableWarnings: true,
       });
       connectFirestoreEmulator(db, "127.0.0.1", 8080);
+      connectFunctionsEmulator(functions, "127.0.0.1", 5001);
       emulatorsConnected = true;
     } catch {
       // Already connected (HMR): ignore.
     }
   }
 
-  return { app, auth, db };
+  return { app, auth, db, functions };
 }

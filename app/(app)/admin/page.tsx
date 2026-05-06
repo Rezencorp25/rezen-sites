@@ -1,6 +1,7 @@
 "use client";
 
-import { Building, Lock, Coins, Plus, X } from "lucide-react";
+import Link from "next/link";
+import { Activity, ArrowUpRight, Building, Lock, Coins, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -43,6 +44,25 @@ export default function AdminPage() {
           Branding, SSO &amp; billing per tutto il workspace.
         </p>
       </div>
+
+      <Link
+        href="/admin/system-health"
+        className="mb-5 flex items-center justify-between rounded-xl border border-sky-400/30 bg-sky-400/5 p-4 transition-colors hover:bg-sky-400/10"
+      >
+        <div className="flex items-center gap-3">
+          <Activity className="h-4 w-4 text-sky-300" />
+          <div>
+            <p className="text-body-md font-semibold text-on-surface">
+              System health & observability
+            </p>
+            <p className="text-label-md text-text-muted">
+              Stato CF schedulate · integrazioni attive · costi LLM MTD ·
+              counters platform-wide
+            </p>
+          </div>
+        </div>
+        <ArrowUpRight className="h-4 w-4 text-text-muted" />
+      </Link>
 
       <section className="mb-5 rounded-xl bg-surface-container-high p-6">
         <h2 className="mb-4 text-title-md font-semibold text-on-surface">

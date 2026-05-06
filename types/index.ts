@@ -1,6 +1,42 @@
 import type { Data as PuckData } from "@measured/puck";
+import type { IntegrationProviderId } from "@/lib/integrations/providers";
 
 export type ProjectStatus = "draft" | "staging" | "production";
+
+/**
+ * S13 — Self-Service Integrations metadata.
+ *
+ * Mai contiene il valore della chiave (quello sta in Secret Manager).
+ * Solo metadata sicuri da esporre via Firestore: stato + last4 + audit.
+ */
+export type IntegrationStatus = "active" | "revoked" | "error";
+
+export type IntegrationMetadata = {
+  /** Provider configurato. */
+  provider: IntegrationProviderId;
+  /** Ultimi 4 caratteri della chiave/token primario (UI display only). */
+  last4: string;
+  /** Stato corrente. */
+  status: IntegrationStatus;
+  /** Quando il test connection è andato a buon fine l'ultima volta. */
+  verifiedAt: Date | null;
+  /** Ultimo errore test connection (se status=error). */
+  lastError?: string;
+  /** Timestamp ultimo update metadata. */
+  updatedAt: Date;
+  /** UID utente che ha fatto l'ultimo set/test (audit). */
+  configuredBy: string;
+};
+
+/**
+ * Per-project override flag. Se useOverride=true, le CF leggono Secret
+ * `proj-{projectId}-{provider}`; altrimenti `ws-{workspaceId}-{provider}`.
+ */
+export type ProjectIntegrationOverride = {
+  useOverride: boolean;
+  /** Metadata override valido solo se useOverride=true. */
+  metadata?: IntegrationMetadata;
+};
 
 export type Project = {
   id: string;
@@ -19,6 +55,7 @@ export type Project = {
     seoScore: number; // 0-100
   };
   integrations: {
+    /** Pre-S13 legacy (Pixel/measurement IDs front-end embed only). */
     googleAnalytics?: { measurementId: string; verified: boolean };
     metaPixel?: { pixelId: string; verified: boolean };
     googleAdsense?: { publisherId: string; verified: boolean };
@@ -27,8 +64,44 @@ export type Project = {
       label: string;
       verified: boolean;
     };
+    metaAds?: {
+      businessAccountId: string;
+      adAccountId: string;
+      accessTokenLast4: string;
+      verified: boolean;
+    };
+    /**
+     * S13 — Self-Service Integrations override per-project.
+     * Default: ereditate da workspace. Se override=true → CF usa secret
+     * `proj-{projectId}-{providerId}` invece di `ws-{wsId}-{providerId}`.
+     */
+    apiOverrides?: Partial<
+      Record<IntegrationProviderId, ProjectIntegrationOverride>
+    >;
+  };
+  /**
+   * S13 — Workspace di appartenenza. Default "default" (singleton oggi).
+   * Multi-workspace future: ogni progetto avrà workspaceId reale.
+   */
+  workspaceId?: string;
+  /**
+   * S8: branding white-label per Reports PDF mensili. Hardcoded da settings.
+   * Se omesso, fallback ai colori REZEN default.
+   */
+  branding?: {
+    logoUrl: string;
+    primaryColor: string;
   };
 };
+
+/**
+ * S13 — Workspace integrations doc Firestore.
+ * Path: `workspaces/{workspaceId}/integrations/{providerId}`
+ *
+ * Contiene SOLO metadata. Il valore reale del secret sta in Secret Manager
+ * con resource name `ws-{workspaceId}-{providerId}`.
+ */
+export type WorkspaceIntegration = IntegrationMetadata;
 
 export type PageStatus = "draft" | "published";
 
@@ -167,6 +240,17 @@ export type Version = {
 
 export type AlertSeverity = "critical" | "warning" | "info" | "ok";
 
+/**
+ * S12: identificativo handler auto-fix. Mappato in lib/alerts/auto-fixers.ts.
+ * Quando alert.fixAction === "auto", il sistema può applicare una correzione
+ * client-side (modifica store) senza intervento umano.
+ */
+export type AlertAutoFixId =
+  | "set-meta-title-from-page-title"
+  | "generate-meta-description-fallback"
+  | "set-default-og-image"
+  | "enable-consent-banner";
+
 export type Alert = {
   id: string;
   projectId: string;
@@ -176,6 +260,12 @@ export type Alert = {
   page?: string;
   createdAt: Date;
   acknowledged: boolean;
+  /** S12: kind of fix supported. "auto" = sistema può risolverlo. "manual" = serve intervento umano. */
+  fixAction: "auto" | "manual";
+  /** S12: handler id quando fixAction === "auto". */
+  fixActionId?: AlertAutoFixId;
+  /** S12: pageId target per fix che modificano una specifica Page. */
+  fixPageId?: string;
 };
 
 export type AdSenseRevenue = {

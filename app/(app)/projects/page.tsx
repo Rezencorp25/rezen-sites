@@ -5,10 +5,12 @@ import { useProjectsStore } from "@/lib/stores/projects-store";
 import { NewProjectDialog } from "@/components/projects/new-project-dialog";
 import { ProjectCard } from "@/components/projects/project-card";
 import { QuickActionsFab } from "@/components/quick-actions-fab";
+import { TodayActionsWidget } from "@/components/widgets/today-actions-widget";
 import { Plus, TrendingUp } from "lucide-react";
 
 export default function ProjectsListPage() {
   const projects = useProjectsStore((s) => s.projects);
+  const projectIds = useMemo(() => projects.map((p) => p.id), [projects]);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -26,6 +28,14 @@ export default function ProjectsListPage() {
           </p>
         </div>
       </div>
+
+      {projectIds.length > 0 && (
+        <TodayActionsWidget
+          projectIds={projectIds}
+          maxItems={10}
+          className="mb-6"
+        />
+      )}
 
       <BenchmarkPanel />
 

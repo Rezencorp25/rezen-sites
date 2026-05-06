@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ShieldAlert } from "lucide-react";
+import { ArrowRight, ShieldAlert, Wrench, Zap } from "lucide-react";
 import { SeverityPill } from "@/components/luminous/status-pill";
+import { AlertFixDialog } from "@/components/alerts/fix-dialog";
 import type { Alert } from "@/types";
+import { cn } from "@/lib/utils";
 
 export function ActiveAlerts({
   alerts,
@@ -14,6 +17,7 @@ export function ActiveAlerts({
 }) {
   const visible = alerts.slice(0, 3);
   const critical = alerts.filter((a) => a.severity === "critical").length;
+  const [fixOpen, setFixOpen] = useState<Alert | null>(null);
 
   return (
     <div className="flex flex-col rounded-xl bg-surface-container-high">
@@ -54,7 +58,32 @@ export function ActiveAlerts({
                   </p>
                 ) : null}
               </div>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-text-muted" />
+              {a.severity !== "ok" ? (
+                <button
+                  type="button"
+                  onClick={() => setFixOpen(a)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-label-sm font-medium transition-colors",
+                    a.fixAction === "auto"
+                      ? "bg-emerald-400/15 text-emerald-300 hover:bg-emerald-400/25"
+                      : "bg-molten-primary/15 text-molten-primary hover:bg-molten-primary/25",
+                  )}
+                  title={
+                    a.fixAction === "auto"
+                      ? "Risolvibile automaticamente"
+                      : "Crea task per intervento"
+                  }
+                >
+                  {a.fixAction === "auto" ? (
+                    <Zap className="h-3 w-3" />
+                  ) : (
+                    <Wrench className="h-3 w-3" />
+                  )}
+                  Fix
+                </button>
+              ) : (
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-text-muted" />
+              )}
             </li>
           ))
         )}
@@ -66,6 +95,12 @@ export function ActiveAlerts({
         Vedi tutti gli alert
         <ArrowRight className="h-3.5 w-3.5" />
       </Link>
+
+      <AlertFixDialog
+        open={!!fixOpen}
+        onClose={() => setFixOpen(null)}
+        alert={fixOpen}
+      />
     </div>
   );
 }

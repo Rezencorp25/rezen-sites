@@ -5,6 +5,7 @@ import {
   DATAFORSEO_LOGIN,
   DATAFORSEO_PASSWORD,
 } from "../utils/secrets";
+import { logActiveProviders } from "../integrations/resolve-secret";
 
 /**
  * Rank + AEO Tracking — scheduled daily 03:00 Europe/Rome.
@@ -145,6 +146,14 @@ export const runRankAndAeoTracking = onSchedule(
     let totalErrors = 0;
 
     for (const project of projects) {
+      // S13: log chiavi DataForSEO configurate via UI per questo project.
+      // Pronto per attivare live mode S13.1.5 (DataForSEO API).
+      await logActiveProviders(
+        project.projectId,
+        ["dataforseo"],
+        "runRankAndAeoTracking",
+      );
+
       const keywords = await listProjectKeywords(db, project.projectId);
       if (keywords.length === 0) {
         logger.info("runRankAndAeoTracking:project:noKeywords", {

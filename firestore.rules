@@ -73,10 +73,25 @@ service cloud.firestore {
     }
 
     // Keyword set per progetto (popolato da onboarding wizard S6d).
-    // Read da utente autenticato, write da Admin SDK.
+    // Read da utente autenticato; write da utente autenticato (l'onboarding scrive
+    // direttamente da client). DOC 3 stringerà a `isProjectMember(projectId)`.
     match /projects/{projectId}/seo_keywords/{keywordId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if false;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Competitor set per progetto (popolato da onboarding wizard S6d).
+    // Letto dalla CF runGeoTracking come pool reale invece del placeholder.
+    match /projects/{projectId}/competitors/{competitorId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Onboarding state singleton per progetto (popolato dal wizard S6d).
+    // Persiste step + draft + completedAt → permette resume parziale.
+    match /projects/{projectId}/onboarding/{stateId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
 
     // GEO Tracking snapshots (Sprint S6b.3).
@@ -85,6 +100,37 @@ service cloud.firestore {
     // - write: solo Admin SDK (Cloud Function runGeoTracking)
     // - TTL 365gg via Firestore TTL policy su `createdAt`.
     match /projects/{projectId}/geo_snapshots/{snapshotId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    // AI Search Health (Sprint S6c.3).
+    // Path: projects/{id}/ai_search_health/{YYYY-Www}__aish
+    // - read: utente autenticato (in DOC 3: solo project member)
+    // - write: solo Admin SDK (Cloud Function runAiSearchHealth)
+    // - TTL 365gg via Firestore TTL policy su `checkedAt`.
+    match /projects/{projectId}/ai_search_health/{snapshotId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    // Reports PDF mensili (Sprint S8).
+    // Path: projects/{id}/reports/{YYYY-MM}
+    // - read: utente autenticato (in DOC 3: solo project member)
+    // - write: solo Admin SDK (CF generateProjectReport / generateMonthlyReports)
+    match /projects/{projectId}/reports/{reportId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    // ── S13: Self-Service Integrations ─────────────────────────────────
+    //
+    // Workspace-level integrations doc.
+    // Path: workspaces/{workspaceId}/integrations/{providerId}
+    // - read: utente autenticato (DOC 3 stringerà a workspace member)
+    // - write: solo Admin SDK (callable setIntegration / revokeIntegration)
+    // Il valore reale del secret NON è qui — sta in Secret Manager (`ws-{wsId}-{provider}`).
+    match /workspaces/{workspaceId}/integrations/{providerId} {
       allow read: if isSignedIn();
       allow create, update, delete: if false;
     }

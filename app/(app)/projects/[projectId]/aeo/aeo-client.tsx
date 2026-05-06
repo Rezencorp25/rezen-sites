@@ -22,6 +22,7 @@ import { SerpFeaturesTable } from "@/components/aeo/serp-features-table";
 import { AeoTrendChart } from "@/components/aeo/aeo-trend-chart";
 import { AeoOpportunities } from "@/components/aeo/aeo-opportunities";
 import { SerpFeatureModal } from "@/components/aeo/serp-feature-modal";
+import { OnboardingIncompleteBanner } from "@/components/onboarding/onboarding-incomplete-banner";
 import { generateAeoDrill } from "@/lib/seo/aeo-stub";
 import type { AeoKeywordRow } from "@/lib/seo/aeo-types";
 import { cn } from "@/lib/utils";
@@ -143,6 +144,8 @@ export default function AeoPageClient({ projectId }: { projectId: string }) {
           Aggiorna snapshot
         </button>
       </header>
+
+      <OnboardingIncompleteBanner projectId={projectId} module="aeo" />
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         <div className="flex flex-col gap-2 rounded-xl bg-surface-container-high p-5">

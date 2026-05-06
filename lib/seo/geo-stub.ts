@@ -113,14 +113,47 @@ function generateMention(input: {
     cited.splice(rank - 1, 0, ownerDomain);
   }
 
+  // Citation rate stub: ~60% medio, biased per-LLM.
+  // Perplexity (search-grounded) cita più spesso con link; Claude/Gemini più
+  // spesso solo brand testuale. In live (S6c.2 backend) rilevato dall'API.
+  let isCitation: boolean | null = null;
+  let citedUrl: string | null = null;
+  if (mentioned) {
+    const citationBias =
+      llm === "perplexity" ? 0.85 : llm === "chatgpt" ? 0.55 : 0.45;
+    isCitation = rand() < citationBias;
+    if (isCitation) {
+      citedUrl = `https://${ownerDomain}${
+        STUB_CITED_PATHS[Math.floor(rand() * STUB_CITED_PATHS.length)]
+      }`;
+    }
+  }
+
   return {
     llm,
     mentioned,
     rank,
     sentiment: mentioned ? pickSentiment(rand) : null,
     citedDomains: cited,
+    isCitation,
+    citedUrl,
   };
 }
+
+/**
+ * Pool di path stub citati. In live (S6c.2 backend) verranno estratti dalla
+ * response DataForSEO LLM Mentions (campo `cited_urls[]` per LLM).
+ */
+const STUB_CITED_PATHS = [
+  "/",
+  "/servizi",
+  "/blog/cms-ai-driven-2026",
+  "/blog/seo-ticino-guida",
+  "/case-study/agenzia-web-svizzera",
+  "/pricing",
+  "/about",
+  "/blog/aeo-vs-geo-differenze",
+];
 
 function buildQueriesForProject(input: {
   projectId: string;
@@ -253,6 +286,10 @@ export type GeoLlmAnswer = {
   mentioned: boolean;
   rank: number | null;
   sentiment: "positive" | "neutral" | "negative" | null;
+  /** S6c.2: True se la mention dell'owner è citation con link. Null se non mentioned. */
+  isCitation: boolean | null;
+  /** S6c.2: URL pagina cliente citata (se isCitation). Null altrimenti. */
+  citedUrl: string | null;
 };
 
 export type GeoLlmGap = {
@@ -474,6 +511,8 @@ export function generateGeoDrill(input: {
       mentioned: m.mentioned,
       rank: m.rank,
       sentiment: m.sentiment,
+      isCitation: m.isCitation,
+      citedUrl: m.citedUrl,
     };
   });
 

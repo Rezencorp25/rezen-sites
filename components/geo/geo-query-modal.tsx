@@ -4,10 +4,13 @@ import {
   Bot,
   CheckCircle2,
   Compass,
+  ExternalLink,
   Frown,
   Gem,
   Lightbulb,
+  Link2,
   Meh,
+  Quote,
   Smile,
   Sparkles,
   Star,
@@ -89,10 +92,27 @@ function MentionBadge({ a }: { a: GeoLlmAnswer }) {
   }
   const SentimentI = a.sentiment ? SENTIMENT_ICON[a.sentiment] : Meh;
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="inline-flex items-center gap-1 rounded bg-emerald-400/15 px-2 py-0.5 text-label-sm font-semibold text-emerald-300">
         <Star className="h-3 w-3" /> rank #{a.rank ?? "?"}
       </span>
+      {a.isCitation === true ? (
+        <span
+          className="inline-flex items-center gap-1 rounded bg-blue-400/15 px-2 py-0.5 text-label-sm font-semibold text-blue-300"
+          title="Mention con link cliccabile (citation) — porta traffico"
+        >
+          <Link2 className="h-3 w-3" />
+          citation
+        </span>
+      ) : a.isCitation === false ? (
+        <span
+          className="inline-flex items-center gap-1 rounded bg-amber-400/15 px-2 py-0.5 text-label-sm text-amber-300"
+          title="Mention testuale senza link — solo brand awareness"
+        >
+          <Quote className="h-3 w-3" />
+          testuale
+        </span>
+      ) : null}
       {a.sentiment && (
         <span
           className={cn(
@@ -129,6 +149,19 @@ function LlmAnswerSection({ a }: { a: GeoLlmAnswer }) {
       <p className="rounded bg-surface-container-low/40 p-3 text-body-sm leading-relaxed text-on-surface">
         {a.answerText}
       </p>
+      {a.isCitation && a.citedUrl && (
+        <a
+          href={a.citedUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="flex items-center gap-1.5 text-label-sm text-blue-300 hover:underline"
+          title="URL della pagina cliente citata"
+        >
+          <Link2 className="h-3 w-3" />
+          <span className="font-mono">{a.citedUrl}</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      )}
       <div className="flex flex-col gap-1">
         <span className="text-[10px] uppercase tracking-wider text-text-muted">
           Citazioni ({a.citations.length})

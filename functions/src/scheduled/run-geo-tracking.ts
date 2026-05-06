@@ -8,6 +8,15 @@ import {
   GEMINI_API_KEY,
   OPENAI_API_KEY,
 } from "../utils/secrets";
+import { resolveProjectSecret } from "../integrations/resolve-secret";
+import {
+  makeLlmClient,
+  type LlmClient,
+  type LlmClientId,
+} from "../integrations/llm-clients";
+import { parseMentionFromResponse } from "../integrations/llm-mention-parser";
+import { checkBudget, recordLlmCost } from "../integrations/llm-cost-guard";
+import { logLlmCall } from "../integrations/llm-audit";
 
 /**
  * GEO Tracking — scheduled WEEKLY lunedì 04:00 Europe/Rome.
@@ -96,6 +105,10 @@ type GeoMention = {
   rank: number | null;
   sentiment: "positive" | "neutral" | "negative" | null;
   citedDomains: string[];
+  /** S6c.2: link cliccabile vs solo testo. Citation rate target ≥40%. */
+  isCitation: boolean | null;
+  /** S6c.2: URL pagina cliente citata (path completo). */
+  citedUrl: string | null;
 };
 
 /**
@@ -169,7 +182,6 @@ export const runGeoTracking = onSchedule(
     }
 
     const liveMode = await resolveLiveMode(db);
-    const llmClient = liveMode ? await loadLlmMentionsClient() : null;
 
     const projects = await listEnabledProjects(db);
     logger.info("runGeoTracking:start", {
@@ -182,6 +194,20 @@ export const runGeoTracking = onSchedule(
     let totalErrors = 0;
 
     for (const project of projects) {
+      // S13.1.5: risolve LLM clients per progetto da Secret Manager (workspace +
+      // override). Se almeno 1 LLM ha chiave → live mode parziale o totale per
+      // questo progetto (gli LLM senza chiave restano stub). Perplexity sempre stub.
+      const llmClients = await resolveLlmClientsForProject(project.projectId);
+      const liveLlmIds = Object.keys(llmClients).filter(
+        (k) => llmClients[k as LlmClientId],
+      );
+      if (liveLlmIds.length > 0) {
+        logger.info("runGeoTracking:project:liveLlms", {
+          projectId: project.projectId,
+          live: liveLlmIds,
+        });
+      }
+
       const keywords = await listProjectKeywords(db, project.projectId);
       if (keywords.length === 0) {
         logger.info("runGeoTracking:project:noKeywords", {
@@ -189,6 +215,10 @@ export const runGeoTracking = onSchedule(
         });
         continue;
       }
+
+      // S6d: leggi competitor reali dall'onboarding wizard. Fallback a placeholder
+      // pool per progetti pre-S6d (graceful degrade — no errore hard).
+      const competitorPool = await listProjectCompetitors(db, project.projectId);
 
       const queries = buildQueriesForProject({
         projectId: project.projectId,
@@ -204,7 +234,8 @@ export const runGeoTracking = onSchedule(
             query: q,
             weekIso,
             weekStart,
-            llmClient,
+            llmClients,
+            competitorPool,
           });
           const docId = `${weekIso}__${q.id}`;
           await db
@@ -231,38 +262,55 @@ export const runGeoTracking = onSchedule(
   },
 );
 
+/**
+ * Legacy live mode flag check. Mantenuto per compatibility ma S13.1.5
+ * dispatcha live mode per-progetto via `resolveLlmClientsForProject`, quindi
+ * questo flag non è più hard-required.
+ */
 async function resolveLiveMode(
   db: FirebaseFirestore.Firestore,
 ): Promise<boolean> {
   const cfg = await db.doc("_config/features").get();
   const flag = cfg.get("geo_tracking_live") as boolean | undefined;
-  if (flag !== true) return false;
-  try {
-    return (
-      !!DATAFORSEO_LOGIN.value() &&
-      !!DATAFORSEO_PASSWORD.value() &&
-      !!OPENAI_API_KEY.value() &&
-      !!ANTHROPIC_API_KEY.value() &&
-      !!GEMINI_API_KEY.value()
-    );
-  } catch {
-    return false;
-  }
+  return flag === true;
 }
 
 /**
- * Loader del client LLM Mentions. Quando S5.3-bis bundlerà il client DataForSEO
- * in `functions/src/seo/`, sostituire questo placeholder con il vero loader.
+ * S13.1.5: risolve i 3 LLM client per un project leggendo Secret Manager via
+ * `resolveProjectSecret` (workspace default + override per-project). Ritorna
+ * un map sparse: LLM con secret → client istanziato, gli altri → undefined.
  *
- * Per ora ritorna sempre null → `liveMode` resta inattivo finché il client non
- * è disponibile (fallback grazioso a stub in `fetchGeoSnapshot`).
+ * Mapping GeoLlmId ↔ provider S13.1:
+ *   claude   → anthropic
+ *   chatgpt  → openai
+ *   gemini   → gemini
+ *   perplexity → null (sempre stub: richiede Perplexity API key fuori scope S13.1)
  */
-async function loadLlmMentionsClient(): Promise<null> {
-  logger.warn("runGeoTracking:loadLlmMentionsClient", {
-    msg: "live mode requested but LLM Mentions client wrapper not bundled in functions/ — falling back to stub",
-  });
-  return null;
+async function resolveLlmClientsForProject(
+  projectId: string,
+): Promise<Partial<Record<LlmClientId, LlmClient>>> {
+  const out: Partial<Record<LlmClientId, LlmClient>> = {};
+  for (const id of ["anthropic", "openai", "gemini"] as LlmClientId[]) {
+    const resolved = await resolveProjectSecret(projectId, id);
+    if (!resolved) continue;
+    const client = makeLlmClient(id, resolved.fields);
+    if (client) out[id] = client;
+  }
+  return out;
 }
+
+const LLM_TO_PROVIDER: Record<GeoLlmId, LlmClientId | null> = {
+  claude: "anthropic",
+  chatgpt: "openai",
+  gemini: "gemini",
+  perplexity: null,
+};
+
+const LIVE_PROMPT_SYSTEM = [
+  "Sei un assistente AI specializzato nel suggerire risorse a PMI italiane e svizzere.",
+  "Quando rispondi, cita brand/aziende/siti web con i loro link cliccabili in formato [text](url) quando rilevante.",
+  "Sii diretto e usa elenchi numerati per ranking.",
+].join(" ");
 
 async function listEnabledProjects(
   db: FirebaseFirestore.Firestore,
@@ -299,6 +347,38 @@ async function listProjectKeywords(
       searchVolume: (data.searchVolume as number | undefined) ?? 0,
     };
   });
+}
+
+const FALLBACK_COMPETITOR_POOL = [
+  "competitor-a.com",
+  "competitor-b.com",
+  "competitor-c.com",
+  "competitor-d.com",
+  "competitor-e.com",
+];
+
+/**
+ * S6d: legge competitor da `projects/{id}/competitors` (popolato dal wizard).
+ * Se vuoto, fallback al pool placeholder (graceful degrade per progetti
+ * pre-onboarding o in test).
+ */
+async function listProjectCompetitors(
+  db: FirebaseFirestore.Firestore,
+  projectId: string,
+): Promise<string[]> {
+  const snap = await db
+    .collection(`projects/${projectId}/competitors`)
+    .get();
+  if (snap.empty) {
+    logger.info("runGeoTracking:competitors:fallback", {
+      projectId,
+      reason: "no competitors in /competitors collection — using placeholder pool",
+    });
+    return FALLBACK_COMPETITOR_POOL;
+  }
+  return snap.docs
+    .map((d) => (d.get("domain") as string | undefined)?.trim().toLowerCase() ?? "")
+    .filter((d) => d.length > 0);
 }
 
 type GeneratedQuery = {
@@ -342,18 +422,144 @@ async function fetchGeoSnapshot(input: {
   query: GeneratedQuery;
   weekIso: string;
   weekStart: string;
-  llmClient: unknown | null;
+  llmClients: Partial<Record<LlmClientId, LlmClient>>;
+  competitorPool: string[];
 }): Promise<GeoSnapshotDoc> {
-  const { project, query, weekIso, weekStart, llmClient } = input;
-  if (llmClient === null) {
-    return stubSnapshot(project, query, weekIso, weekStart);
+  const { project, query, weekIso, weekStart, llmClients, competitorPool } = input;
+
+  // Se nessun LLM client configurato → snapshot fully stub (back-compat)
+  const hasAnyLive = Object.values(llmClients).some((c) => c);
+  if (!hasAnyLive) {
+    return stubSnapshot(project, query, weekIso, weekStart, competitorPool);
   }
-  // S5.3-bis: chiamata live a llm_mentions/google_ai/live (o client diretto LLM).
-  // Quando implementato:
-  //   - per ogni LLM, ottenere risposta + lista citation domains
-  //   - derivare GeoMention { mentioned, rank, sentiment, citedDomains }
-  //   - chiamare computeGeoFields(mentions, searchVolume) per popolare geo
-  throw new Error("live mode not implemented yet");
+
+  const seed = hash(`${project.projectId}::${query.id}::${weekIso}`);
+  const rand = pseudoRand(seed);
+  const mentions = {} as Record<GeoLlmId, GeoMention>;
+  let anyLiveSucceeded = false;
+
+  for (const llm of ALL_LLMS) {
+    const providerId = LLM_TO_PROVIDER[llm];
+    const client = providerId ? llmClients[providerId] : undefined;
+
+    if (!client) {
+      // No client per questo LLM → stub mention (perplexity sempre, o LLM senza chiave)
+      mentions[llm] = generateMention({
+        llm,
+        rand,
+        ownerDomain: project.domain,
+        competitors: competitorPool,
+      });
+      continue;
+    }
+
+    try {
+      mentions[llm] = await fetchLiveMention({
+        client,
+        llm,
+        project,
+        query,
+      });
+      anyLiveSucceeded = true;
+    } catch (err) {
+      logger.warn("runGeoTracking:liveCallFailed:fallbackStub", {
+        projectId: project.projectId,
+        llm,
+        queryId: query.id,
+        error: (err as Error).message,
+      });
+      mentions[llm] = generateMention({
+        llm,
+        rand,
+        ownerDomain: project.domain,
+        competitors: competitorPool,
+      });
+    }
+  }
+
+  const geo = computeGeoFields(mentions, query.searchVolume);
+
+  return {
+    queryId: query.id,
+    queryText: query.query,
+    category: query.category,
+    projectId: project.projectId,
+    weekIso,
+    weekStart,
+    searchVolume: query.searchVolume,
+    mentions,
+    geo,
+    source: anyLiveSucceeded ? "dataforseo" : "stub",
+    createdAt: FieldValue.serverTimestamp(),
+  };
+}
+
+async function fetchLiveMention(input: {
+  client: LlmClient;
+  llm: GeoLlmId;
+  project: GeoTrackingProject;
+  query: GeneratedQuery;
+}): Promise<GeoMention> {
+  const { client, llm, project, query } = input;
+
+  // Cost guard: skip se budget esaurito → throw → fallback stub
+  const budgetCheck = await checkBudget(project.projectId, 0.001);
+  if (!budgetCheck.ok) {
+    throw new Error(`budget exceeded: ${budgetCheck.reason}`);
+  }
+
+  let result: { text: string; latencyMs: number; estimatedCostUsd: number };
+  try {
+    result = await client.generate({
+      prompt: query.query,
+      system: LIVE_PROMPT_SYSTEM,
+      maxTokens: 600,
+    });
+  } catch (err) {
+    await logLlmCall({
+      projectId: project.projectId,
+      llm: client.id,
+      queryPreview: query.query,
+      success: false,
+      latencyMs: 0,
+      costUsd: 0,
+      errorMessage: (err as Error).message,
+    });
+    throw err;
+  }
+
+  // Record cost (best-effort, non blocca)
+  await recordLlmCost({
+    projectId: project.projectId,
+    llm: client.id,
+    costUsd: result.estimatedCostUsd,
+  });
+
+  const parsed = parseMentionFromResponse({
+    text: result.text,
+    ownerDomain: project.domain,
+  });
+
+  await logLlmCall({
+    projectId: project.projectId,
+    llm: client.id,
+    queryPreview: query.query,
+    success: true,
+    latencyMs: result.latencyMs,
+    costUsd: result.estimatedCostUsd,
+    responseLength: result.text.length,
+    mentioned: parsed.mentioned,
+  });
+
+  return {
+    llm,
+    mentioned: parsed.mentioned,
+    rank: parsed.rank,
+    sentiment: parsed.sentiment,
+    citedDomains: parsed.citedDomains,
+    isCitation: parsed.isCitation,
+    citedUrl: parsed.citedUrl,
+  };
 }
 
 function stubSnapshot(
@@ -361,19 +567,10 @@ function stubSnapshot(
   query: GeneratedQuery,
   weekIso: string,
   weekStart: string,
+  competitorPool: string[],
 ): GeoSnapshotDoc {
   const seed = hash(`${project.projectId}::${query.id}::${weekIso}`);
   const rand = pseudoRand(seed);
-
-  // Set competitor stub (in produzione verrà letto da `projects/{id}/competitors`).
-  // Per ora usiamo placeholder generici.
-  const competitorPool = [
-    "competitor-a.com",
-    "competitor-b.com",
-    "competitor-c.com",
-    "competitor-d.com",
-    "competitor-e.com",
-  ];
 
   const mentions = {} as Record<GeoLlmId, GeoMention>;
   for (const llm of ALL_LLMS) {
@@ -432,14 +629,46 @@ function generateMention(input: {
     cited.splice(rank - 1, 0, ownerDomain);
   }
 
+  // S6c.2 — Citation rate stub. Mirror di lib/seo/geo-stub.ts.
+  // In live (S6c.2 backend full) verrà rilevato dal field cited_urls[] della
+  // DataForSEO LLM Mentions response per ogni LLM.
+  let isCitation: boolean | null = null;
+  let citedUrl: string | null = null;
+  if (mentioned) {
+    const citationBias =
+      llm === "perplexity" ? 0.85 : llm === "chatgpt" ? 0.55 : 0.45;
+    isCitation = rand() < citationBias;
+    if (isCitation) {
+      citedUrl = `https://${ownerDomain}${
+        STUB_CITED_PATHS[Math.floor(rand() * STUB_CITED_PATHS.length)]
+      }`;
+    }
+  }
+
   return {
     llm,
     mentioned,
     rank,
     sentiment: mentioned ? pickSentiment(rand) : null,
     citedDomains: cited,
+    isCitation,
+    citedUrl,
   };
 }
+
+/**
+ * Pool path stub citati. Mirror di lib/seo/geo-stub.ts:STUB_CITED_PATHS — keep in sync.
+ */
+const STUB_CITED_PATHS = [
+  "/",
+  "/servizi",
+  "/blog/cms-ai-driven-2026",
+  "/blog/seo-ticino-guida",
+  "/case-study/agenzia-web-svizzera",
+  "/pricing",
+  "/about",
+  "/blog/aeo-vs-geo-differenze",
+];
 
 function pickSentiment(
   rand: () => number,

@@ -21,7 +21,16 @@ import { LlmCards } from "@/components/geo/llm-cards";
 import { GeoTrendChart } from "@/components/geo/geo-trend-chart";
 import { GeoQueriesTable } from "@/components/geo/geo-queries-table";
 import { GeoQueryModal } from "@/components/geo/geo-query-modal";
+import { SentimentSection } from "@/components/geo/sentiment-section";
+import { NegativeMentionsList } from "@/components/geo/negative-mentions-list";
+import { CitationsVsMentions } from "@/components/geo/citations-vs-mentions";
+import { TopCitedPages } from "@/components/geo/top-cited-pages";
+import { AiSearchHealthSection } from "@/components/geo/ai-search-health-section";
+import { OnboardingIncompleteBanner } from "@/components/onboarding/onboarding-incomplete-banner";
 import { generateGeoDrill } from "@/lib/seo/geo-stub";
+import { calcCitationMetrics, calcTopCitedPages } from "@/lib/seo/citations";
+import { deriveSentimentSnapshot } from "@/lib/ai/sentiment-stub";
+import { generateAiSearchHealthStub } from "@/lib/seo/ai-search-health-stub";
 import type { GeoQuery, GeoTrendPoint } from "@/lib/seo/geo-types";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +59,46 @@ export default function GeoPageClient({ projectId }: { projectId: string }) {
       ownerDomain: domain,
     });
   }, [selected, projectId, domain]);
+
+  const sentiment = useMemo(() => {
+    if (!snapshot) return null;
+    const prevScore =
+      snapshot.prevVisibilityScore !== null
+        ? Math.round(snapshot.prevVisibilityScore - 50) // proxy stub-mode delta
+        : null;
+    return deriveSentimentSnapshot({ snapshot, prevScore });
+  }, [snapshot]);
+
+  const citationMetrics = useMemo(() => {
+    if (!snapshot) return null;
+    return calcCitationMetrics(snapshot);
+  }, [snapshot]);
+
+  const topCitedPages = useMemo(() => {
+    if (!snapshot) return [];
+    return calcTopCitedPages(snapshot, 5);
+  }, [snapshot]);
+
+  const aiSearchHealth = useMemo(() => {
+    if (!snapshot || !domain) return null;
+    return generateAiSearchHealthStub({
+      projectId,
+      domain,
+      seedSalt: snapshot.id,
+    });
+  }, [snapshot, projectId, domain]);
+
+  const handleNegativeSelect = (queryId: string) => {
+    if (!snapshot) return;
+    const q = snapshot.queries.find((x) => x.id === queryId);
+    if (q) setSelected(q);
+  };
+
+  const handleCitedPageQuery = (queryId: string) => {
+    if (!snapshot) return;
+    const q = snapshot.queries.find((x) => x.id === queryId);
+    if (q) setSelected(q);
+  };
 
   if (!project) {
     return (
@@ -133,6 +182,8 @@ export default function GeoPageClient({ projectId }: { projectId: string }) {
         </button>
       </header>
 
+      <OnboardingIncompleteBanner projectId={projectId} module="geo" />
+
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl bg-surface-container-high p-5 lg:col-span-1">
           <div className="mb-3 flex items-center gap-2">
@@ -159,6 +210,22 @@ export default function GeoPageClient({ projectId }: { projectId: string }) {
           <LlmCards perLlm={snapshot.perLlm} />
         </div>
       </section>
+
+      {sentiment && <SentimentSection sentiment={sentiment} />}
+
+      {citationMetrics && (
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <CitationsVsMentions metrics={citationMetrics} />
+          <TopCitedPages
+            pages={topCitedPages}
+            onSelectQuery={handleCitedPageQuery}
+          />
+        </section>
+      )}
+
+      {aiSearchHealth && (
+        <AiSearchHealthSection health={aiSearchHealth} domain={domain} />
+      )}
 
       <section className="rounded-xl bg-surface-container-high p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -236,6 +303,13 @@ export default function GeoPageClient({ projectId }: { projectId: string }) {
           )}
         </div>
       </section>
+
+      {sentiment && (
+        <NegativeMentionsList
+          entries={sentiment.negativeEntries}
+          onSelect={handleNegativeSelect}
+        />
+      )}
 
       <p className="text-label-sm text-text-muted">
         ★ Le query sono prompt-style longer-tail. Cadenza fetch settimanale (LLM

@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// REZEN Sites — Cloud Storage Security Rules
+//
+// I report PDF (S8) sono salvati in `reports/{projectId}/{YYYY-MM}.pdf` da
+// Admin SDK (Cloud Functions) e serviti via signed URL pre-firmate (7gg per
+// on-demand, 30gg per scheduled). Quindi:
+//  - upload: solo Admin SDK (bypass rules)
+//  - download: solo signed URL (bypass rules)
+//  - tutto il resto: deny by default per non permettere accessi diretti
+//    dal client.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Reports PDF: bloccato qualsiasi accesso diretto da client.
+    // Distribuzione gestita esclusivamente via signed URL.
+    match /reports/{projectId}/{filename} {
+      allow read, write: if false;
+    }
+
+    // Default deny per qualsiasi altra path (rinforza compliance).
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

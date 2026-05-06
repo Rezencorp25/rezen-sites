@@ -11,6 +11,7 @@ const TABS = [
   { label: "Redirects", segment: "redirects" },
   { label: "Staging", segment: "staging" },
   { label: "Tracking", segment: "tracking" },
+  { label: "Integrazioni", segment: "integrations" },
   { label: "Versions", segment: "versions" },
 ];
 

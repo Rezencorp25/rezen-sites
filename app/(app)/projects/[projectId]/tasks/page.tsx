@@ -8,6 +8,8 @@ import {
   Clock,
   Coins,
   GitBranch,
+  FileDown,
+  Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -16,10 +18,11 @@ import {
   type TaskPriority,
 } from "@/lib/stores/tasks-store";
 import { useWorkspaceStore } from "@/lib/stores/workspace-store";
+import { useProjectsStore } from "@/lib/stores/projects-store";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { GradientButton } from "@/components/luminous/gradient-button";
 import { StatusPill } from "@/components/luminous/status-pill";
+import { ExportTasksModal } from "@/components/tasks/export-modal";
 import { fmtDateLong } from "@/lib/utils/format-date";
 
 const STATUS_VARIANT: Record<
@@ -43,6 +46,7 @@ export default function TasksPage({
   const update = useTasksStore((s) => s.update);
   const remove = useTasksStore((s) => s.remove);
   const billing = useWorkspaceStore((s) => s.config.billing);
+  const project = useProjectsStore((s) => s.getById(projectId));
 
   const tasks = useMemo(
     () => allTasks.filter((t) => t.projectId === projectId),
@@ -52,13 +56,25 @@ export default function TasksPage({
   const totalHours = tasks.reduce((sum, t) => sum + t.hoursSpent, 0);
   const totalCost = totalHours * billing.hourlyRate;
 
+  const totalEstimatedHours = tasks.reduce(
+    (sum, t) => sum + (t.estimatedHours ?? 0),
+    0,
+  );
+  const totalEstimatedCost = tasks.reduce(
+    (sum, t) =>
+      sum + (t.estimatedHours ?? 0) * (t.customRate ?? billing.hourlyRate),
+    0,
+  );
+  const includedCount = tasks.filter((t) => t.customerPriced).length;
+
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [dueDate, setDueDate] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
 
   return (
     <div className="mx-auto max-w-6xl px-10 py-10">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-label-md uppercase tracking-widest text-text-muted">
             <ListTodo className="h-3.5 w-3.5" />
@@ -72,9 +88,25 @@ export default function TasksPage({
             {totalCost.toFixed(0)} costo allocato
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (includedCount === 0) {
+              toast.error(
+                "Nessuna task selezionata per l'export. Spunta almeno una checkbox 'Include export'.",
+              );
+              return;
+            }
+            setExportOpen(true);
+          }}
+          className="flex items-center gap-2 rounded-md bg-molten-primary/15 px-3.5 py-2 text-label-md font-medium text-molten-primary transition-colors hover:bg-molten-primary/25"
+        >
+          <FileDown className="h-3.5 w-3.5" />
+          Esporta per cliente ({includedCount})
+        </button>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
         <div className="rounded-xl bg-surface-container-high p-4">
           <div className="flex items-center gap-2 text-label-md text-text-muted">
             <Clock className="h-3.5 w-3.5" />
@@ -91,6 +123,18 @@ export default function TasksPage({
           </div>
           <p className="mt-1 font-mono text-headline-sm font-bold text-molten-primary tabular-nums">
             {billing.currency} {totalCost.toFixed(0)}
+          </p>
+        </div>
+        <div className="rounded-xl bg-surface-container-high p-4">
+          <div className="flex items-center gap-2 text-label-md text-text-muted">
+            <Calculator className="h-3.5 w-3.5" />
+            Preventivo cliente
+          </div>
+          <p className="mt-1 font-mono text-headline-sm font-bold text-on-surface tabular-nums">
+            {totalEstimatedHours}h
+          </p>
+          <p className="font-mono text-label-sm text-molten-primary tabular-nums">
+            {billing.currency} {totalEstimatedCost.toFixed(0)}
           </p>
         </div>
         <div className="rounded-xl bg-surface-container-high p-4">
@@ -144,6 +188,9 @@ export default function TasksPage({
                 status: "todo",
                 priority,
                 hoursSpent: 0,
+                estimatedHours: 0,
+                customRate: null,
+                customerPriced: true,
                 assigneeName: "Te",
                 dueDate: dueDate || new Date().toISOString().slice(0, 10),
               });
@@ -159,12 +206,16 @@ export default function TasksPage({
       </section>
 
       <section className="overflow-hidden rounded-xl bg-surface-container-high">
-        <div className="grid grid-cols-[2fr_100px_120px_120px_100px_140px_50px] gap-3 px-6 py-2 text-label-sm uppercase tracking-wider text-text-muted">
+        <div className="grid grid-cols-[2fr_90px_100px_110px_80px_90px_90px_120px_40px] gap-3 px-6 py-2 text-label-sm uppercase tracking-wider text-text-muted">
           <span>Titolo</span>
           <span className="text-center">Status</span>
           <span className="text-center">Prio</span>
           <span>Assignee</span>
           <span className="text-right">Ore</span>
+          <span className="text-right">Stima</span>
+          <span className="text-center" title="Include in export PDF/CSV per cliente">
+            Export
+          </span>
           <span>Due</span>
           <span />
         </div>
@@ -177,7 +228,7 @@ export default function TasksPage({
           tasks.map((t, i) => (
             <div
               key={t.id}
-              className={`grid grid-cols-[2fr_100px_120px_120px_100px_140px_50px] items-center gap-3 px-6 py-2 ${
+              className={`grid grid-cols-[2fr_90px_100px_110px_80px_90px_90px_120px_40px] items-center gap-3 px-6 py-2 ${
                 i % 2 === 0
                   ? "bg-surface-container-lowest"
                   : "bg-surface-container-low"
@@ -228,6 +279,30 @@ export default function TasksPage({
                 }
                 className="h-7 rounded-md bg-surface-container px-2 text-right font-mono text-label-md tabular-nums"
               />
+              <input
+                type="number"
+                step="0.5"
+                min={0}
+                value={t.estimatedHours}
+                onChange={(e) =>
+                  update(t.id, {
+                    estimatedHours: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="h-7 rounded-md bg-surface-container px-2 text-right font-mono text-label-md tabular-nums"
+                title="Ore preventive per export cliente"
+              />
+              <label className="flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={t.customerPriced}
+                  onChange={(e) =>
+                    update(t.id, { customerPriced: e.target.checked })
+                  }
+                  className="h-4 w-4 cursor-pointer rounded accent-molten-primary"
+                  aria-label="Include in export"
+                />
+              </label>
               <span
                 className="font-mono text-label-md text-text-muted"
                 suppressHydrationWarning
@@ -261,6 +336,16 @@ export default function TasksPage({
           </span>
         </div>
       </section>
+
+      {project && (
+        <ExportTasksModal
+          open={exportOpen}
+          onClose={() => setExportOpen(false)}
+          tasks={tasks.filter((t) => t.customerPriced)}
+          project={project}
+          billing={billing}
+        />
+      )}
     </div>
   );
 }

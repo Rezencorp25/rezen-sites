@@ -50,6 +50,19 @@ export type GeoMention = {
   sentiment: "positive" | "neutral" | "negative" | null;
   /** Domini citati nella risposta in ordine, incluso il cliente se mentioned. */
   citedDomains: string[];
+  /**
+   * True se la mention del cliente è una citation con link cliccabile (URL),
+   * false se è solo testo plain. Null se non mentioned.
+   *
+   * Citation rate target ≥40% (brief KPI v1.0 §4.5): citation porta traffico,
+   * mention testuale solo brand awareness.
+   */
+  isCitation: boolean | null;
+  /**
+   * URL specifica della pagina cliente citata (path completo). Null se non
+   * mentioned o citation solo a livello dominio. Usato per "Top Cited Pages".
+   */
+  citedUrl: string | null;
 };
 
 export type GeoQuery = {

@@ -29,6 +29,7 @@ import {
   refreshSeoSnapshot,
   useSeoStore,
 } from "@/lib/stores/seo-store";
+import { OnboardingIncompleteBanner } from "@/components/onboarding/onboarding-incomplete-banner";
 import { authorityBucket } from "@/lib/seo/vf-authority";
 import { decomposeContribution } from "@/lib/seo/visibility";
 import type { SerpFeatureFlags } from "@/lib/seo/seo-types";
@@ -193,6 +194,8 @@ export default function SeoPageClient({ projectId }: { projectId: string }) {
           Aggiorna snapshot
         </button>
       </header>
+
+      <OnboardingIncompleteBanner projectId={projectId} module="seo" />
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-3 rounded-xl bg-surface-container-high p-5 lg:col-span-2">

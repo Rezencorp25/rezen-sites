@@ -13,6 +13,9 @@ import {
   ListTodo,
   FolderKanban,
   Users,
+  BadgeDollarSign,
+  TrendingUp,
+  KeyRound,
 } from "lucide-react";
 
 export type NavItem = {
@@ -35,6 +38,12 @@ export const GLOBAL_NAV: GlobalNavItem[] = [
     href: "/projects",
     icon: FolderKanban,
     matchPath: "/projects",
+  },
+  {
+    label: "Integrazioni",
+    href: "/settings/integrations",
+    icon: KeyRound,
+    matchPath: "/settings/integrations",
   },
 ];
 
@@ -88,6 +97,18 @@ export const PROJECT_NAV: NavItem[] = [
     matchPath: "leads",
   },
   {
+    label: "Ads",
+    href: (id) => `/projects/${id}/ads`,
+    icon: BadgeDollarSign,
+    matchPath: "ads",
+  },
+  {
+    label: "CPL & ROAS",
+    href: (id) => `/projects/${id}/cpl`,
+    icon: TrendingUp,
+    matchPath: "cpl",
+  },
+  {
     label: "Forms",
     href: (id) => `/projects/${id}/forms`,
     icon: Inbox,
@@ -110,6 +131,12 @@ export const PROJECT_NAV: NavItem[] = [
     href: (id) => `/projects/${id}/tasks`,
     icon: ListTodo,
     matchPath: "tasks",
+  },
+  {
+    label: "Setup",
+    href: (id) => `/projects/${id}/onboarding`,
+    icon: Settings,
+    matchPath: "onboarding",
   },
   {
     label: "Site Settings",

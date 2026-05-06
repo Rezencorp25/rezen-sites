@@ -11,6 +11,7 @@ export const MOCK_ALERTS: Alert[] = [
     page: "/blog/post-3",
     createdAt: new Date("2026-04-18T09:00:00Z"),
     acknowledged: false,
+    fixAction: "manual",
   },
   {
     id: "a2",
@@ -22,6 +23,7 @@ export const MOCK_ALERTS: Alert[] = [
     page: "/contact",
     createdAt: new Date("2026-04-17T14:22:00Z"),
     acknowledged: false,
+    fixAction: "manual",
   },
   {
     id: "a3",
@@ -32,6 +34,7 @@ export const MOCK_ALERTS: Alert[] = [
       "GA4, Meta Pixel, AdSense e Google Ads conversion tracking operativi.",
     createdAt: new Date("2026-04-17T10:00:00Z"),
     acknowledged: false,
+    fixAction: "manual",
   },
   {
     id: "a4",
@@ -43,6 +46,7 @@ export const MOCK_ALERTS: Alert[] = [
     page: "/blog",
     createdAt: new Date("2026-04-16T16:40:00Z"),
     acknowledged: false,
+    fixAction: "manual",
   },
   {
     id: "a5",
@@ -54,6 +58,7 @@ export const MOCK_ALERTS: Alert[] = [
     page: "/privacy",
     createdAt: new Date("2026-04-15T08:30:00Z"),
     acknowledged: false,
+    fixAction: "manual",
   },
   {
     id: "a6",
@@ -63,5 +68,6 @@ export const MOCK_ALERTS: Alert[] = [
     description: "Dominio custom attivato e SSL verificato.",
     createdAt: new Date("2026-04-10T12:00:00Z"),
     acknowledged: false,
+    fixAction: "manual",
   },
 ];

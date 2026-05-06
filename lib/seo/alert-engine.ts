@@ -43,6 +43,9 @@ const ruleMissingMetaDescription: Rule = ({ project, pages }) => {
         title: `Meta description mancante su ${p.slug || "/"}`,
         description: `La pagina "${p.title}" non ha una meta description. Google genererà uno snippet automatico, perdendo controllo sul CTR.`,
         page: p.slug,
+        fixAction: "auto",
+        fixActionId: "generate-meta-description-fallback",
+        fixPageId: p.id,
       }),
     );
 };
@@ -60,6 +63,9 @@ const ruleTitleLength: Rule = ({ project, pages }) => {
           title: `Meta title mancante su ${p.slug || "/"}`,
           description: `La pagina "${p.title}" non ha un meta title custom. Google userà il <h1> o il nome del sito.`,
           page: p.slug,
+          fixAction: "auto",
+          fixActionId: "set-meta-title-from-page-title",
+          fixPageId: p.id,
         }),
       );
     } else if (t.length > TITLE_MAX) {
@@ -71,6 +77,8 @@ const ruleTitleLength: Rule = ({ project, pages }) => {
           title: `Title troppo lungo su ${p.slug || "/"}`,
           description: `${t.length} caratteri (max raccomandato ${TITLE_MAX}). Sarà troncato nei risultati.`,
           page: p.slug,
+          fixAction: "manual",
+          fixPageId: p.id,
         }),
       );
     } else if (t.length < TITLE_MIN && t.length > 0) {
@@ -82,6 +90,8 @@ const ruleTitleLength: Rule = ({ project, pages }) => {
           title: `Title corto su ${p.slug || "/"}`,
           description: `${t.length} caratteri (min raccomandato ${TITLE_MIN}). Aggiungi keyword + brand.`,
           page: p.slug,
+          fixAction: "manual",
+          fixPageId: p.id,
         }),
       );
     }
@@ -103,6 +113,8 @@ const ruleDescriptionLength: Rule = ({ project, pages }) => {
           title: `Description troppo lunga su ${p.slug || "/"}`,
           description: `${d.length} caratteri (max ${DESC_MAX}). Verrà troncata.`,
           page: p.slug,
+          fixAction: "manual",
+          fixPageId: p.id,
         }),
       );
     } else if (d.length < DESC_MIN) {
@@ -114,6 +126,8 @@ const ruleDescriptionLength: Rule = ({ project, pages }) => {
           title: `Description corta su ${p.slug || "/"}`,
           description: `${d.length} caratteri (target ${DESC_MIN}-${DESC_MAX}). Espandi con benefici + CTA.`,
           page: p.slug,
+          fixAction: "manual",
+          fixPageId: p.id,
         }),
       );
     }
@@ -134,6 +148,8 @@ const ruleHomeIndexable: Rule = ({ project, pages }) => {
         description:
           "La home è marcata indexable=false: Google la escluderà dal sito. Verifica voluto.",
         page: "/",
+        fixAction: "manual",
+        fixPageId: home.id,
       }),
     ];
   }
@@ -153,6 +169,9 @@ const ruleMissingOgImage: Rule = ({ project, pages }) => {
         description:
           "Senza og:image i social mostreranno fallback generico. Aggiungi 1200×630.",
         page: p.slug,
+        fixAction: "auto",
+        fixActionId: "set-default-og-image",
+        fixPageId: p.id,
       }),
     );
 };
@@ -176,6 +195,7 @@ const ruleAltText: Rule = ({ project, pages }) => {
       title: `${count} immagine/i senza alt text`,
       description:
         "Le immagini senza alt sono bloccanti per accessibilità (WCAG 2.2) e per SEO immagini. Risolvi nel SEO editor.",
+      fixAction: "manual",
     }),
   ];
 };
@@ -193,6 +213,7 @@ const ruleRedirectIssues: Rule = ({ project, redirects }) => {
       description: `Trovati: ${validation.issues
         .map((i) => i.kind)
         .join(", ")}. Apri Settings → Redirects per dettaglio.`,
+      fixAction: "manual",
     }),
   ];
 };
@@ -212,6 +233,7 @@ const ruleNoSchema: Rule = ({ project, pages }) => {
         title: "Nessun blocco FAQ rilevato",
         description:
           "Aggiungi un blocco FAQ ad almeno una pagina chiave: triggera FAQPage schema → eligible per AI Overviews & rich results.",
+        fixAction: "manual",
       }),
     ];
   }
@@ -280,6 +302,7 @@ const ruleNapConsistency: Rule = ({ project, pages, localBusiness }) => {
         (inconsistencies.length > 5
           ? ` (+${inconsistencies.length - 5} altri)`
           : ""),
+      fixAction: "manual",
     }),
   ];
 };
@@ -304,6 +327,7 @@ const ruleOrphanPages: Rule = ({ project, pages }) => {
           .join(", ") +
         (real.length > 5 ? ` (+${real.length - 5})` : "") +
         ". Aggiungi link interni per topic cluster.",
+      fixAction: "manual",
     }),
   ];
 };
@@ -320,6 +344,7 @@ const ruleA11y: Rule = ({ project, pages }) => {
       severity: critical > 0 ? "critical" : warnings > 0 ? "warning" : "info",
       title: `${issues.length} problema/i di accessibilità (WCAG 2.2)`,
       description: `${critical} critici, ${warnings} warning. Heading hierarchy, alt text, link descriptivi, struttura semantica.`,
+      fixAction: "manual",
     }),
   ];
 };
@@ -362,6 +387,7 @@ const ruleExternalLinkRel: Rule = ({ project, pages }) => {
         "rel=noopener target=_blank sempre. Esempi: " +
         externalLinks.slice(0, 3).join(", ") +
         (externalLinks.length > 3 ? ` (+${externalLinks.length - 3})` : ""),
+      fixAction: "manual",
     }),
   ];
 };
@@ -389,6 +415,8 @@ const ruleCookieInventory: Rule = ({ project }) => {
       severity: "info",
       title: `${trackers.length} tracker attivo/i — verifica consent gating`,
       description: `Trovati: ${trackers.join(", ")}. Verifica che il banner consent sia attivo (Settings → Cookie banner) e che gli script siano caricati solo dopo grant.`,
+      fixAction: "auto",
+      fixActionId: "enable-consent-banner",
     }),
   ];
 };
@@ -434,6 +462,7 @@ const ruleAnomalyDetection: Rule = ({ project }) => {
           ? "Identifica fonte (referrer, social, news mention) per amplificare."
           : "Verifica Search Console per crawl errors o keyword cannibalization."
       }`,
+      fixAction: "manual",
     }),
   ];
 };
