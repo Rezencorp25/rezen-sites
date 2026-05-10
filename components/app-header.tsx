@@ -1,8 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, HelpCircle, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { Search, HelpCircle, ChevronRight, LogOut } from "lucide-react";
 import { ProjectSwitcher } from "./project-switcher";
 import { NotificationsBell } from "./notifications-bell";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,13 @@ function useBreadcrumbs() {
 
 export function AppHeader() {
   const crumbs = useBreadcrumbs();
+  const router = useRouter();
+
+  function handleLogout() {
+    document.cookie = "rezen_session=; path=/; max-age=0; samesite=lax";
+    toast.success("Logout effettuato");
+    router.push("/login");
+  }
 
   return (
     <header className="glass sticky top-0 z-30 flex h-12 items-center justify-between gap-4 px-5 border-b border-border/60">
@@ -87,6 +95,15 @@ export function AppHeader() {
           <HelpCircle className="h-4 w-4" />
         </button>
         <NotificationsBell />
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Esci"
+          title="Esci"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-surface-container-high hover:text-error transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
         <div className="mx-1 h-5 w-px bg-outline/30" />
         <ProjectSwitcher />
       </div>

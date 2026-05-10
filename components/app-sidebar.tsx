@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   GLOBAL_NAV,
   DASHBOARD_NAV_ITEM,
@@ -12,7 +13,16 @@ import {
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Flame, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Flame, ChevronDown, LogOut } from "lucide-react";
 
 function isItemActive(pathname: string | null, item: NavItem): boolean {
   if (!pathname) return false;
@@ -29,8 +39,15 @@ function isSectionActive(
 export function AppSidebar() {
   const pathname = usePathname();
   const params = useParams<{ projectId?: string }>();
+  const router = useRouter();
   const projectId = params?.projectId ?? "verumflow-ch";
   const inProjectScope = Boolean(params?.projectId);
+
+  function handleLogout() {
+    document.cookie = "rezen_session=; path=/; max-age=0; samesite=lax";
+    toast.success("Logout effettuato");
+    router.push("/login");
+  }
 
   const activeSectionId = useMemo(() => {
     const found = PROJECT_NAV_SECTIONS.find((s) =>
@@ -187,36 +204,61 @@ export function AppSidebar() {
         )}
       </nav>
 
-      <div className="m-2.5 flex items-center gap-2.5 rounded-xl bg-surface-container-high p-2 pr-3">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback
-            className="text-label-md font-bold"
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="Apri menu account"
+          className="m-2.5 flex items-center gap-2.5 rounded-xl bg-surface-container-high p-2 pr-3 text-left transition-colors hover:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-molten-primary/40"
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarFallback
+              className="text-label-md font-bold"
+              style={{
+                background: "linear-gradient(135deg,#ff8533,#ff6200)",
+                color: "#0f1113",
+              }}
+            >
+              AA
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span className="truncate text-body-sm font-semibold text-on-surface">
+              Admin
+            </span>
+            <span className="truncate text-label-sm text-text-muted">
+              demo@rezen.dev
+            </span>
+          </div>
+          <span
+            className="rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider"
             style={{
               background: "linear-gradient(135deg,#ff8533,#ff6200)",
               color: "#0f1113",
             }}
           >
-            AA
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex min-w-0 flex-1 flex-col leading-tight">
-          <span className="truncate text-body-sm font-semibold text-on-surface">
-            Admin
+            PRO
           </span>
-          <span className="truncate text-label-sm text-text-muted">
-            demo@rezen.dev
-          </span>
-        </div>
-        <span
-          className="rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider"
-          style={{
-            background: "linear-gradient(135deg,#ff8533,#ff6200)",
-            color: "#0f1113",
-          }}
-        >
-          PRO
-        </span>
-      </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="top" className="w-56">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="flex flex-col leading-tight">
+              <span className="text-body-sm font-semibold text-on-surface">
+                Admin
+              </span>
+              <span className="text-label-sm font-normal text-text-muted">
+                demo@rezen.dev
+              </span>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleLogout}
+            className="cursor-pointer text-error focus:text-error"
+          >
+            <LogOut className="mr-2 h-3.5 w-3.5" />
+            Esci
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </aside>
   );
 }
