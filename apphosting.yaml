@@ -15,7 +15,7 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: preview-no-auth
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: rezen-sites-preview.appspot.com
+    value: rezen-sites-preview.firebasestorage.app
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     value: "000000000000"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
