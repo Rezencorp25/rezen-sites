@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import * as LucideIcons from "lucide-react";
 import type { ComponentConfig } from "@measured/puck";
 import { cn } from "@/lib/utils";
@@ -1267,6 +1268,33 @@ export type IframeEmbedProps = {
   showToolbar: boolean;
 };
 
+// Lazy import to keep Monaco out of the initial Puck bundle.
+const ImportedSiteFileEditor = dynamic(
+  () =>
+    import("@/components/cms/imported-site-file-editor").then(
+      (m) => m.ImportedSiteFileEditor,
+    ),
+  { ssr: false },
+);
+
+/** Parse "/imports/{projectId}/{importId}/path/to/file.ext" → parts. */
+function parseImportSrc(src: string): {
+  projectId: string;
+  importId: string;
+  filePath: string;
+  rootPrefix: string;
+} | null {
+  const match = src.match(/^\/imports\/([^/]+)\/([^/]+)\/(.+)$/);
+  if (!match) return null;
+  const [, projectId, importId, filePath] = match;
+  return {
+    projectId,
+    importId,
+    filePath,
+    rootPrefix: `/imports/${projectId}/${importId}`,
+  };
+}
+
 function ImportedSiteRender({
   src,
   height,
@@ -1277,6 +1305,8 @@ function ImportedSiteRender({
 }: IframeEmbedProps) {
   const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
   const [autoHeight, setAutoHeight] = React.useState<number | null>(null);
+  const [editorOpen, setEditorOpen] = React.useState(false);
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   const handleLoad = React.useCallback(() => {
     if (!autoFit) return;
@@ -1294,14 +1324,12 @@ function ImportedSiteRender({
   }, [autoFit]);
 
   const effectiveHeight = autoFit && autoHeight ? autoHeight : height;
-  const niceUrl = (() => {
-    try {
-      const u = src.startsWith("/") ? new URL(src, "http://x").pathname : src;
-      return u;
-    } catch {
-      return src;
-    }
-  })();
+  const parsed = parseImportSrc(src);
+  const niceUrl = parsed ? `/${parsed.filePath}` : src;
+
+  function reloadIframe() {
+    setReloadKey((k) => k + 1);
+  }
 
   return (
     <div className="relative w-full">
@@ -1309,9 +1337,19 @@ function ImportedSiteRender({
         <div className="flex items-center gap-2 rounded-t-md border-b border-outline/30 bg-surface-container-low px-3 py-1.5 text-label-sm">
           <span className="font-mono text-text-muted truncate">{niceUrl}</span>
           <span className="ml-auto flex items-center gap-1">
+            {parsed && (
+              <button
+                type="button"
+                onClick={() => setEditorOpen(true)}
+                className="rounded px-2 py-0.5 text-molten-primary hover:bg-surface-container"
+                title="Apri editor file (HTML / CSS / JS)"
+              >
+                ✎ Modifica file
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => iframeRef.current?.contentWindow?.location.reload()}
+              onClick={reloadIframe}
               className="rounded px-2 py-0.5 text-text-muted hover:bg-surface-container hover:text-on-surface"
               title="Ricarica iframe"
             >
@@ -1335,6 +1373,7 @@ function ImportedSiteRender({
         </span>
       )}
       <iframe
+        key={reloadKey}
         ref={iframeRef}
         title={title}
         src={src}
@@ -1343,6 +1382,17 @@ function ImportedSiteRender({
         loading="lazy"
         sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
       />
+      {parsed && (
+        <ImportedSiteFileEditor
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          projectId={parsed.projectId}
+          importId={parsed.importId}
+          initialPath={parsed.filePath}
+          iframeSrcRoot={parsed.rootPrefix}
+          onSaved={reloadIframe}
+        />
+      )}
     </div>
   );
 }
