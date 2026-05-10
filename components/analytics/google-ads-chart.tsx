@@ -35,7 +35,7 @@ export function GoogleAdsChart({ data }: { data: CampaignRow[] }) {
 
   return (
     <div className="h-80 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <BarChart
           data={chartData}
           margin={{ top: 24, right: 16, left: 0, bottom: 8 }}

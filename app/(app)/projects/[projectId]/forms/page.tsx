@@ -167,7 +167,7 @@ export default function FormsPage({
           label="Abandonment rate"
           value={`${stats.abandonmentRate}%`}
           delta={-3}
-          deltaLabel="vs 30gg prec."
+          deltaLabel="vs 30 giorni prec."
         />
         <KpiCard
           label="Conv. rate"

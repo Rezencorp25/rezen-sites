@@ -124,7 +124,7 @@ export default function GoogleAdsPage({
           value={`CHF ${totals.spend.toFixed(2)}`}
           icon={Wallet}
           delta={-8}
-          deltaLabel="vs 30gg prec."
+          deltaLabel="vs 30 giorni prec."
         />
         <KpiCard
           label="Click"

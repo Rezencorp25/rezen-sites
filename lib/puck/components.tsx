@@ -1216,6 +1216,93 @@ export type MapEmbedProps = {
   caption: string;
 };
 
+// ───────────────────────── GenericHtml (S7.9 — parser fallback) ─────────────────────────
+
+export type GenericHtmlProps = {
+  html: string;
+  warning: boolean;
+};
+
+export const GenericHtml: ComponentConfig<GenericHtmlProps> = {
+  label: "Generic HTML (fallback)",
+  fields: {
+    html: { type: "textarea", label: "HTML raw" },
+    warning: {
+      type: "radio",
+      label: "Mostra warning 'sezione non parsata'",
+      options: [
+        { label: "Sì", value: true as unknown as string },
+        { label: "No", value: false as unknown as string },
+      ],
+    },
+  },
+  defaultProps: {
+    html: "<p>Generic HTML block.</p>",
+    warning: true,
+  },
+  render: ({ html, warning }) => (
+    <div className="mx-auto max-w-7xl px-10 py-4">
+      {warning && (
+        <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-2.5 py-1 text-label-md font-semibold uppercase tracking-wider text-warning">
+          Sezione non parsata · raw HTML
+        </span>
+      )}
+      <div
+        className="prose prose-invert max-w-none"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  ),
+};
+
+// ───────────────────────── IframeEmbed (S7.8 — ZIP passthrough) ─────────────────────────
+
+export type IframeEmbedProps = {
+  src: string;
+  height: number;
+  title: string;
+  badge: boolean;
+};
+
+export const IframeEmbed: ComponentConfig<IframeEmbedProps> = {
+  label: "Iframe (Imported Site)",
+  fields: {
+    src: { type: "text", label: "URL (asset Storage o pubblico)" },
+    height: { type: "number", label: "Altezza (px)", min: 200, max: 5000 },
+    title: { type: "text", label: "Titolo (a11y)" },
+    badge: {
+      type: "radio",
+      label: "Badge 'Imported, not editable'",
+      options: [
+        { label: "Mostra", value: true as unknown as string },
+        { label: "Nascondi", value: false as unknown as string },
+      ],
+    },
+  },
+  defaultProps: {
+    src: "/imports/placeholder/index.html",
+    height: 1600,
+    title: "Sito importato",
+    badge: true,
+  },
+  render: ({ src, height, title, badge }) => (
+    <div className="relative w-full">
+      {badge && (
+        <span className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-warning/90 px-2.5 py-1 text-label-md font-semibold uppercase tracking-wider text-on-surface">
+          Imported · not editable
+        </span>
+      )}
+      <iframe
+        title={title}
+        src={src}
+        style={{ width: "100%", height, border: 0 }}
+        loading="lazy"
+        sandbox="allow-scripts allow-same-origin"
+      />
+    </div>
+  ),
+};
+
 export const MapEmbed: ComponentConfig<MapEmbedProps> = {
   label: "Map Embed",
   fields: {

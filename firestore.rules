@@ -146,6 +146,42 @@ service cloud.firestore {
       allow delete: if isAdmin(); // solo admin può cancellare lead
     }
 
+    // ── S7: CMS Webflow-style ──────────────────────────────────────────
+    //
+    // Collezione schema (definizione collection + fields).
+    // Path: projects/{projectId}/collections/{collectionId}
+    // - read: utente autenticato (DOC 3 stringerà a project member)
+    // - write: utente autenticato (in S7.6 si aggiungerà CF audit log on schema change)
+    // L'hashId Webflow-style è dentro il documento (campo `hashId`), non nel path.
+    match /projects/{projectId}/collections/{collectionId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.resource.data.keys().hasAll(['name', 'slug', 'fields']);
+      allow delete: if isAdmin();
+    }
+
+    // CMS items (draftData + liveData + lifecycle 5-state).
+    // Path: projects/{projectId}/collections/{collectionId}/items/{itemId}
+    // - read: utente autenticato (DOC 3 stringerà a project member)
+    // - create/update: utente autenticato; status enum: draft|queued|published|scheduled|archived
+    // - delete: solo admin (preferire status='archived' come soft-delete)
+    // - publish: in S7.6 una CF onWrite copierà draftData → liveData quando status passa a 'queued'
+    match /projects/{projectId}/collections/{collectionId}/items/{itemId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.resource.data.status in ['draft', 'queued', 'published', 'scheduled', 'archived'];
+      allow delete: if isAdmin();
+    }
+
+    // Item version history (popolato da CF onWrite in S7.6).
+    // Path: projects/{projectId}/collections/{collectionId}/items/{itemId}/versions/{versionId}
+    // - read: utente autenticato (per restore UI)
+    // - write: solo Admin SDK (immutabile da client)
+    match /projects/{projectId}/collections/{collectionId}/items/{itemId}/versions/{versionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
     // ── Fallback prototipo (rules aperte) ──────────────────────────────
     //
     // ⚠️ PROTOTIPO — DOC 3 dovrà rimuovere questo fallback e stringere ogni

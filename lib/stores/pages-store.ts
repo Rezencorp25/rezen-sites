@@ -2,10 +2,10 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { VERUMFLOW_PAGES, CARFI_PAGES, BIO_PAGES } from "@/lib/mocks/pages";
+import { ALL_PAGES } from "@/lib/mocks/pages";
 import type { Page, PuckData } from "@/types";
 
-const SEED: Page[] = [...VERUMFLOW_PAGES, ...CARFI_PAGES, ...BIO_PAGES];
+const SEED: Page[] = ALL_PAGES;
 
 type State = {
   pages: Page[];

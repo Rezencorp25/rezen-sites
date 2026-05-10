@@ -78,7 +78,7 @@ export function MetaCampaignDrillModal({ campaign, currency, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <section className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Stat label="Spend 30gg" value={fmtMetaMoney(campaign.spend30d, currency)} />
+            <Stat label="Spesa 30 giorni" value={fmtMetaMoney(campaign.spend30d, currency)} />
             <Stat label="Impression" value={fmtMetaInt(campaign.impressions30d)} />
             <Stat label="Click" value={fmtMetaInt(campaign.clicks30d)} sub={`CTR ${campaign.ctr30d}%`} />
             <Stat

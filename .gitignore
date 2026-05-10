@@ -47,3 +47,10 @@ ui-debug*.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# CMS S7.8 — siti statici importati (passthrough). In prod sono in Firebase Storage.
+/public/imports/
+
+# Asset locali di brief / audit — non versionati
+/CMS Web-flow Foto/
+/.claude-audit/

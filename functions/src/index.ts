@@ -29,3 +29,4 @@ export { revokeIntegration } from "./callable/revoke-integration";
 // Triggers
 export { leadOnFormSubmitted } from "./triggers/lead-on-form-submitted";
 export { leadOnStatusChanged } from "./triggers/lead-on-status-changed";
+export { cmsItemOnWrite } from "./triggers/cms-item-on-write";

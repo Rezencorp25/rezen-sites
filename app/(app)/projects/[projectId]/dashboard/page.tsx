@@ -72,7 +72,7 @@ export default function DashboardPage({
           label="Traffico Organico"
           value={project.kpis.organicTraffic30d.toLocaleString("it-IT")}
           delta={pvDelta}
-          deltaLabel="vs 30gg precedenti"
+          deltaLabel="vs 30 giorni prec."
           icon={TrendingUp}
           tooltip={KPI_DEFINITIONS.organicTraffic}
         />

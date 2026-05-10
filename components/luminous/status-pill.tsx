@@ -66,10 +66,25 @@ export function PageStatusPill({
   status: "draft" | "published" | "staging" | "production";
 }) {
   const map = {
-    published: { variant: "success" as const, label: "PUBLISHED" },
-    production: { variant: "success" as const, label: "PRODUCTION" },
+    published: { variant: "success" as const, label: "PUBBLICATO" },
+    production: { variant: "success" as const, label: "PRODUZIONE" },
     staging: { variant: "info" as const, label: "STAGING" },
-    draft: { variant: "neutral" as const, label: "DRAFT" },
+    draft: { variant: "neutral" as const, label: "BOZZA" },
+  }[status];
+  return <StatusPill variant={map.variant}>{map.label}</StatusPill>;
+}
+
+export function CmsItemStatusPill({
+  status,
+}: {
+  status: "draft" | "queued" | "published" | "scheduled" | "archived";
+}) {
+  const map = {
+    published: { variant: "success" as const, label: "PUBBLICATO" },
+    queued: { variant: "info" as const, label: "IN CODA" },
+    scheduled: { variant: "info" as const, label: "PROGRAMMATO" },
+    draft: { variant: "neutral" as const, label: "BOZZA" },
+    archived: { variant: "warning" as const, label: "ARCHIVIATO" },
   }[status];
   return <StatusPill variant={map.variant}>{map.label}</StatusPill>;
 }

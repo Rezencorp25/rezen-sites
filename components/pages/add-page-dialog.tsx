@@ -25,7 +25,14 @@ import { usePagesStore } from "@/lib/stores/pages-store";
 import { toast } from "sonner";
 import type { Page, PuckData } from "@/types";
 
-type Source = "choose" | "ai" | "blank" | "zip" | "framer" | "webflow";
+type Source =
+  | "choose"
+  | "ai"
+  | "blank"
+  | "zip"
+  | "static"
+  | "framer"
+  | "webflow";
 
 type ImportResponse = {
   page: Page;
@@ -54,6 +61,9 @@ export function AddPageDialog({
   const [prompt, setPrompt] = useState("");
   const [url, setUrl] = useState("");
   const [hasFile, setHasFile] = useState(false);
+  const [staticMode, setStaticMode] = useState<"passthrough" | "parse">(
+    "passthrough",
+  );
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   function reset() {
@@ -209,6 +219,54 @@ export function AddPageDialog({
     }
   }
 
+  async function createFromStaticZip() {
+    const file = fileRef.current?.files?.[0];
+    if (!file || !title.trim()) return;
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("projectId", projectId);
+      fd.append("title", title.trim());
+      fd.append("slug", slug.trim() || toSlug(title));
+      fd.append("mode", staticMode);
+      const res = await fetch("/api/import/static-zip", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const body = (await res.json()) as {
+        page: import("@/types").Page;
+        stats?: {
+          filesWritten: number;
+          skipped: string[];
+          totalBytes: number;
+          blocksProduced?: number;
+          fallbackBlocks?: number;
+        };
+      };
+      if (body.stats) {
+        if (staticMode === "parse" && body.stats.blocksProduced != null) {
+          const fb = body.stats.fallbackBlocks ?? 0;
+          toast.success(
+            `${body.stats.blocksProduced} blocchi Puck${
+              fb > 0 ? ` · ${fb} in fallback raw HTML` : ""
+            }`,
+          );
+        } else {
+          toast.success(
+            `${body.stats.filesWritten} file estratti · ${(body.stats.totalBytes / 1024).toFixed(0)} KB`,
+          );
+        }
+      }
+      pushAndClose(body.page, false);
+    } catch (err) {
+      toast.error(`Errore import static zip: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function createFromUrl(endpoint: "framer-url" | "webflow-url") {
     if (!title.trim() || !url.trim()) return;
     setLoading(true);
@@ -253,6 +311,12 @@ export function AddPageDialog({
       Icon: Upload,
       title: "ZIP Claude Design / Stitch",
       desc: "Brief + screenshot → pagina",
+    },
+    {
+      key: "static" as const,
+      Icon: Upload,
+      title: "ZIP sito statico (Webflow/Framer/WP)",
+      desc: "Passthrough: visibile, non editabile",
     },
     {
       key: "framer" as const,
@@ -368,6 +432,57 @@ export function AddPageDialog({
               </div>
             )}
 
+            {mode === "static" && (
+              <div className="flex flex-col gap-3">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".zip"
+                  onChange={(e) => setHasFile(Boolean(e.target.files?.length))}
+                  className="block w-full cursor-pointer rounded-lg bg-surface-container-low px-3 py-2.5 text-body-sm text-on-surface file:mr-3 file:rounded-md file:border-0 file:bg-surface-container-high file:px-3 file:py-1.5 file:text-body-sm file:text-on-surface hover:file:bg-surface-container-highest"
+                />
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-label-md uppercase tracking-widest text-text-muted">
+                    Strategia import
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStaticMode("passthrough")}
+                      className={`rounded-lg p-3 text-left text-body-sm transition-colors ${
+                        staticMode === "passthrough"
+                          ? "bg-molten-primary/15 text-on-surface ring-1 ring-molten-primary"
+                          : "bg-surface-container-low text-secondary-text hover:bg-surface-container"
+                      }`}
+                    >
+                      <strong className="block text-body-sm text-on-surface">
+                        Iframe passthrough
+                      </strong>
+                      <span className="text-label-sm text-text-muted">
+                        Fedeltà 100% · non editabile
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStaticMode("parse")}
+                      className={`rounded-lg p-3 text-left text-body-sm transition-colors ${
+                        staticMode === "parse"
+                          ? "bg-molten-primary/15 text-on-surface ring-1 ring-molten-primary"
+                          : "bg-surface-container-low text-secondary-text hover:bg-surface-container"
+                      }`}
+                    >
+                      <strong className="block text-body-sm text-on-surface">
+                        Parse to editable
+                      </strong>
+                      <span className="text-label-sm text-text-muted">
+                        Blocchi Puck · lossy ma editabile
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {(mode === "framer" || mode === "webflow") && (
               <Input
                 value={url}
@@ -395,6 +510,7 @@ export function AddPageDialog({
                   if (mode === "ai") return createAI();
                   if (mode === "blank") return createBlank();
                   if (mode === "zip") return createFromZip();
+                  if (mode === "static") return createFromStaticZip();
                   if (mode === "framer") return createFromUrl("framer-url");
                   if (mode === "webflow") return createFromUrl("webflow-url");
                 }}
@@ -478,7 +594,7 @@ function canSubmit(
   if (!state.title.trim()) return false;
   if (mode === "ai") return Boolean(state.prompt.trim());
   if (mode === "blank") return true;
-  if (mode === "zip") return state.hasFile;
+  if (mode === "zip" || mode === "static") return state.hasFile;
   if (mode === "framer" || mode === "webflow") return Boolean(state.url.trim());
   return false;
 }
@@ -491,6 +607,8 @@ function headerFor(mode: Source) {
       return "Partenza vuota";
     case "zip":
       return "Importa ZIP";
+    case "static":
+      return "Importa sito statico";
     case "framer":
       return "Importa da Framer";
     case "webflow":
@@ -510,6 +628,8 @@ function descFor(mode: Source) {
       return "Canvas Puck vuoto — componi da zero.";
     case "zip":
       return "Esporta da Claude Design o Stitch: zip con prompt.md + screen.png.";
+    case "static":
+      return "ZIP di un sito reale (HTML/CSS/JS). Passthrough iframe — visibile, non editabile.";
     case "framer":
       return "URL pubblico Framer. Facciamo scraping dei meta e restructure AI.";
     case "webflow":
@@ -525,6 +645,8 @@ function ctaFor(mode: Source) {
       return "Crea pagina";
     case "zip":
       return "Importa ZIP";
+    case "static":
+      return "Importa sito";
     case "framer":
       return "Importa da URL";
     case "webflow":

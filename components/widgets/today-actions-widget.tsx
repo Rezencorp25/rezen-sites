@@ -208,8 +208,8 @@ export function TodayActionsWidget({
             {headerTitle}
           </h3>
           <span className="text-label-sm text-text-muted">
-            {totalUnresolved} azione{totalUnresolved === 1 ? "" : "i"} aperte ·{" "}
-            top {Math.min(visible.length, effectiveMax)} per impact
+            {totalUnresolved} {totalUnresolved === 1 ? "azione aperta" : "azioni aperte"} · top{" "}
+            {Math.min(visible.length, effectiveMax)} per impatto
           </span>
         </div>
         <div className="ml-auto flex items-center gap-2">

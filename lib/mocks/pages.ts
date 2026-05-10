@@ -466,8 +466,16 @@ export const BIO_PAGES: PageSeed[] = [
   },
 ];
 
+import { MOCK_COLLECTIONS } from "./cms";
+import { buildCollectionTemplatePage } from "@/lib/cms/collection-template";
+
+const COLLECTION_TEMPLATE_PAGES: PageSeed[] = MOCK_COLLECTIONS.map((c) =>
+  buildCollectionTemplatePage(c),
+);
+
 export const ALL_PAGES = [
   ...VERUMFLOW_PAGES,
   ...CARFI_PAGES,
   ...BIO_PAGES,
+  ...COLLECTION_TEMPLATE_PAGES,
 ];

@@ -2,6 +2,7 @@
 
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { fmtDateTime, fmtDateLong } from "@/lib/utils/format-date";
 import {
   ArrowLeft,
@@ -14,8 +15,9 @@ import {
 import { toast } from "sonner";
 import { useCMSStore } from "@/lib/stores/cms-store";
 import { SchemaEditor } from "@/components/cms/schema-editor";
+import { defaultValueFor } from "@/lib/cms/field-types";
 import {
-  PageStatusPill,
+  CmsItemStatusPill,
   StatusPill,
 } from "@/components/luminous/status-pill";
 import { GradientButton } from "@/components/luminous/gradient-button";
@@ -29,6 +31,7 @@ export default function CollectionDetailPage({
   params: Promise<{ projectId: string; collectionId: string }>;
 }) {
   const { projectId, collectionId } = use(params);
+  const router = useRouter();
   const allCollections = useCMSStore((s) => s.collections);
   const allItems = useCMSStore((s) => s.items);
   const addItem = useCMSStore((s) => s.addItem);
@@ -59,11 +62,13 @@ export default function CollectionDetailPage({
     if (!collection) return;
     const emptyData: Record<string, unknown> = {};
     for (const f of collection.fields) {
-      emptyData[f.id] =
-        f.type === "boolean" ? false : f.type === "number" ? 0 : "";
+      emptyData[f.id] = defaultValueFor(f.type);
     }
-    addItem(projectId, collectionId, emptyData);
+    const created = addItem(projectId, collectionId, emptyData);
     toast.success("Nuovo item creato (draft)");
+    router.push(
+      `/projects/${projectId}/cms/${collectionId}/items/${created.id}`,
+    );
   }
 
   return (
@@ -100,9 +105,9 @@ export default function CollectionDetailPage({
       <nav className="mb-5 flex gap-1 rounded-lg bg-surface-container-high p-1 w-fit">
         {(
           [
-            { key: "items", label: "Items", icon: FileText },
+            { key: "items", label: "Item", icon: FileText },
             { key: "schema", label: "Schema", icon: Database },
-            { key: "settings", label: "Settings", icon: SettingsIcon },
+            { key: "settings", label: "Impostazioni", icon: SettingsIcon },
           ] as const
         ).map(({ key, label, icon: Icon }) => (
           <button
@@ -143,17 +148,18 @@ export default function CollectionDetailPage({
                   .join(" ")} 130px`,
               }}
             >
-              <span>Status</span>
+              <span>Stato</span>
               {visibleFields.map((f) => (
                 <span key={f.id}>{f.name}</span>
               ))}
-              <span>Updated</span>
+              <span>Aggiornato</span>
             </div>
             {items.map((item, i) => (
-              <div
+              <Link
                 key={item.id}
+                href={`/projects/${projectId}/cms/${collectionId}/items/${item.id}`}
                 className={cn(
-                  "grid items-center gap-4 px-6 py-3",
+                  "grid items-center gap-4 px-6 py-3 transition-colors hover:bg-surface-container-high",
                   i % 2 === 0
                     ? "bg-surface-container-lowest"
                     : "bg-surface-container-low",
@@ -164,14 +170,15 @@ export default function CollectionDetailPage({
                     .join(" ")} 130px`,
                 }}
               >
-                <PageStatusPill status={item.status} />
+                <CmsItemStatusPill status={item.status} />
                 {visibleFields.map((f) => {
-                  const v = item.data[f.id];
-                  if (f.type === "boolean") {
+                  const source = item.liveData ?? item.draftData;
+                  const v = source[f.id];
+                  if (f.type === "switch") {
                     return (
                       <span key={f.id}>
                         <StatusPill variant={v ? "success" : "neutral"}>
-                          {v ? "YES" : "NO"}
+                          {v ? "SÌ" : "NO"}
                         </StatusPill>
                       </span>
                     );
@@ -188,19 +195,20 @@ export default function CollectionDetailPage({
                 <span className="text-label-sm text-text-muted">
                   {fmtDateTime(item.updatedAt)}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )
       ) : tab === "schema" ? (
         <SchemaEditor
           collectionId={collection.id}
+          projectId={projectId}
           initialFields={collection.fields}
         />
       ) : (
         <div className="rounded-xl bg-surface-container-high p-6">
           <h3 className="mb-4 text-title-md font-semibold text-on-surface">
-            Settings collezione
+            Impostazioni collezione
           </h3>
           <div className="flex flex-col gap-3 text-body-sm text-secondary-text">
             <div className="flex justify-between">
@@ -210,18 +218,18 @@ export default function CollectionDetailPage({
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Created</span>
+              <span>Creata il</span>
               <span className="text-on-surface">
                 {fmtDateLong(collection.createdAt)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Project ID</span>
+              <span>ID progetto</span>
               <span className="font-mono text-on-surface">{projectId}</span>
             </div>
           </div>
           <p className="mt-6 text-label-sm text-text-muted">
-            Delete collection + archive: disponibile in DOC 3.
+            Eliminazione e archiviazione collezione: disponibili in DOC 3.
           </p>
         </div>
       )}

@@ -124,7 +124,7 @@ export default function AdsClient({ projectId }: { projectId: string }) {
           </div>
           <p className="text-body-sm text-secondary-text">
             Performance campagne Meta Marketing API · ultimi 30 giorni · refresh
-            schedulato '0 6 * * *' Europe/Rome
+            schedulato {`'0 6 * * *'`} Europe/Rome
           </p>
         </div>
         <button
@@ -150,7 +150,7 @@ export default function AdsClient({ projectId }: { projectId: string }) {
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiTile
           icon={BadgeDollarSign}
-          label="Spend 30gg"
+          label="Spesa ultimi 30 giorni"
           value={fmtMetaMoney(totals.spend30d, currency)}
           subValue={`${totals.activeCampaigns} campagne attive`}
         />
@@ -204,21 +204,31 @@ export default function AdsClient({ projectId }: { projectId: string }) {
           <div className="flex items-center gap-1">
             {(
               ["all", "ACTIVE", "PAUSED", "COMPLETED"] as const
-            ).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  "rounded px-2.5 py-1 text-label-sm font-medium transition-colors",
-                  statusFilter === s
-                    ? "bg-molten-primary/15 text-molten-primary"
-                    : "text-text-muted hover:text-on-surface",
-                )}
-              >
-                {s === "all" ? "Tutte" : s.charAt(0) + s.slice(1).toLowerCase()}
-              </button>
-            ))}
+            ).map((s) => {
+              const labelIt =
+                s === "all"
+                  ? "Tutte"
+                  : s === "ACTIVE"
+                    ? "Attive"
+                    : s === "PAUSED"
+                      ? "In pausa"
+                      : "Completate";
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  className={cn(
+                    "rounded px-2.5 py-1 text-label-sm font-medium transition-colors",
+                    statusFilter === s
+                      ? "bg-molten-primary/15 text-molten-primary"
+                      : "text-text-muted hover:text-on-surface",
+                  )}
+                >
+                  {labelIt}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -227,13 +237,13 @@ export default function AdsClient({ projectId }: { projectId: string }) {
               <tr className="border-b border-surface-container-low text-label-sm uppercase tracking-wider text-text-muted">
                 <th className="px-2 py-2 text-left">Campagna</th>
                 <th className="px-2 py-2 text-left">Obiettivo</th>
-                <th className="px-2 py-2 text-center">Status</th>
-                <th className="px-2 py-2 text-right">Spend</th>
+                <th className="px-2 py-2 text-center">Stato</th>
+                <th className="px-2 py-2 text-right">Spesa</th>
                 <th className="px-2 py-2 text-right">Impr.</th>
                 <th className="px-2 py-2 text-right">CTR</th>
                 <th className="px-2 py-2 text-right">CPC</th>
                 <th className="px-2 py-2 text-right">Conv.</th>
-                <th className="px-2 py-2 text-right">CPL/ROAS</th>
+                <th className="px-2 py-2 text-right">CPL / ROAS</th>
                 <th className="px-2 py-2" />
               </tr>
             </thead>

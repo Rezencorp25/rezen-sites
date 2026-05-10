@@ -98,12 +98,12 @@ export default function PagesListPage({
           onValueChange={(v) => setStatus(v as StatusFilter)}
         >
           <SelectTrigger className="h-10 w-40 bg-surface-container-low border-none">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Stato" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Status: Tutti</SelectItem>
-            <SelectItem value="published">Status: Published</SelectItem>
-            <SelectItem value="draft">Status: Draft</SelectItem>
+            <SelectItem value="all">Stato: tutti</SelectItem>
+            <SelectItem value="published">Stato: pubblicate</SelectItem>
+            <SelectItem value="draft">Stato: bozze</SelectItem>
           </SelectContent>
         </Select>
 
@@ -112,12 +112,12 @@ export default function PagesListPage({
           onValueChange={(v) => setIndexable(v as IndexableFilter)}
         >
           <SelectTrigger className="h-10 w-44 bg-surface-container-low border-none">
-            <SelectValue placeholder="Indexable" />
+            <SelectValue placeholder="Indicizzabili" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Indexable: Tutti</SelectItem>
-            <SelectItem value="yes">Indexable: Sì</SelectItem>
-            <SelectItem value="no">Indexable: No</SelectItem>
+            <SelectItem value="all">Indicizzabili: tutti</SelectItem>
+            <SelectItem value="yes">Indicizzabili: sì</SelectItem>
+            <SelectItem value="no">Indicizzabili: no</SelectItem>
           </SelectContent>
         </Select>
 

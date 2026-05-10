@@ -116,6 +116,16 @@ export type PageSEO = {
     description?: string;
     image?: string;
   };
+  /**
+   * S7.7 — CMS binding: pesca il valore da un fieldId della collection
+   * dell'item corrente. Se settato, sovrascrive il valore statico.
+   */
+  bindings?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    ogImage?: string;
+    canonical?: string;
+  };
   /** E-E-A-T author + reviewer (boost AI/Google credibility) */
   author?: {
     name: string;
@@ -160,45 +170,33 @@ export type Page = {
   puckData: PuckData;
   seo: PageSEO;
   analytics: PageAnalytics;
+  /**
+   * Se settato, questa Page è il template Webflow-style "Collection Page":
+   * viene renderizzata 1 volta per item della collection target.
+   * URL pattern dinamico: `/{collection.slug}/{item.slug}`.
+   */
+  templateForCollectionId?: string;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type CMSFieldType =
-  | "text"
-  | "richtext"
-  | "image"
-  | "date"
-  | "number"
-  | "boolean"
-  | "reference";
-
-export type CMSField = {
-  id: string;
-  name: string;
-  type: CMSFieldType;
-  required: boolean;
-  referenceCollectionId?: string;
-};
-
-export type CMSCollection = {
-  id: string;
-  projectId: string;
-  name: string;
-  slug: string;
-  fields: CMSField[];
-  createdAt: Date;
-};
-
-export type CMSItem = {
-  id: string;
-  collectionId: string;
-  projectId: string;
-  data: Record<string, unknown>;
-  status: PageStatus;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type {
+  CMSFieldType,
+  CMSField,
+  CMSCollection,
+  CMSCollectionLimits,
+  CMSItem,
+  CMSItemStatus,
+  CMSItemFieldData,
+  CMSItemVersion,
+  CMSValidationRule,
+  CMSOptionChoice,
+} from "./cms";
+export {
+  BAKED_IN_FIELDS,
+  DEFAULT_COLLECTION_LIMITS,
+  isReferenceField,
+} from "./cms";
 
 export type FormSubmission = {
   id: string;

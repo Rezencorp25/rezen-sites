@@ -17,7 +17,14 @@ import {
   ContactForm,
   Footer,
   MapEmbed,
+  IframeEmbed,
+  GenericHtml,
 } from "./components";
+import {
+  BindableHeading,
+  BindableParagraph,
+  BindableImage,
+} from "./components-bindable";
 
 export const puckConfig: Config = {
   components: {
@@ -36,6 +43,11 @@ export const puckConfig: Config = {
     ContactForm,
     Footer,
     MapEmbed,
+    IframeEmbed,
+    GenericHtml,
+    BindableHeading,
+    BindableParagraph,
+    BindableImage,
   },
   categories: {
     layout: {
@@ -48,7 +60,11 @@ export const puckConfig: Config = {
     },
     sections: {
       title: "Sezioni",
-      components: ["Hero", "CTA", "FeatureList", "PricingCard", "Testimonial", "FAQ", "ContactForm", "MapEmbed"],
+      components: ["Hero", "CTA", "FeatureList", "PricingCard", "Testimonial", "FAQ", "ContactForm", "MapEmbed", "IframeEmbed", "GenericHtml"],
+    },
+    cms: {
+      title: "CMS Bindable",
+      components: ["BindableHeading", "BindableParagraph", "BindableImage"],
     },
   },
   root: {

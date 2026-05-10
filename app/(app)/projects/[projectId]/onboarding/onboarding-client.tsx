@@ -490,6 +490,12 @@ function Step2Keywords({
   const updateKw = (id: string, patch: Partial<OnboardingKeyword>) =>
     onChange(keywords.map((k) => (k.id === id ? { ...k, ...patch } : k)));
 
+  const pendingLines = bulkText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 1).length;
+  const projectedTotal = Math.min(keywords.length + pendingLines, MAX_KEYWORDS);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
@@ -511,18 +517,23 @@ function Step2Keywords({
             <span
               className={cn(
                 "font-mono font-semibold",
-                keywords.length < MIN_KEYWORDS
+                projectedTotal < MIN_KEYWORDS
                   ? "text-rose-300"
-                  : keywords.length >= TARGET_KEYWORDS
+                  : projectedTotal >= TARGET_KEYWORDS
                     ? "text-emerald-300"
                     : "text-amber-300",
               )}
             >
-              {keywords.length}
+              {projectedTotal}
             </span>
             {" / "}
             <span className="font-mono">{TARGET_KEYWORDS}</span> target (min{" "}
             {MIN_KEYWORDS}, max {MAX_KEYWORDS})
+            {pendingLines > 0 && (
+              <span className="ml-2 text-text-muted">
+                · {keywords.length} salvate + {pendingLines} da aggiungere
+              </span>
+            )}
           </span>
           <button
             type="button"
@@ -536,7 +547,7 @@ function Step2Keywords({
             )}
           >
             <Plus className="h-3.5 w-3.5" />
-            Aggiungi al set
+            Aggiungi al set{pendingLines > 0 ? ` (${pendingLines})` : ""}
           </button>
         </div>
       </div>
