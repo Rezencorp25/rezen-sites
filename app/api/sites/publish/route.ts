@@ -124,13 +124,18 @@ export async function POST(req: Request) {
             },
             resumable: false,
           });
-          await dest.makePublic();
+          // Files are served via Next proxy route /sites/{projectId}/[...path]
+          // which uses Admin SDK to fetch — no need for ACL makePublic
+          // (incompatible with uniform bucket-level access).
           uploaded.push({ path: rel, size: data.length });
         }),
       );
     }
 
-    const indexUrl = `https://storage.googleapis.com/${bucketName}/${sitePrefix}index.html`;
+    // Public URL via Next proxy route (no auth required, bypasses /login).
+    const reqUrl = new URL(req.url);
+    const origin = reqUrl.origin;
+    const indexUrl = `${origin}/sites/${projectId}/`;
     const totalBytes = uploaded.reduce((acc, f) => acc + f.size, 0);
 
     return NextResponse.json({
