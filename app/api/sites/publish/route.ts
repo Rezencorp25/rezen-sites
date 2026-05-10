@@ -133,8 +133,12 @@ export async function POST(req: Request) {
     }
 
     // Public URL via Next proxy route (no auth required, bypasses /login).
-    const reqUrl = new URL(req.url);
-    const origin = reqUrl.origin;
+    // Behind Cloud Run, req.url has the internal host (0.0.0.0:8080); use the
+    // forwarded headers to recover the canonical public URL.
+    const fwdHost =
+      req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+    const fwdProto = req.headers.get("x-forwarded-proto") ?? "https";
+    const origin = fwdHost ? `${fwdProto}://${fwdHost}` : new URL(req.url).origin;
     const indexUrl = `${origin}/sites/${projectId}/`;
     const totalBytes = uploaded.reduce((acc, f) => acc + f.size, 0);
 
