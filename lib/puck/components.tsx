@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import * as LucideIcons from "lucide-react";
 import type { ComponentConfig } from "@measured/puck";
 import { cn } from "@/lib/utils";
@@ -1262,14 +1263,120 @@ export type IframeEmbedProps = {
   height: number;
   title: string;
   badge: boolean;
+  autoFit: boolean;
+  showToolbar: boolean;
 };
+
+function ImportedSiteRender({
+  src,
+  height,
+  title,
+  badge,
+  autoFit,
+  showToolbar,
+}: IframeEmbedProps) {
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+  const [autoHeight, setAutoHeight] = React.useState<number | null>(null);
+
+  const handleLoad = React.useCallback(() => {
+    if (!autoFit) return;
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) return;
+      const measured = Math.max(
+        doc.documentElement?.scrollHeight ?? 0,
+        doc.body?.scrollHeight ?? 0,
+      );
+      if (measured > 0) setAutoHeight(measured + 40);
+    } catch {
+      // cross-origin: fallback to manual height
+    }
+  }, [autoFit]);
+
+  const effectiveHeight = autoFit && autoHeight ? autoHeight : height;
+  const niceUrl = (() => {
+    try {
+      const u = src.startsWith("/") ? new URL(src, "http://x").pathname : src;
+      return u;
+    } catch {
+      return src;
+    }
+  })();
+
+  return (
+    <div className="relative w-full">
+      {showToolbar && (
+        <div className="flex items-center gap-2 rounded-t-md border-b border-outline/30 bg-surface-container-low px-3 py-1.5 text-label-sm">
+          <span className="font-mono text-text-muted truncate">{niceUrl}</span>
+          <span className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => iframeRef.current?.contentWindow?.location.reload()}
+              className="rounded px-2 py-0.5 text-text-muted hover:bg-surface-container hover:text-on-surface"
+              title="Ricarica iframe"
+            >
+              ↻
+            </button>
+            <a
+              href={src}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded px-2 py-0.5 text-molten-primary hover:bg-surface-container"
+              title="Apri in nuova scheda"
+            >
+              ↗ Apri
+            </a>
+          </span>
+        </div>
+      )}
+      {badge && (
+        <span className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-warning/90 px-2.5 py-1 text-label-md font-semibold uppercase tracking-wider text-on-surface">
+          Imported · not editable
+        </span>
+      )}
+      <iframe
+        ref={iframeRef}
+        title={title}
+        src={src}
+        onLoad={handleLoad}
+        style={{ width: "100%", height: effectiveHeight, border: 0 }}
+        loading="lazy"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      />
+    </div>
+  );
+}
 
 export const IframeEmbed: ComponentConfig<IframeEmbedProps> = {
   label: "Iframe (Imported Site)",
   fields: {
-    src: { type: "text", label: "URL (asset Storage o pubblico)" },
-    height: { type: "number", label: "Altezza (px)", min: 200, max: 5000 },
-    title: { type: "text", label: "Titolo (a11y)" },
+    src: {
+      type: "text",
+      label: "URL pagina (es. /imports/{id}/static-real/index.html)",
+    },
+    height: {
+      type: "number",
+      label: "Altezza fissa (px) — usata se Auto-fit OFF",
+      min: 200,
+      max: 8000,
+    },
+    autoFit: {
+      type: "radio",
+      label: "Auto-fit altezza al contenuto",
+      options: [
+        { label: "Sì (consigliato)", value: true as unknown as string },
+        { label: "No (altezza fissa)", value: false as unknown as string },
+      ],
+    },
+    showToolbar: {
+      type: "radio",
+      label: "Toolbar in alto (URL + Apri + Ricarica)",
+      options: [
+        { label: "Mostra", value: true as unknown as string },
+        { label: "Nascondi", value: false as unknown as string },
+      ],
+    },
+    title: { type: "text", label: "Titolo (accessibilità)" },
     badge: {
       type: "radio",
       label: "Badge 'Imported, not editable'",
@@ -1283,24 +1390,11 @@ export const IframeEmbed: ComponentConfig<IframeEmbedProps> = {
     src: "/imports/placeholder/index.html",
     height: 1600,
     title: "Sito importato",
-    badge: true,
+    badge: false,
+    autoFit: true,
+    showToolbar: true,
   },
-  render: ({ src, height, title, badge }) => (
-    <div className="relative w-full">
-      {badge && (
-        <span className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-warning/90 px-2.5 py-1 text-label-md font-semibold uppercase tracking-wider text-on-surface">
-          Imported · not editable
-        </span>
-      )}
-      <iframe
-        title={title}
-        src={src}
-        style={{ width: "100%", height, border: 0 }}
-        loading="lazy"
-        sandbox="allow-scripts allow-same-origin"
-      />
-    </div>
-  ),
+  render: (props) => <ImportedSiteRender {...props} />,
 };
 
 export const MapEmbed: ComponentConfig<MapEmbedProps> = {

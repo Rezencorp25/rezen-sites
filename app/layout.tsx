@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { AppVersionGate } from "@/components/app-version-gate";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,6 +28,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-surface-dim text-on-surface">
+        <AppVersionGate />
         {children}
         <Toaster
           position="bottom-right"

@@ -25,6 +25,8 @@ function importedSitePuckData(src: string, title: string): PuckData {
           height: 4800,
           title,
           badge: false,
+          autoFit: true,
+          showToolbar: true,
         },
       },
     ],
