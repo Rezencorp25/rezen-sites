@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Privacy Policy — VerumFlow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="colors_and_type.css">
+<link rel="stylesheet" href="page.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="vf-typeset">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="page-layout.jsx"></script>
+<script type="text/babel">
+  const Page = () => {
+    React.useEffect(() => { const t = () => window.lucide && window.lucide.createIcons(); t(); const id = setInterval(t, 500); setTimeout(() => clearInterval(id), 3000); }, []);
+    return (
+      <div>
+        <PageNav />
+        <PageHero overline="Legale" title="Privacy Policy" sub="Ultimo aggiornamento: 6 maggio 2026. Conformità GDPR (UE) e nFADP (Svizzera)." />
+        <section style={{ padding: "0 32px 100px" }}>
+          <div style={{ maxWidth: 760, margin: "0 auto" }} className="vf-typeset">
+            <h2>1. Titolare del trattamento</h2>
+            <p>VerumFlow / REZEN Corp., Canton Ticino, Svizzera. Email: <a href="mailto:hello@verumflow.com">hello@verumflow.com</a>.</p>
+
+            <h2>2. Dati raccolti</h2>
+            <p>Raccogliamo solo i dati necessari per fornire i nostri servizi:</p>
+            <ul>
+              <li>Dati di contatto (nome, email, azienda, telefono) forniti volontariamente tramite i nostri form.</li>
+              <li>Dati di navigazione anonimi (pagine visitate, durata visita) tramite analytics rispettoso della privacy.</li>
+              <li>Trascrizioni e audio delle sessioni VerumAudit, con il tuo consenso esplicito prima della registrazione.</li>
+            </ul>
+
+            <h2>3. Finalità</h2>
+            <p>Utilizziamo i dati esclusivamente per: rispondere alle tue richieste, condurre l'audit, preparare il blueprint, fatturare i servizi prestati. Non vendiamo né cediamo dati a terzi.</p>
+
+            <h2>4. Conservazione</h2>
+            <p>I dati di contatto vengono conservati per 24 mesi dall'ultimo contatto. Le trascrizioni audit vengono cancellate dopo 90 giorni se non si procede con un progetto. I dati relativi a progetti attivi vengono conservati per la durata del contratto + 10 anni (obblighi fiscali).</p>
+
+            <h2>5. AI e modelli</h2>
+            <p>I tuoi dati <strong>non</strong> vengono usati per il training di modelli AI di terze parti. Le inferenze degli agent durante l'audit avvengono su modelli ospitati nel nostro perimetro o presso provider con accordi di no-training (es. OpenAI Enterprise, Anthropic).</p>
+
+            <h2>6. I tuoi diritti</h2>
+            <p>Hai diritto a: accesso, rettifica, cancellazione, portabilità, opposizione al trattamento. Scrivi a <a href="mailto:hello@verumflow.com">hello@verumflow.com</a> per esercitarli.</p>
+
+            <h2>7. Hosting e trasferimenti</h2>
+            <p>L'hosting di base è in Svizzera (Infomaniak). Per progetti che richiedono hosting EU offriamo opzione AWS Frankfurt o Hetzner. Nessun trasferimento extra-EU/CH senza tua autorizzazione esplicita.</p>
+
+            <h2>8. Cookie</h2>
+            <p>Il sito usa solo cookie tecnici necessari. Vedi <a href="cookie.html">Cookie Policy</a> per il dettaglio.</p>
+
+            <h2>9. Modifiche</h2>
+            <p>Ti notificheremo via email qualsiasi modifica sostanziale a questa policy.</p>
+          </div>
+        </section>
+        <PageFooter />
+      </div>
+    );
+  };
+  ReactDOM.createRoot(document.getElementById("root")).render(<Page />);
+</script>
+</body>
+</html>

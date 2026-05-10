@@ -30,38 +30,7 @@ export type ProjectTask = {
   createdAt: string;
 };
 
-const SEED: ProjectTask[] = [
-  {
-    id: "tk-1",
-    projectId: "verumflow-ch",
-    title: "Aggiungere meta description su /blog/post-3",
-    description: "Triggered by alert #a1. Generato AI fallback OK.",
-    status: "in_progress",
-    priority: "high",
-    hoursSpent: 0.5,
-    estimatedHours: 1,
-    customRate: null,
-    customerPriced: true,
-    assigneeName: "Anna Bianchi",
-    dueDate: new Date(NOW_ANCHOR + 2 * 86400000).toISOString().slice(0, 10),
-    createdAt: new Date(NOW_ANCHOR - 1 * 86400000).toISOString(),
-  },
-  {
-    id: "tk-2",
-    projectId: "verumflow-ch",
-    title: "Verificare bounce rate /contact",
-    description: "Bounce >80%. Possibile UX issue.",
-    status: "todo",
-    priority: "medium",
-    hoursSpent: 0,
-    estimatedHours: 2,
-    customRate: null,
-    customerPriced: true,
-    assigneeName: "Te",
-    dueDate: new Date(NOW_ANCHOR + 5 * 86400000).toISOString().slice(0, 10),
-    createdAt: new Date(NOW_ANCHOR - 2 * 86400000).toISOString(),
-  },
-];
+const SEED: ProjectTask[] = [];
 
 type State = { tasks: ProjectTask[] };
 type Actions = {

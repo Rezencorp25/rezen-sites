@@ -1,4 +1,5 @@
 import type { Page } from "@/types";
+import type { Data as PuckData } from "@measured/puck";
 import {
   heroLandingTemplate,
   simplePageTemplate,
@@ -13,214 +14,57 @@ type PageSeed = Omit<Page, "createdAt" | "updatedAt"> & {
 
 const now = () => new Date("2026-04-18T10:00:00Z");
 
+function importedSitePuckData(src: string, title: string): PuckData {
+  return {
+    content: [
+      {
+        type: "IframeEmbed",
+        props: {
+          id: "iframe-import-verumflow",
+          src,
+          height: 4800,
+          title,
+          badge: false,
+        },
+      },
+    ],
+    root: { props: { title } },
+  } as unknown as PuckData;
+}
+
+const VERUMFLOW_IMPORT_BASE = "/imports/verumflow-ch/static-real";
+
 export const VERUMFLOW_PAGES: PageSeed[] = [
   {
     id: "home",
     projectId: "verumflow-ch",
-    title: "Home",
+    title: "VerumFlow.ch",
     slug: "/",
     status: "published",
-    puckData: heroLandingTemplate({
-      siteName: "VerumFlow",
-      headline: "Software che orchestra business reali",
-      subheadline:
-        "Costruiamo gestionali SaaS per PMI svizzere e italiane. Firebase + Claude + cura artigianale.",
-      ctaText: "Prenota audit",
-      ctaHref: "/audit",
-    }),
+    puckData: importedSitePuckData(
+      `${VERUMFLOW_IMPORT_BASE}/index.html`,
+      "VerumFlow — Sistemi gestionali su misura, in 14 giorni",
+    ),
     seo: {
-      metaTitle: "VerumFlow — Software house per PMI svizzere e italiane",
+      metaTitle:
+        "VerumFlow — Sistemi gestionali su misura, in 14 giorni",
       metaDescription:
-        "Gestionali su misura con AI multi-agente. Pipeline Firebase, compliance GDPR, delivery in settimane.",
+        "AI-native agency. Costruiamo software custom per micro-imprese in Ticino e Nord Italia.",
       canonicalUrl: "https://verumflow.ch/",
       indexable: true,
       internalSearch: true,
       og: {},
     },
     analytics: {
-      pageviews7d: 784,
-      pageviews30d: 3120,
-      bounceRate: 0.42,
-      avgPosition: 8.3,
-      topKeyword: "software house svizzera",
-      seoScore: 82,
-    },
-    createdAt: new Date("2025-11-12T10:00:00Z"),
-    updatedAt: new Date("2026-04-15T14:00:00Z"),
-  },
-  {
-    id: "audit",
-    projectId: "verumflow-ch",
-    title: "Audit",
-    slug: "/audit",
-    status: "published",
-    puckData: heroLandingTemplate({
-      siteName: "VerumFlow",
-      headline: "Accedi all'audit AI — VerumFlow",
-      subheadline:
-        "Scopri come l'AI può ottimizzare i processi della tua azienda. Audit gratuito in 10 minuti.",
-      ctaText: "Inizia l'audit",
-      ctaHref: "#form",
-    }),
-    seo: {
-      metaTitle: "Accedi all'audit AI — VerumFlow",
-      metaDescription:
-        "Scopri come l'AI può ottimizzare i processi della tua azienda. Audit gratuito in 10 minuti.",
-      canonicalUrl: "https://verumflow.ch/audit",
-      indexable: true,
-      internalSearch: true,
-      og: {},
-    },
-    analytics: {
-      pageviews7d: 312,
-      pageviews30d: 1205,
-      bounceRate: 0.34,
-      avgPosition: 12.4,
-      topKeyword: "audit azienda",
-      seoScore: 88,
-    },
-    createdAt: new Date("2025-11-15T10:00:00Z"),
-    updatedAt: new Date("2026-04-17T09:00:00Z"),
-  },
-  {
-    id: "contact",
-    projectId: "verumflow-ch",
-    title: "Contact",
-    slug: "/contact",
-    status: "published",
-    puckData: contactPageTemplate(),
-    seo: {
-      metaTitle: "Contattaci — VerumFlow",
-      metaDescription: "Scrivici: risposta entro 24h lavorative.",
-      canonicalUrl: "https://verumflow.ch/contact",
-      indexable: true,
-      internalSearch: false,
-      og: {},
-    },
-    analytics: {
-      pageviews7d: 132,
-      pageviews30d: 432,
-      bounceRate: 0.61,
-      avgPosition: 15.2,
-      topKeyword: "contatti verumflow",
-      seoScore: 69,
-    },
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: "blog",
-    projectId: "verumflow-ch",
-    title: "Blog",
-    slug: "/blog",
-    status: "published",
-    puckData: simplePageTemplate({
-      title: "Blog VerumFlow",
-      body: "Articoli su AI, Firebase e processi aziendali.",
-    }),
-    seo: {
-      metaTitle: "Blog VerumFlow — AI e software per PMI",
-      metaDescription:
-        "Articoli su AI multi-agente, Firebase, orchestrazione processi aziendali.",
-      canonicalUrl: "https://verumflow.ch/blog",
-      indexable: true,
-      internalSearch: true,
-      og: {},
-    },
-    analytics: {
-      pageviews7d: 218,
-      pageviews30d: 876,
-      bounceRate: 0.48,
-      avgPosition: 18.1,
-      topKeyword: "blog ai italia",
-      seoScore: 74,
-    },
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: "privacy",
-    projectId: "verumflow-ch",
-    title: "Privacy",
-    slug: "/privacy",
-    status: "draft",
-    puckData: simplePageTemplate({
-      title: "Privacy Policy",
-      body: "Informativa privacy in corso di stesura.",
-    }),
-    seo: {
-      metaTitle: "Privacy Policy",
-      metaDescription: "",
-      canonicalUrl: "https://verumflow.ch/privacy",
-      indexable: false,
-      internalSearch: false,
-      og: {},
-    },
-    analytics: {
-      pageviews7d: 2,
-      pageviews30d: 12,
-      bounceRate: 0.88,
-      avgPosition: 42,
-      topKeyword: "verumflow privacy",
-      seoScore: 45,
-    },
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: "terms",
-    projectId: "verumflow-ch",
-    title: "Terms",
-    slug: "/terms",
-    status: "draft",
-    puckData: simplePageTemplate({
-      title: "Termini di Servizio",
-      body: "Termini in corso di stesura.",
-    }),
-    seo: {
-      metaTitle: "Termini di Servizio",
-      metaDescription: "",
-      canonicalUrl: "https://verumflow.ch/terms",
-      indexable: false,
-      internalSearch: false,
-      og: {},
-    },
-    analytics: {
       pageviews7d: 0,
-      pageviews30d: 3,
-      bounceRate: 1,
-      avgPosition: 55,
-      topKeyword: "verumflow termini",
-      seoScore: 40,
-    },
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: "not-found",
-    projectId: "verumflow-ch",
-    title: "404",
-    slug: "/404",
-    status: "published",
-    puckData: notFoundTemplate(),
-    seo: {
-      metaTitle: "Pagina non trovata",
-      metaDescription: "",
-      canonicalUrl: "https://verumflow.ch/404",
-      indexable: false,
-      internalSearch: false,
-      og: {},
-    },
-    analytics: {
-      pageviews7d: 5,
-      pageviews30d: 23,
-      bounceRate: 0.95,
+      pageviews30d: 0,
+      bounceRate: 0,
       avgPosition: 0,
-      topKeyword: "—",
+      topKeyword: "",
       seoScore: 0,
     },
-    createdAt: now(),
-    updatedAt: now(),
+    createdAt: new Date("2026-05-10T14:00:00Z"),
+    updatedAt: new Date("2026-05-10T14:00:00Z"),
   },
 ];
 

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>VerumFlow — Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1113">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="mobile.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<nav class="m-nav dark">
+  <a href="index.html" class="m-nav__brand"><img src="../assets/logo-v.png" alt="VerumFlow"><span style="color:#F2F2F2">VerumFlow</span></a>
+  <button class="m-nav__menu" data-drawer-open aria-label="Menu"><i data-lucide="menu"></i></button>
+</nav>
+
+<div id="m-drawer" class="m-drawer" role="dialog" aria-hidden="true">
+  <div class="m-drawer__top">
+    <a href="index.html" class="m-drawer__brand"><img src="../assets/logo-v.png" alt="VerumFlow">VerumFlow</a>
+    <button class="m-drawer__close" data-drawer-close aria-label="Chiudi"><i data-lucide="x"></i></button>
+  </div>
+  <nav class="m-drawer__nav">
+    <a href="servizi.html"><span>Servizi</span><span>→</span></a>
+    <a href="case-studies.html"><span>Case studies</span><span>→</span></a>
+    <a href="contatti.html"><span>Contatti</span><span>→</span></a>
+    <a href="book.html"><span>Prenota audit</span><span>→</span></a>
+  </nav>
+  <a href="book.html" class="m-btn m-btn--primary m-drawer__cta">Prenota VerumAudit →</a>
+  <div class="m-drawer__foot">
+    Canton Ticino, CH<br>
+    <a href="mailto:sales@verumflow.com">sales@verumflow.com</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<header class="m-index-hero">
+  <div class="m-index-hero__pill">VerumAudit · Posti limitati 2026</div>
+  <h1 class="m-index-hero__title">Sistemi gestionali<br>su misura<br><em>in 14 giorni.</em></h1>
+  <p class="m-index-hero__sub">L'agenzia AI-native per micro-imprese in Ticino e Nord Italia. Dall'audit al go-live: due settimane, prezzo fisso, codice tuo.</p>
+  <div class="m-index-hero__cta">
+    <a href="book.html" class="m-btn m-btn--primary">Prenota VerumAudit →</a>
+  </div>
+  <div class="m-index-hero__meta">
+    <div><b>14gg</b>al go-live</div>
+    <div><b>72h</b>per il blueprint</div>
+    <div><b>0€</b>audit</div>
+  </div>
+</header>
+
+<!-- PROCESSO -->
+<section class="m-section m-reveal">
+  <span class="m-section__overline">Il processo</span>
+  <h2>Quattro fasi, <em>zero sorprese.</em></h2>
+  <p class="m-section__sub">Tre voice agent specializzati conducono l'audit. Tu ricevi il blueprint con preventivo fisso entro 72 ore.</p>
+  <div class="m-process">
+    <div class="m-process__step"><span class="m-process__step__dur">45 min</span><h4>VerumAudit</h4><p>Tre voice agent intervistano il team. Mappiamo processi, dati, dolori.</p></div>
+    <div class="m-process__step"><span class="m-process__step__dur">72 ore</span><h4>Blueprint</h4><p>Architettura, stack, timeline e preventivo fisso. Niente "stima oraria".</p></div>
+    <div class="m-process__step"><span class="m-process__step__dur">10–14 gg</span><h4>Build</h4><p>Pipeline multi-agent costruisce, tu validi su staging ogni 48h.</p></div>
+    <div class="m-process__step"><span class="m-process__step__dur">3 mesi</span><h4>Go-live + support</h4><p>Onboarding del team, bug-fix e micro-iterazioni inclusi.</p></div>
+  </div>
+</section>
+
+<!-- SERVIZI -->
+<section class="m-section m-section--dark m-reveal">
+  <span class="m-section__overline">Servizi</span>
+  <h2>Quattro modi per<br><em>essere più veloci.</em></h2>
+  <div class="m-stack">
+    <div class="m-card"><h3>Sistemi gestionali custom</h3><p>ERP/CRM su misura, sostituiscono fogli e tool scollegati. Codice tuo, hosting CH/EU.</p></div>
+    <div class="m-card"><h3>Voice agent operativi</h3><p>Agent che fanno chiamate, qualificano lead, prendono appuntamenti. Italiano nativo.</p></div>
+    <div class="m-card"><h3>Automazioni AI workflow</h3><p>Routing email, lettura documenti, classificazione, escalation. Sui tuoi dati.</p></div>
+    <div class="m-card"><h3>Audit & advisory</h3><p>Diagnosi indipendente. 45 minuti, blueprint a 72h. Niente vendor lock-in.</p></div>
+  </div>
+  <div style="margin-top:24px"><a href="servizi.html" class="m-btn m-btn--ghost-dark">Tutti i servizi →</a></div>
+</section>
+
+<!-- CASE STUDIES -->
+<section class="m-section m-section--warm-2 m-reveal">
+  <span class="m-section__overline">Case studies</span>
+  <h2>Quello che <em>abbiamo costruito.</em></h2>
+  <div>
+    <div class="m-case">
+      <span class="m-case__tag">Logistica</span>
+      <h3>Da 14 fogli Excel a un cruscotto unico.</h3>
+      <p>Spedizioniere ticinese, 32 dipendenti. Centralizzati ordini, stock, fatturazione e tracking.</p>
+      <div class="m-case__metrics">
+        <div class="m-case__metric"><b>−47%</b><span>tempo data-entry</span></div>
+        <div class="m-case__metric"><b>14gg</b><span>al go-live</span></div>
+      </div>
+    </div>
+    <div class="m-case">
+      <span class="m-case__tag">Hospitality</span>
+      <h3>Voice agent per prenotazioni h24.</h3>
+      <p>Catena ristoranti Lugano. Agent gestisce prenotazioni in italiano, tedesco e inglese.</p>
+      <div class="m-case__metrics">
+        <div class="m-case__metric"><b>+38%</b><span>prenotazioni</span></div>
+        <div class="m-case__metric"><b>0</b><span>chiamate perse</span></div>
+      </div>
+    </div>
+    <div class="m-case">
+      <span class="m-case__tag">Servizi B2B</span>
+      <h3>Onboarding clienti automatizzato.</h3>
+      <p>Studio commercialista. Lettura documenti, classificazione, pre-compilazione.</p>
+      <div class="m-case__metrics">
+        <div class="m-case__metric"><b>−62%</b><span>setup time</span></div>
+        <div class="m-case__metric"><b>4×</b><span>capacity</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:24px"><a href="case-studies.html" class="m-btn m-btn--ghost-light">Tutti i case studies →</a></div>
+</section>
+
+<!-- CHI SIAMO -->
+<section class="m-section m-reveal">
+  <span class="m-section__overline">Chi siamo</span>
+  <h2>Tre persone,<br><em>una pipeline AI-native.</em></h2>
+  <p class="m-section__sub">Lavoriamo con AI come collaboratore alla pari: scrive codice, scrive test, documenta. Per questo possiamo consegnare in 14 giorni quello che un'agenzia tradizionale fa in 6 mesi.</p>
+  <div class="m-stats" style="grid-template-columns:1fr 1fr;gap:12px">
+    <div class="m-stat"><b>14</b><span style="color:var(--vf-fg-2)">giorni medi al go-live</span></div>
+    <div class="m-stat"><b>23</b><span style="color:var(--vf-fg-2)">progetti consegnati</span></div>
+    <div class="m-stat"><b>100%</b><span style="color:var(--vf-fg-2)">codice del cliente</span></div>
+    <div class="m-stat"><b>CH/EU</b><span style="color:var(--vf-fg-2)">hosting & dati</span></div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="m-section m-section--warm-2 m-reveal">
+  <div class="m-quote">
+    <p>"In due settimane abbiamo sostituito 14 fogli Excel con un unico cruscotto. Pensavamo fosse impossibile, era solo lento il modo in cui lavoravamo prima."</p>
+    <div class="m-quote__att"><b>Marco B.</b>CEO, Spedizioniere Ticino</div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="m-section m-section--dark m-reveal">
+  <span class="m-section__overline">Domande frequenti</span>
+  <h2>Tutto quello che<br>vuoi <em>davvero</em> sapere.</h2>
+  <div style="margin-top:8px">
+    <div class="m-faq__item open"><button class="m-faq__q">Quanto dura davvero un progetto?<i data-lucide="chevron-down"></i></button><div class="m-faq__a">Dal kickoff dell'audit al go-live: 14 giorni di calendario, in media. Audit 45 minuti, blueprint entro 72 ore, sistema online entro la seconda settimana.</div></div>
+    <div class="m-faq__item"><button class="m-faq__q">Sono micro-impresa, posso permettermelo?<i data-lucide="chevron-down"></i></button><div class="m-faq__a">Sì. La pipeline multi-agent ci permette di lavorare a costi enterprise — ma ad un quinto. Preventivo fisso, dichiarato dopo l'audit.</div></div>
+    <div class="m-faq__item"><button class="m-faq__q">Devo cambiare i tool che già uso?<i data-lucide="chevron-down"></i></button><div class="m-faq__a">No. Costruiamo sopra il tuo stack — Google Workspace, M365, WhatsApp Business, Stripe, Shopify. Centralizziamo i dati, non sostituiamo tutto.</div></div>
+    <div class="m-faq__item"><button class="m-faq__q">I miei dati sono al sicuro?<i data-lucide="chevron-down"></i></button><div class="m-faq__a">GDPR e nFADP svizzera. Hosting CH o EU a tua scelta. Crittografia at-rest e in-transit. Niente training di modelli esterni sui tuoi dati.</div></div>
+    <div class="m-faq__item"><button class="m-faq__q">Cosa succede dopo il go-live?<i data-lucide="chevron-down"></i></button><div class="m-faq__a">Tre mesi di support inclusi (bug-fix, micro-iterazioni, training team). Dopo: retainer mensile o pay-per-change. Codice e documentazione sono tuoi.</div></div>
+  </div>
+</section>
+
+<!-- CTA FINALE -->
+<section class="m-section m-section--warm-2">
+  <div class="m-cta-card m-reveal">
+    <h2>Costruisci il tuo sistema<br><em>su misura</em>, in 14 giorni.</h2>
+    <p>45 minuti di audit. 72 ore per il blueprint. Da lì, in due settimane, online.</p>
+    <a href="book.html" class="m-btn m-btn--primary">Prenota VerumAudit →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="m-footer">
+  <div class="m-footer__brand"><img src="../assets/logo-v.png" alt="VerumFlow">VerumFlow</div>
+  <p class="m-footer__bio">AI-native agency. Sistemi gestionali su misura per micro-imprese in Ticino e Nord Italia.</p>
+
+  <div class="m-footer__col-title">Esplora</div>
+  <div class="m-footer__col">
+    <a href="servizi.html">Servizi</a>
+    <a href="case-studies.html">Case studies</a>
+    <a href="contatti.html">Contatti</a>
+    <a href="book.html">Prenota audit</a>
+  </div>
+
+  <div class="m-footer__col-title">Legale</div>
+  <div class="m-footer__col">
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="privacy.html">Terms</a>
+    <a href="cookie.html">Cookie Policy</a>
+  </div>
+
+  <div class="m-footer__col-title">Contatti</div>
+  <div class="m-footer__col">
+    <a href="mailto:sales@verumflow.com">sales@verumflow.com</a>
+    <span style="color:rgba(242,242,242,0.5);font-size:14px">Canton Ticino, CH</span>
+  </div>
+
+  <div class="m-footer__bottom">
+    <span>© 2026 REZEN Corp. — VerumFlow.</span>
+    <span>Tutti i diritti riservati.</span>
+  </div>
+</footer>
+
+<a href="../index.html" class="m-desktop-link">Vai alla versione <b>desktop</b> →</a>
+
+<script src="mobile.js"></script>
+</body>
+</html>

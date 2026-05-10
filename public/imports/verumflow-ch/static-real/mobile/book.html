@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Prenota Audit — VerumFlow Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F2">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="mobile.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+<nav class="m-nav">
+  <a href="index.html" class="m-nav__brand"><img src="../assets/logo-v.png" alt="VerumFlow">VerumFlow</a>
+  <button class="m-nav__menu" data-drawer-open><i data-lucide="menu"></i></button>
+</nav>
+<div id="m-drawer" class="m-drawer">
+  <div class="m-drawer__top"><a href="index.html" class="m-drawer__brand"><img src="../assets/logo-v.png" alt="VerumFlow">VerumFlow</a><button class="m-drawer__close" data-drawer-close><i data-lucide="x"></i></button></div>
+  <nav class="m-drawer__nav"><a href="servizi.html"><span>Servizi</span><span>→</span></a><a href="case-studies.html"><span>Case studies</span><span>→</span></a><a href="contatti.html"><span>Contatti</span><span>→</span></a><a href="book.html"><span>Prenota audit</span><span>→</span></a></nav>
+</div>
+
+<header class="m-hero">
+  <span class="m-hero__overline">VerumAudit · Gratuito</span>
+  <h1>Prenota il tuo <em>audit</em>.</h1>
+  <p>Tre passi. 45 minuti con tre voice agent specializzati. Blueprint a 72 ore.</p>
+</header>
+
+<section class="m-section m-reveal">
+  <div class="m-steps"><div class="m-steps__dot active"></div><div class="m-steps__dot"></div><div class="m-steps__dot"></div></div>
+  <h2 style="font:500 24px/1.25 var(--vf-font-sans);letter-spacing:-0.018em;margin:0 0 8px">Step 1 · Chi sei?</h2>
+  <p style="font:400 14px/1.5 var(--vf-font-sans);color:var(--vf-fg-2);margin:0 0 24px">Bastano i dati essenziali. Tutto il resto lo scopriamo in chiamata.</p>
+  <form class="m-form" onsubmit="event.preventDefault();alert('Richiesta inviata. Ti contattiamo entro 24h.')">
+    <label class="m-field"><span class="m-field__label">Nome <em>*</em></span><input class="m-input" required></label>
+    <label class="m-field"><span class="m-field__label">Email <em>*</em></span><input class="m-input" type="email" required></label>
+    <label class="m-field"><span class="m-field__label">Azienda <em>*</em></span><input class="m-input" required></label>
+    <label class="m-field"><span class="m-field__label">Settore</span>
+      <select class="m-input"><option>Logistica</option><option>Hospitality</option><option>Servizi B2B</option><option>E-commerce</option><option>Altro</option></select>
+    </label>
+    <label class="m-field"><span class="m-field__label">Dimensione team</span>
+      <select class="m-input"><option>1–5</option><option>6–20</option><option>21–50</option><option>50+</option></select>
+    </label>
+    <label class="m-field"><span class="m-field__label">Cosa vorresti risolvere? <em>*</em></span><textarea class="m-input" required placeholder="In due righe…"></textarea></label>
+    <button type="submit" class="m-btn m-btn--primary">Richiedi audit →</button>
+  </form>
+</section>
+
+<section class="m-section m-section--warm-2">
+  <h2 style="font:500 24px/1.25 var(--vf-font-sans);margin:0 0 16px">Cosa succede dopo</h2>
+  <div class="m-process">
+    <div class="m-process__step"><span class="m-process__step__dur">Entro 24h</span><h4>Conferma e calendario</h4><p>Ti scriviamo per fissare l'audit, sempre 45 minuti.</p></div>
+    <div class="m-process__step"><span class="m-process__step__dur">45 min</span><h4>VerumAudit con voice agent</h4><p>Tre agent specializzati intervistano te e il tuo team.</p></div>
+    <div class="m-process__step"><span class="m-process__step__dur">72h</span><h4>Blueprint + preventivo fisso</h4><p>Tu decidi se andare avanti. Nessun vincolo.</p></div>
+  </div>
+</section>
+
+<footer class="m-footer">
+  <div class="m-footer__brand"><img src="../assets/logo-v.png" alt="VerumFlow">VerumFlow</div>
+  <div class="m-footer__col-title">Esplora</div>
+  <div class="m-footer__col"><a href="servizi.html">Servizi</a><a href="case-studies.html">Case studies</a><a href="contatti.html">Contatti</a></div>
+  <div class="m-footer__col-title">Legale</div>
+  <div class="m-footer__col"><a href="privacy.html">Privacy</a><a href="cookie.html">Cookie</a></div>
+  <div class="m-footer__bottom"><span>© 2026 REZEN Corp.</span></div>
+</footer>
+<a href="../book.html" class="m-desktop-link">Vai alla versione <b>desktop</b> →</a>
+<script src="mobile.js"></script>
+</body>
+</html>

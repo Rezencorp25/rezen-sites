@@ -27,6 +27,8 @@ const ALLOWED_EXT = new Set([
   ".css",
   ".js",
   ".mjs",
+  ".jsx",
+  ".tsx",
   ".png",
   ".jpg",
   ".jpeg",

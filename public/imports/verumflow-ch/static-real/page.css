@@ -1,0 +1,204 @@
+/* VerumFlow homepage — page-level styles */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--vf-bg-warm); color: var(--vf-fg-1); font-family: var(--vf-font-sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html { scroll-behavior: smooth; }
+button { font-family: inherit; }
+a { color: inherit; }
+i[data-lucide] { display: inline-block; vertical-align: middle; }
+
+/* Reveal animation */
+.vf-reveal { opacity: 0; transform: translateY(8px); transition: opacity 600ms var(--vf-ease-out), transform 600ms var(--vf-ease-out); }
+.vf-reveal.in { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .vf-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Toast */
+.vf-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  padding: 12px 20px; background: var(--vf-ink); color: var(--vf-bg-warm);
+  border-radius: var(--vf-radius-2); box-shadow: var(--vf-shadow-3);
+  font: 500 13px/1 var(--vf-font-sans); z-index: 1000;
+}
+
+/* Float animation for stack nodes */
+@keyframes vfFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Carousel scroll */
+@keyframes vfMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.vf-marquee-track { animation: vfMarquee 50s linear infinite; }
+.vf-marquee-track:hover { animation-play-state: paused; }
+
+/* Scroll-triggered text glow — the lighter portions of the H2 illuminate
+   amber as the user scrolls them into view. Driven by --vf-glow-progress
+   (0 → 1) set on the heading by JS. */
+.vf-glow-h2 { --vf-glow-progress: 0; }
+.vf-glow-h2 .vf-glow-text {
+  color: color-mix(in oklab, var(--vf-fg-2) calc((1 - var(--vf-glow-progress)) * 100%), var(--vf-amber) calc(var(--vf-glow-progress) * 100%));
+  text-shadow:
+    0 0 calc(var(--vf-glow-progress) * 24px) rgba(255,158,90, calc(var(--vf-glow-progress) * 0.55)),
+    0 0 calc(var(--vf-glow-progress) * 60px) rgba(255,122,26, calc(var(--vf-glow-progress) * 0.35));
+  transition: text-shadow 200ms linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vf-glow-h2 .vf-glow-text { text-shadow: none; color: var(--vf-fg-2); }
+}
+
+/* Industries vertical carousel */
+@keyframes vfFadeSlide {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Selection */
+::selection { background: var(--vf-amber); color: var(--vf-bg-warm); }
+
+/* Hide scrollbar on horizontal scroll within carousels but keep functionality */
+.vf-no-scrollbar::-webkit-scrollbar { display: none; }
+.vf-no-scrollbar { scrollbar-width: none; }
+
+/* ============================================================
+   RESPONSIVE — global utilities
+   The site builds desktop-first via inline styles in JSX.
+   These rules override at narrower breakpoints.
+   ============================================================ */
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+  /* Reduce hero padding */
+  section { scroll-margin-top: 80px; }
+  /* Container padding */
+  .vf-container { padding-left: 24px !important; padding-right: 24px !important; }
+}
+
+/* Mobile (≤768px) — collapse two-column grids, scale type, reduce paddings */
+@media (max-width: 768px) {
+  /* All 2-col / asymmetric grids → single column */
+  .vf-grid-2,
+  .vf-grid-asym,
+  .vf-grid-12-7,
+  .vf-grid-5-7,
+  .vf-grid-7-5,
+  .vf-grid-6-6,
+  .vf-grid-4-3-2-3 {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+    row-gap: 32px !important;
+  }
+  /* Hide desktop nav links — show hamburger instead */
+  .vf-nav-links-desktop { display: none !important; }
+  .vf-nav-cta-desktop   { display: none !important; }
+  .vf-hamburger         { display: inline-flex !important; }
+  /* Section vertical padding */
+  .vf-section { padding-top: 72px !important; padding-bottom: 72px !important; }
+  /* Hide secondary decorative blocks (orbital stack, etc.) on tiny screens — handled per-section */
+  .vf-mobile-hide { display: none !important; }
+  /* Footer stack */
+  .vf-footer-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+  /* Container padding */
+  .vf-container { padding-left: 20px !important; padding-right: 20px !important; }
+  /* Hero — push content to bottom but keep it readable */
+  .vf-hero-bottom { bottom: 100px !important; padding: 0 20px !important; }
+  .vf-hero-trustpill { display: none !important; }
+  /* Smaller h1 / h2 fall-back */
+  .vf-h1-resp { font-size: clamp(32px, 8vw, 44px) !important; }
+  .vf-h2-resp { font-size: clamp(28px, 7vw, 40px) !important; }
+  /* Convert horizontal pill rows to wrap */
+  .vf-row-wrap { flex-wrap: wrap !important; gap: 12px !important; }
+  /* CTA cards */
+  .vf-cta-pad { padding: 32px 24px !important; }
+}
+
+/* Small mobile (≤480px) */
+@media (max-width: 480px) {
+  .vf-h1-resp { font-size: clamp(28px, 9vw, 36px) !important; }
+  .vf-section { padding-top: 56px !important; padding-bottom: 56px !important; }
+}
+
+/* Hamburger menu — hidden by default on desktop, shown on mobile via .vf-hamburger */
+.vf-hamburger { display: none; }
+
+/* Tap target floor for ANY anchor / button on touch */
+@media (hover: none) and (pointer: coarse) {
+  a, button { min-height: 44px; }
+}
+
+/* ============================================================
+   Abstract 3D — orbital rings + drifting particles
+   ============================================================ */
+.vf-orb-stage { perspective-origin: 50% 50%; }
+.vf-orb { will-change: transform; }
+.vf-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,158,90,0.32);
+  box-shadow: 0 0 40px rgba(255,122,26,0.18), inset 0 0 30px rgba(255,158,90,0.08);
+}
+.vf-ring--1 { transform: rotateX(70deg) rotateZ(0deg);   border-color: rgba(255,158,90,0.42); }
+.vf-ring--2 { transform: rotateX(70deg) rotateZ(60deg);  border-color: rgba(255,158,90,0.28); inset: 8% 8% 8% 8%; }
+.vf-ring--3 { transform: rotateX(70deg) rotateZ(120deg); border-color: rgba(242,242,242,0.18); inset: 16% 16% 16% 16%; }
+.vf-ring--4 { transform: rotateX(20deg) rotateY(45deg);  border-color: rgba(255,158,90,0.20); inset: 4% 4% 4% 4%; border-style: dashed; }
+.vf-orb-dot {
+  position: absolute; top: 50%; left: 50%;
+  width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFB071 0%, #FF7A1A 60%, transparent 100%);
+  box-shadow: 0 0 18px rgba(255,122,26,0.7);
+  animation: vfOrbDot 6s ease-in-out infinite;
+}
+@keyframes vfOrbSpin {
+  0%   { transform: rotateX(-12deg) rotateY(0deg); }
+  100% { transform: rotateX(-12deg) rotateY(360deg); }
+}
+@keyframes vfOrbPulse {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+@keyframes vfOrbDot {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+@media (max-width: 768px) {
+  .vf-orb { width: 260px !important; height: 260px !important; }
+  .vf-orb-dot { width: 8px; height: 8px; margin: -4px 0 0 -4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vf-orb { animation: none; transform: rotateX(-12deg) rotateY(-25deg); }
+  .vf-orb-dot { animation: none; }
+}
+
+/* ============================================================
+   Mobile menu drawer
+   ============================================================ */
+.vf-mobile-menu {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(15,17,19,0.96);
+  backdrop-filter: blur(20px);
+  display: flex; flex-direction: column; padding: 80px 24px 40px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 240ms var(--vf-ease-out);
+}
+.vf-mobile-menu.in { opacity: 1; pointer-events: auto; }
+.vf-mobile-menu a {
+  display: block; padding: 18px 4px;
+  font: 500 22px/1 var(--vf-font-sans); color: #F2F2F2;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  text-decoration: none;
+  letter-spacing: -0.012em;
+}
+.vf-mobile-menu a:hover { color: var(--vf-amber); }
+.vf-mobile-close {
+  position: absolute; top: 24px; right: 24px;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: #F2F2F2;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}

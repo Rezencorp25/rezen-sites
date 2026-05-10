@@ -27,11 +27,7 @@ export function generatePageviews(
   start.setUTCHours(0, 0, 0, 0);
   start.setUTCDate(start.getUTCDate() - (days - 1));
   const base =
-    projectId === "verumflow-ch"
-      ? 180
-      : projectId === "impresa-edile-carfi"
-        ? 40
-        : 0;
+    projectId === "impresa-edile-carfi" ? 40 : 0;
   for (let i = 0; i < days; i++) {
     const date = new Date(start);
     date.setUTCDate(start.getUTCDate() + i);

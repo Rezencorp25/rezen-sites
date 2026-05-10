@@ -1,0 +1,355 @@
+/* ============================================================
+   VerumFlow — Design Tokens (Colors + Type)
+   "Linear-glow in light-warm mode."
+   70% light, 30% dark. Warm off-whites, near-blacks, amber accent.
+   ============================================================ */
+
+/* ---------- Fonts ---------- */
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Thin.woff2") format("woff2");
+  font-weight: 100; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-ExtraLight.woff2") format("woff2");
+  font-weight: 200; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Light.woff2") format("woff2");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Italic.woff2") format("woff2");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-MediumItalic.woff2") format("woff2");
+  font-weight: 500; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-SemiBoldItalic.woff2") format("woff2");
+  font-weight: 600; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-BoldItalic.woff2") format("woff2");
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-ExtraBold.woff2") format("woff2");
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter-Black.woff2") format("woff2");
+  font-weight: 900; font-style: normal; font-display: swap;
+}
+
+/* Variable Inter — preferred when available (better tabular nums, opsz) */
+@font-face {
+  font-family: "InterVar";
+  src: url("fonts/InterV.woff2") format("woff2-variations"),
+       url("fonts/InterV.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("fonts/InstrumentSerif-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("fonts/InstrumentSerif-Italic.ttf") format("truetype");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+
+/* ============================================================
+   Tokens
+   ============================================================ */
+:root {
+  /* ---- Brand core ---- */
+  --vf-bg-warm:        #F2F2F2;   /* warm off-white — primary surface */
+  --vf-bg-warm-2:      #ECEAE5;   /* warmer off-white — elevated */
+  --vf-bg-warm-3:      #E2DFD8;   /* mid-warm — subtle bands / inputs */
+  --vf-bg-paper:       #F7F5F0;   /* paper — section dividers */
+  --vf-ink:            #0F1113;   /* near-black — primary ink (never #000) */
+  --vf-ink-2:          #1A1D21;   /* near-black, dark sections bg */
+  --vf-ink-3:          #232428;   /* near-black, elevated dark surfaces */
+
+  /* ---- Operational text grays ---- */
+  --vf-fg-1:           #0F1113;   /* primary text on light */
+  --vf-fg-2:           #4B4F54;   /* operational gray — body */
+  --vf-fg-3:           #6B6F75;   /* muted */
+  --vf-fg-4:           #9AA0A6;   /* very muted / placeholder */
+  --vf-fg-on-dark-1:   #F2F2F2;   /* primary on dark */
+  --vf-fg-on-dark-2:   #B8BCC2;   /* body on dark */
+  --vf-fg-on-dark-3:   #7A7E84;   /* muted on dark */
+
+  /* ---- Borders / dividers ---- */
+  --vf-border-1:       #E2DFD8;   /* hairline divider light */
+  --vf-border-2:       #D4D0C7;   /* card border light */
+  --vf-border-3:       #C2BDB2;   /* hover border light */
+  --vf-border-on-dark: #2A2C30;   /* hairline on dark */
+  --vf-border-on-dark-2: #3A3D42; /* card border on dark */
+
+  /* ---- Accents ---- */
+  --vf-amber:          #FF7A1A;   /* CTAs, links, serif highlight */
+  --vf-amber-700:      #E0660E;   /* amber pressed */
+  --vf-amber-300:      #FFB071;   /* amber hover tint */
+  --vf-amber-tint:     #FFE9D6;   /* amber background fill */
+  --vf-flow:           #FF9E5A;   /* Flow Orange — halos ONLY */
+  --vf-flow-halo:      rgba(255,158,90,0.15); /* the canonical glow */
+  --vf-neural:         #3A5CFF;   /* AI signals only — max 2-3/page */
+  --vf-neural-tint:    #E6EBFF;
+  --vf-neural-on-dark: #6B86FF;
+
+  /* ---- Semantic ---- */
+  --vf-success:        #2F8F4F;
+  --vf-warning:        #C58A1A;
+  --vf-danger:         #C0392B;
+  --vf-info:           var(--vf-neural);
+
+  /* ---- Typography ---- */
+  --vf-font-sans: "InterVar", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --vf-font-serif: "Instrument Serif", "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --vf-font-mono: ui-monospace, "JetBrains Mono", Menlo, Monaco, "Courier New", monospace;
+
+  /* Display (Inter Semibold/Bold, tracking -2%) */
+  --vf-display-1-size: 88px;  --vf-display-1-lh: 0.96; --vf-display-1-track: -0.02em;
+  --vf-display-2-size: 64px;  --vf-display-2-lh: 1.0;  --vf-display-2-track: -0.02em;
+  --vf-h1-size:        48px;  --vf-h1-lh:        1.05; --vf-h1-track:        -0.02em;
+  --vf-h2-size:        36px;  --vf-h2-lh:        1.1;  --vf-h2-track:        -0.018em;
+  --vf-h3-size:        24px;  --vf-h3-lh:        1.2;  --vf-h3-track:        -0.012em;
+  --vf-h4-size:        18px;  --vf-h4-lh:        1.3;  --vf-h4-track:        -0.005em;
+
+  /* Body */
+  --vf-lead-size:      20px;  --vf-lead-lh:      1.5;
+  --vf-body-size:      16px;  --vf-body-lh:      1.55;
+  --vf-small-size:     14px;  --vf-small-lh:     1.5;
+  --vf-micro-size:     12px;  --vf-micro-lh:     1.4;
+
+  /* Overline (uppercase label, +5% tracking) */
+  --vf-overline-size:  12px;
+  --vf-overline-track: 0.05em;
+
+  /* ---- 8px spacing scale ---- */
+  --vf-space-0: 0;
+  --vf-space-1: 4px;
+  --vf-space-2: 8px;
+  --vf-space-3: 12px;
+  --vf-space-4: 16px;
+  --vf-space-5: 24px;
+  --vf-space-6: 32px;
+  --vf-space-7: 48px;
+  --vf-space-8: 64px;
+  --vf-space-9: 96px;
+  --vf-space-10: 128px;
+  --vf-space-11: 160px;
+
+  /* ---- Layout ---- */
+  --vf-container: 1280px;
+  --vf-gutter: 24px;
+  --vf-section-pad-y: 120px;
+
+  /* ---- Radii ---- */
+  --vf-radius-1: 4px;     /* inputs, badges */
+  --vf-radius-2: 8px;     /* buttons, small cards */
+  --vf-radius-3: 12px;    /* cards */
+  --vf-radius-4: 16px;    /* mockup frames */
+  --vf-radius-5: 24px;    /* hero panels */
+  --vf-radius-pill: 999px;
+
+  /* ---- Shadows (soft, warm — never blue tinted) ---- */
+  --vf-shadow-1: 0 1px 2px rgba(15,17,19,0.04), 0 1px 1px rgba(15,17,19,0.03);
+  --vf-shadow-2: 0 2px 4px rgba(15,17,19,0.04), 0 6px 16px rgba(15,17,19,0.06);
+  --vf-shadow-3: 0 4px 8px rgba(15,17,19,0.05), 0 16px 40px rgba(15,17,19,0.08);
+  --vf-shadow-4: 0 8px 16px rgba(15,17,19,0.06), 0 32px 80px rgba(15,17,19,0.10);
+  --vf-inner-1:  inset 0 0 0 1px rgba(15,17,19,0.06);
+  --vf-ring-amber: 0 0 0 3px rgba(255,122,26,0.25);
+  --vf-ring-neural: 0 0 0 3px rgba(58,92,255,0.25);
+
+  /* The signature glow — used behind product mockups only */
+  --vf-glow-flow: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,158,90,0.30) 0%, rgba(255,158,90,0.15) 35%, rgba(255,158,90,0) 70%);
+
+  /* ---- Motion ---- */
+  --vf-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --vf-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --vf-dur-1: 120ms;     /* press */
+  --vf-dur-2: 200ms;     /* hover */
+  --vf-dur-3: 320ms;     /* element transitions */
+  --vf-dur-4: 600ms;     /* section reveal */
+}
+
+/* ============================================================
+   Semantic typography classes
+   ============================================================ */
+
+.vf-overline {
+  font: 500 var(--vf-overline-size) / 1 var(--vf-font-sans);
+  letter-spacing: var(--vf-overline-track);
+  text-transform: uppercase;
+  color: var(--vf-fg-2);
+}
+.vf-overline::before { content: "[ "; opacity: 0.6; }
+.vf-overline::after  { content: " ]"; opacity: 0.6; }
+
+.vf-display-1 {
+  font: 600 var(--vf-display-1-size) / var(--vf-display-1-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-display-1-track);
+  color: var(--vf-fg-1);
+  text-wrap: balance;
+}
+.vf-display-2 {
+  font: 600 var(--vf-display-2-size) / var(--vf-display-2-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-display-2-track);
+  color: var(--vf-fg-1);
+  text-wrap: balance;
+}
+.vf-h1 {
+  font: 600 var(--vf-h1-size) / var(--vf-h1-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-h1-track);
+  color: var(--vf-fg-1);
+  text-wrap: balance;
+}
+.vf-h2 {
+  font: 600 var(--vf-h2-size) / var(--vf-h2-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-h2-track);
+  color: var(--vf-fg-1);
+  text-wrap: balance;
+}
+.vf-h3 {
+  font: 600 var(--vf-h3-size) / var(--vf-h3-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-h3-track);
+  color: var(--vf-fg-1);
+}
+.vf-h4 {
+  font: 600 var(--vf-h4-size) / var(--vf-h4-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-h4-track);
+  color: var(--vf-fg-1);
+}
+
+/* The signature serif accent: ONE highlight per headline, in amber. */
+.vf-serif-accent {
+  font-family: var(--vf-font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--vf-amber);
+  letter-spacing: 0;
+  /* The serif is optically larger than Inter — pull down a touch. */
+  font-size: 1.08em;
+  line-height: 1;
+}
+
+.vf-lead {
+  font: 400 var(--vf-lead-size) / var(--vf-lead-lh) var(--vf-font-sans);
+  color: var(--vf-fg-2);
+  text-wrap: pretty;
+}
+.vf-body {
+  font: 400 var(--vf-body-size) / var(--vf-body-lh) var(--vf-font-sans);
+  color: var(--vf-fg-2);
+  text-wrap: pretty;
+}
+.vf-small {
+  font: 400 var(--vf-small-size) / var(--vf-small-lh) var(--vf-font-sans);
+  color: var(--vf-fg-2);
+}
+.vf-micro {
+  font: 500 var(--vf-micro-size) / var(--vf-micro-lh) var(--vf-font-sans);
+  color: var(--vf-fg-3);
+}
+.vf-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+.vf-mono {
+  font-family: var(--vf-font-mono);
+  font-size: 13px;
+  letter-spacing: -0.005em;
+  color: var(--vf-fg-2);
+}
+
+/* ============================================================
+   Element defaults (use on a wrapper to opt in)
+   ============================================================ */
+.vf-typeset {
+  font-family: var(--vf-font-sans);
+  font-feature-settings: "ss01" 1, "cv11" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--vf-fg-1);
+  background: var(--vf-bg-warm);
+}
+.vf-typeset h1 { all: unset; display: block; }
+.vf-typeset h1, .vf-typeset .h1 {
+  font: 600 var(--vf-h1-size) / var(--vf-h1-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-h1-track);
+  margin-block-end: var(--vf-space-5);
+  text-wrap: balance;
+}
+.vf-typeset h2, .vf-typeset .h2 {
+  font: 600 var(--vf-h2-size) / var(--vf-h2-lh) var(--vf-font-sans);
+  letter-spacing: var(--vf-h2-track);
+  margin-block: var(--vf-space-7) var(--vf-space-4);
+  text-wrap: balance;
+}
+.vf-typeset p {
+  font: 400 var(--vf-body-size) / var(--vf-body-lh) var(--vf-font-sans);
+  color: var(--vf-fg-2);
+  margin-block-end: var(--vf-space-4);
+  text-wrap: pretty;
+}
+.vf-typeset a {
+  color: var(--vf-amber);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--vf-dur-2) var(--vf-ease-out);
+}
+.vf-typeset a:hover { color: var(--vf-amber-700); }
+.vf-typeset code {
+  font: 500 0.92em / 1.5 var(--vf-font-mono);
+  background: var(--vf-bg-warm-3);
+  padding: 1px 6px;
+  border-radius: var(--vf-radius-1);
+}
+
+/* Inverted set for dark sections */
+.vf-typeset--dark {
+  background: var(--vf-ink-2);
+  color: var(--vf-fg-on-dark-1);
+}
+.vf-typeset--dark p { color: var(--vf-fg-on-dark-2); }
+.vf-typeset--dark a { color: var(--vf-amber-300); }
+
+/* Selection */
+::selection { background: var(--vf-amber); color: var(--vf-bg-warm); }
