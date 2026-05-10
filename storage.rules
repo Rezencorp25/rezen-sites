@@ -18,6 +18,14 @@ service firebase.storage {
       allow read, write: if false;
     }
 
+    // S7.10 — Siti pubblicati: read pubblico (servono al visitatore finale
+    // del sito cliente), write solo Admin SDK via /api/sites/publish.
+    // I file sono uploadati con makePublic() e serviti via Storage public URL.
+    match /sites/{projectId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Default deny per qualsiasi altra path (rinforza compliance).
     match /{allPaths=**} {
       allow read, write: if false;

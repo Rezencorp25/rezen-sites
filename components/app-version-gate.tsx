@@ -10,7 +10,7 @@ import { useEffect } from "react";
  *
  * Eccezioni preservate: cookie consent, sidebar collapsed, demo creds.
  */
-const APP_VERSION = "2026-05-10-s7.9-monaco-editor";
+const APP_VERSION = "2026-05-10-s7.10-publish-storage";
 const VERSION_KEY = "rezen.app_version";
 
 const PRESERVE_KEYS = new Set([

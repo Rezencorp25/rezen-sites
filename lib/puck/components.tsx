@@ -1331,9 +1331,14 @@ function ImportedSiteRender({
     setReloadKey((k) => k + 1);
   }
 
+  // Default-on: show toolbar unless explicitly disabled (handles legacy
+  // PuckData blocks where showToolbar is undefined, e.g. cached localStorage
+  // from before this prop existed).
+  const toolbarVisible = showToolbar !== false;
+
   return (
     <div className="relative w-full">
-      {showToolbar && (
+      {toolbarVisible && (
         <div className="flex items-center gap-2 rounded-t-md border-b border-outline/30 bg-surface-container-low px-3 py-1.5 text-label-sm">
           <span className="font-mono text-text-muted truncate">{niceUrl}</span>
           <span className="ml-auto flex items-center gap-1">
@@ -1366,6 +1371,19 @@ function ImportedSiteRender({
             </a>
           </span>
         </div>
+      )}
+      {/* Floating fallback button: always visible when the iframe points to an
+          imported site, even if the toolbar is hidden (legacy PuckData where
+          showToolbar=false / undefined and user can't get to the editor). */}
+      {!toolbarVisible && parsed && (
+        <button
+          type="button"
+          onClick={() => setEditorOpen(true)}
+          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-surface-container-highest/90 px-3 py-1.5 text-label-md text-on-surface shadow-lg ring-1 ring-outline-variant/40 backdrop-blur hover:bg-surface-container-highest"
+          title="Apri editor file"
+        >
+          ✎ Modifica sito
+        </button>
       )}
       {badge && (
         <span className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-warning/90 px-2.5 py-1 text-label-md font-semibold uppercase tracking-wider text-on-surface">

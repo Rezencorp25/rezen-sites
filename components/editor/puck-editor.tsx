@@ -105,7 +105,9 @@ export function PuckEditor({ projectId, pageId }: Props) {
   const recordVersion = useVersionsStore((s) => s.record);
   const allPages = usePagesStore((s) => s.pages);
 
-  const handlePublish = useCallback(() => {
+  const [publishing, setPublishing] = useState(false);
+
+  const handlePublish = useCallback(async () => {
     if (!data || !page) return;
     savePuckData(pageId, data);
     updatePage(pageId, { status: "published" });
@@ -122,8 +124,78 @@ export function PuckEditor({ projectId, pageId }: Props) {
       changes: [`Modifiche a "${page.title}"`],
       snapshot,
     });
-    toast.success("Pagina pubblicata · nuova versione creata");
-  }, [data, page, pageId, projectId, allPages, savePuckData, updatePage, setDirty, recordVersion]);
+
+    // S7.10 — se la pagina contiene un IframeEmbed che punta a un sito
+    // importato, deploya i file a Firebase Storage e mostra l'URL pubblico.
+    const importMatch = (() => {
+      type Block = { type?: string; props?: { src?: string } };
+      const content = (data as { content?: Block[] }).content ?? [];
+      for (const block of content) {
+        if (block.type === "IframeEmbed" && typeof block.props?.src === "string") {
+          const m = block.props.src.match(/^\/imports\/([^/]+)\/([^/]+)\//);
+          if (m) return { projectId: m[1], importId: m[2] };
+        }
+      }
+      return null;
+    })();
+
+    if (importMatch) {
+      setPublishing(true);
+      const promise = fetch("/api/sites/publish", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(importMatch),
+      })
+        .then(async (r) => {
+          const body = (await r.json()) as {
+            ok?: boolean;
+            url?: string;
+            error?: string;
+            filesUploaded?: number;
+            totalBytes?: number;
+          };
+          if (!r.ok || !body.ok) {
+            throw new Error(body.error ?? "Publish fallito");
+          }
+          return body;
+        })
+        .finally(() => setPublishing(false));
+
+      toast.promise(promise, {
+        loading: "Carico il sito su Firebase Storage…",
+        success: (body) => {
+          const sizeMb = ((body.totalBytes ?? 0) / 1024 / 1024).toFixed(1);
+          return (
+            <span>
+              Sito pubblicato · {body.filesUploaded} file · {sizeMb} MB
+              <br />
+              <a
+                href={body.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-molten-primary underline"
+              >
+                Apri sito pubblicato →
+              </a>
+            </span>
+          );
+        },
+        error: (err: Error) => `Publish Firebase: ${err.message}`,
+      });
+    } else {
+      toast.success("Pagina pubblicata · nuova versione creata");
+    }
+  }, [
+    data,
+    page,
+    pageId,
+    projectId,
+    allPages,
+    savePuckData,
+    updatePage,
+    setDirty,
+    recordVersion,
+  ]);
 
   const viewport = DEVICE_VIEWPORTS[device];
 
@@ -162,6 +234,7 @@ export function PuckEditor({ projectId, pageId }: Props) {
           device={device}
           setDevice={setDevice}
           isDirty={isDirty}
+          isPublishing={publishing}
           onSave={handleSave}
           onPublish={handlePublish}
           onOpenSEO={() => setSeoOpen(true)}
@@ -188,6 +261,7 @@ function EditorShell({
   device,
   setDevice,
   isDirty,
+  isPublishing,
   onSave,
   onPublish,
   onOpenSEO,
@@ -199,6 +273,7 @@ function EditorShell({
   device: Device;
   setDevice: (d: Device) => void;
   isDirty: boolean;
+  isPublishing: boolean;
   onSave: () => void;
   onPublish: () => void;
   onOpenSEO: () => void;
@@ -303,11 +378,15 @@ function EditorShell({
           <button
             type="button"
             onClick={onPublish}
-            className="flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-body-sm font-semibold text-on-molten"
+            disabled={isPublishing}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-body-sm font-semibold text-on-molten",
+              isPublishing && "opacity-60 cursor-not-allowed",
+            )}
             style={{ background: "linear-gradient(135deg,#ffb599,#f56117)" }}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            Publish
+            <Sparkles className={cn("h-3.5 w-3.5", isPublishing && "animate-pulse")} />
+            {isPublishing ? "Pubblicazione…" : "Pubblica"}
           </button>
         </div>
       </header>

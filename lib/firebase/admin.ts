@@ -7,13 +7,19 @@ import {
 } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getStorage, type Storage } from "firebase-admin/storage";
 
 const PROJECT_ID =
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "rezen-sites-dev";
+const STORAGE_BUCKET =
+  process.env.FIREBASE_STORAGE_BUCKET ??
+  process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ??
+  `${PROJECT_ID}.firebasestorage.app`;
 
 let adminApp: App | null = null;
 let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
+let adminStorage: Storage | null = null;
 
 function resolveCredentials() {
   const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true";
@@ -42,12 +48,20 @@ export function getAdmin() {
       adminApp = initializeApp({
         projectId: PROJECT_ID,
         credential: resolveCredentials(),
+        storageBucket: STORAGE_BUCKET,
       });
     } else {
       adminApp = getApps()[0]!;
     }
     adminAuth = getAuth(adminApp);
     adminDb = getFirestore(adminApp);
+    adminStorage = getStorage(adminApp);
   }
-  return { app: adminApp, auth: adminAuth!, db: adminDb! };
+  return {
+    app: adminApp,
+    auth: adminAuth!,
+    db: adminDb!,
+    storage: adminStorage!,
+    bucketName: STORAGE_BUCKET,
+  };
 }
