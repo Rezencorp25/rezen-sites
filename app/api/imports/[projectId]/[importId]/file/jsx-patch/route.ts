@@ -120,7 +120,12 @@ function findJsxMatches(
   wantedText: string,
 ): Array<{ range: Loc; childrenRange?: Loc }> {
   const wantedTag = tag.toLowerCase();
-  const wantedTrim = wantedText.trim();
+  // Normalize both sides: collapse any run of whitespace to single space,
+  // trim. The bridge sends DOM textContent which carries raw HTML whitespace
+  // (newlines from <br>, indent from formatted source); the AST text walk
+  // joins JSXText pieces with no normalization. Both must be normalized to
+  // compare reliably.
+  const wantedTrim = wantedText.replace(/\s+/g, " ").trim();
   const matches: Array<{ range: Loc; childrenRange?: Loc }> = [];
 
   // Manual recursive walk over the AST. We avoid @babel/traverse to keep the
@@ -137,24 +142,36 @@ function findJsxMatches(
           ? (opening?.name?.name ?? "").toLowerCase()
           : "";
       if (name === wantedTag) {
-        // Concatenate direct JSXText/StringLiteral children into a text blob
+        // Walk children recursively to extract all visible text. The browser
+        // sees a `<h1>Title <SerifAccent>word</SerifAccent> more</h1>` as a
+        // single text node "Title word more", so we need to flatten nested
+        // JSXElement children's JSXText too — otherwise tag+text matching
+        // fails on every JSX with inline component children.
+        const collectText = (nodes: unknown): string => {
+          let acc = "";
+          if (!Array.isArray(nodes)) return acc;
+          for (const c of nodes as Array<Record<string, unknown>>) {
+            if (!c) continue;
+            if (c.type === "JSXText") {
+              acc += (c.value as string) ?? "";
+            } else if (
+              c.type === "JSXExpressionContainer" &&
+              (c.expression as { type?: string })?.type === "StringLiteral"
+            ) {
+              acc +=
+                ((c.expression as { value?: string })?.value as string) ?? "";
+            } else if (c.type === "JSXElement") {
+              acc += collectText(c.children);
+            }
+          }
+          return acc;
+        };
         const children = (n.children ?? []) as Array<{
           type: string;
-          value?: string;
-          expression?: { type: string; value?: string };
           start?: number;
           end?: number;
         }>;
-        let combined = "";
-        for (const c of children) {
-          if (c.type === "JSXText") combined += c.value ?? "";
-          else if (
-            c.type === "JSXExpressionContainer" &&
-            c.expression?.type === "StringLiteral"
-          ) {
-            combined += c.expression.value ?? "";
-          }
-        }
+        const combined = collectText(children);
         const trimmed = combined.replace(/\s+/g, " ").trim();
         if (
           wantedTrim === "" ||
