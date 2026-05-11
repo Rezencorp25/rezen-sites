@@ -170,8 +170,8 @@ export function ImportedSiteInlineEditor({
     <div
       className="absolute right-3 top-14 z-30 flex w-80 flex-col gap-3 rounded-xl border border-outline/40 bg-surface-container/95 p-4 text-on-surface shadow-2xl backdrop-blur"
       style={{ pointerEvents: "auto" }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+      onPointerDownCapture={(e) => e.stopPropagation()}
+      onClickCapture={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -187,7 +187,7 @@ export function ImportedSiteInlineEditor({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClickCapture={onClose}
           style={{ pointerEvents: "auto", cursor: "pointer" }}
           className="rounded p-1 text-text-muted hover:bg-surface-container-high hover:text-on-surface"
           title="Chiudi"
@@ -282,9 +282,12 @@ export function ImportedSiteInlineEditor({
               <button
                 key={sw.key}
                 type="button"
-                onClick={() =>
-                  setOpenPicker((prev) => (prev === sw.key ? null : sw.key))
-                }
+                onClickCapture={(e) => {
+                  e.stopPropagation();
+                  setOpenPicker((prev) =>
+                    prev === sw.key ? null : sw.key,
+                  );
+                }}
                 style={{ pointerEvents: "auto", cursor: "pointer" }}
                 className="group flex flex-1 flex-col items-center gap-1 rounded-md border border-outline/30 bg-surface-container-lowest p-2 hover:border-outline/60"
                 title={`Cambia colore ${sw.label.toLowerCase()}`}
@@ -309,7 +312,7 @@ export function ImportedSiteInlineEditor({
           <div
             className="relative"
             style={{ pointerEvents: "auto" }}
-            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDownCapture={(e) => e.stopPropagation()}
           >
             <div className="mt-1 flex flex-col gap-2 rounded-lg border border-outline/40 bg-surface-container-highest p-3 shadow-xl">
               <HexColorPicker
@@ -332,7 +335,8 @@ export function ImportedSiteInlineEditor({
                 />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClickCapture={(e) => {
+                    e.stopPropagation();
                     onApplyPatch("style", "", openPicker);
                   }}
                   style={{ pointerEvents: "auto", cursor: "pointer" }}
@@ -358,7 +362,10 @@ export function ImportedSiteInlineEditor({
         </span>
         <button
           type="button"
-          onClick={handleSave}
+          onClickCapture={(e) => {
+            e.stopPropagation();
+            void handleSave();
+          }}
           disabled={!dirty || saving}
           style={{ pointerEvents: "auto", cursor: dirty && !saving ? "pointer" : "not-allowed" }}
           className={`rounded-md px-3 py-1.5 text-label-sm font-medium ${

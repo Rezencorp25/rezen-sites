@@ -1567,8 +1567,11 @@ function ImportedSiteRender({
             {parsed && (
               <button
                 type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
+                onPointerDownCapture={(e) => e.stopPropagation()}
+                onClickCapture={(e) => {
+                  // CAPTURE phase: Puck wraps the IframeEmbed in a container
+                  // that swallows click events during BUBBLE for drag/select.
+                  // Listening in capture lets us fire before Puck stops it.
                   e.stopPropagation();
                   toggleInlineMode();
                 }}
@@ -1587,8 +1590,8 @@ function ImportedSiteRender({
             {parsed && (
               <button
                 type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
+                onPointerDownCapture={(e) => e.stopPropagation()}
+                onClickCapture={(e) => {
                   e.stopPropagation();
                   setEditorOpen(true);
                 }}
@@ -1601,8 +1604,8 @@ function ImportedSiteRender({
             )}
             <button
               type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
+              onPointerDownCapture={(e) => e.stopPropagation()}
+              onClickCapture={(e) => {
                 e.stopPropagation();
                 reloadIframe();
               }}
@@ -1616,8 +1619,8 @@ function ImportedSiteRender({
               href={src}
               target="_blank"
               rel="noopener noreferrer"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
+              onPointerDownCapture={(e) => e.stopPropagation()}
+              onClickCapture={(e) => e.stopPropagation()}
               style={{ pointerEvents: "auto", cursor: "pointer" }}
               className="rounded px-2 py-0.5 text-molten-primary hover:bg-surface-container"
               title="Apri in nuova scheda"
@@ -1633,8 +1636,8 @@ function ImportedSiteRender({
       {!toolbarVisible && parsed && (
         <button
           type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
+          onPointerDownCapture={(e) => e.stopPropagation()}
+          onClickCapture={(e) => {
             e.stopPropagation();
             setEditorOpen(true);
           }}
