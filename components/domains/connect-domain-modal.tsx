@@ -17,6 +17,7 @@ import {
   Copy,
   ExternalLink,
 } from "lucide-react";
+import { RegistrarGuidePanel } from "./registrar-guide-panel";
 
 /**
  * S7.14 — Modal "Collega dominio".
@@ -223,7 +224,7 @@ export function ConnectDomainModal({
         </DialogHeader>
 
         {step === "enter-domain" && (
-          <div className="flex flex-col gap-4 pt-2">
+          <div className="flex flex-col gap-4 pt-2 max-h-[70vh] overflow-y-auto pr-1">
             <input
               type="text"
               placeholder="verumflow.com o sub.verumflow.com"
@@ -232,17 +233,24 @@ export function ConnectDomainModal({
               className="h-11 rounded-md bg-surface-container-low px-3 text-body-sm"
             />
             <div className="rounded-lg bg-surface-container-low p-4 text-label-sm text-text-muted">
-              <strong className="text-on-surface">Come funziona</strong>
+              <strong className="text-on-surface">Come funziona in 3 step</strong>
               <ol className="ml-4 mt-2 list-decimal space-y-1">
-                <li>Inserisci il dominio</li>
-                <li>Aggiungi 2 record DNS sul tuo registrar (GoDaddy/altri)</li>
-                <li>Noi rileviamo + emettiamo SSL automaticamente</li>
+                <li>Inserisci il dominio (apex o sottodominio)</li>
+                <li>
+                  Aggiungi 2 record DNS sul tuo registrar — ti guidiamo passo
+                  per passo (GoDaddy, Namecheap, Aruba, OVH, Register.it, …)
+                </li>
+                <li>Polling DNS + SSL emesso automaticamente (1-5 min)</li>
               </ol>
               <p className="mt-2">
-                Con Cloudflare collegato in Integrazioni, lo step 2 è
-                automatico.
+                <strong>Auto via Cloudflare</strong>: se hai Cloudflare
+                collegato in <a href="/settings/integrations" className="text-molten-primary underline">Integrazioni</a>, lo step 2 è zero
+                click.
               </p>
             </div>
+
+            <RegistrarGuidePanel defaultSlug="godaddy" />
+
             <GradientButton size="md" onClick={handleConnect} disabled={!domain}>
               Avanti
             </GradientButton>
@@ -259,25 +267,18 @@ export function ConnectDomainModal({
         )}
 
         {step === "records-shown" && (
-          <div className="flex flex-col gap-3 pt-2">
-            <div className="rounded-md bg-surface-container-low p-3 text-label-sm">
-              <strong className="text-on-surface">
-                Pannello DNS del tuo registrar
-              </strong>
-              <p className="mt-1 text-text-muted">
-                Vai su GoDaddy → I miei prodotti → DNS → Gestisci zone, e
-                aggiungi:
-              </p>
-            </div>
+          <div className="flex flex-col gap-3 pt-2 max-h-[70vh] overflow-y-auto pr-1">
             <div className="space-y-2">
               {records.map((r, i) => (
                 <RecordCard key={i} record={r} />
               ))}
             </div>
+
+            <RegistrarGuidePanel defaultSlug="godaddy" />
+
             <p className="text-label-sm text-text-muted">
-              Salvati i record? Click qui sotto, controlliamo ogni 5 secondi.
-              La propagazione richiede in genere 30s – 5 min (raro fino a 30
-              min).
+              Salvati i record? Click qui sotto. Controlliamo ogni 5 secondi
+              fino a 3 minuti totali.
             </p>
             <GradientButton size="md" onClick={handleRecordsAdded}>
               Ho aggiunto i record · Verifica
