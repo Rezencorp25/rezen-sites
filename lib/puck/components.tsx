@@ -1330,6 +1330,12 @@ type InlinePatch = {
   prop: "text" | "href" | "src" | "alt" | "style";
   styleProp?: StyleProp;
   value: string;
+  /** Snapshot of the tag/text at click time — required for SPA fallback to
+   * /file/jsx-patch, where we match JSX elements by tag + text content
+   * rather than CSS selector (the on-disk .jsx has no IDs/classes mapping
+   * back to the rendered DOM 1:1). Captured once per applyPatch call. */
+  tag?: string;
+  text?: string;
 };
 
 function ImportedSiteRender({
@@ -1346,6 +1352,14 @@ function ImportedSiteRender({
   const [reloadKey, setReloadKey] = React.useState(0);
   const [inlineMode, setInlineMode] = React.useState(false);
   const [selection, setSelection] = React.useState<InlineSelection | null>(null);
+  // Ref mirror of selection used inside long-lived listeners that close over
+  // initial state. Keeps "current tag/text at the time the iframe emitted
+  // rzn:edit" accessible without re-binding the listener on every selection
+  // change.
+  const selectionRef = React.useRef<InlineSelection | null>(null);
+  React.useEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
   const [saving, setSaving] = React.useState(false);
   // Patches accumulate across multiple element edits between saves. The
   // *last* patch wins per (selector, prop) — we coalesce on push so the
@@ -1492,6 +1506,8 @@ function ImportedSiteRender({
           prop: m.prop,
           styleProp: m.styleProp,
           value: m.value,
+          tag: selectionRef.current?.tag,
+          text: selectionRef.current?.text,
         };
         if (existingIdx >= 0) queue[existingIdx] = next;
         else if (next.selector) queue.push(next);
@@ -1533,6 +1549,8 @@ function ImportedSiteRender({
         prop,
         styleProp,
         value,
+        tag: selection.tag,
+        text: selection.text,
       };
       if (existingIdx >= 0) queue[existingIdx] = next;
       else queue.push(next);
@@ -1561,30 +1579,69 @@ function ImportedSiteRender({
     }
     setSaving(true);
     try {
-      const url = `/api/imports/${parsed.projectId}/${parsed.importId}/file/patch`;
-      const res = await fetch(url, {
+      const htmlUrl = `/api/imports/${parsed.projectId}/${parsed.importId}/file/patch`;
+      const htmlRes = await fetch(htmlUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ path: parsed.filePath, patches }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      const body = (await res.json()) as {
+      if (!htmlRes.ok) throw new Error(await htmlRes.text());
+      const htmlBody = (await htmlRes.json()) as {
         applied: number;
         skipped: number;
         skippedDetails?: Array<{ reason: string }>;
       };
-      if (body.skipped > 0) {
-        const reasons = body.skippedDetails
+
+      // SPA fallback: if the HTML patch matched zero selectors but had
+      // attempted patches, the site is likely a client-rendered SPA (e.g.
+      // Verumflow-style React + Babel-in-browser, where the on-disk .html
+      // is just `<div id="root"></div>` and the real markup lives in .jsx
+      // files). Retry against the JSX AST endpoint which scans .jsx files
+      // and surgically patches matching JSX elements.
+      const spaFallbackNeeded =
+        htmlBody.applied === 0 && htmlBody.skipped > 0;
+      type JsxBody = { applied: number; skipped: number; files?: string[] };
+      let jsxBody: JsxBody | null = null;
+      if (spaFallbackNeeded) {
+        const jsxUrl = `/api/imports/${parsed.projectId}/${parsed.importId}/file/jsx-patch`;
+        // Strip the `path` field — jsx-patch scans the import folder itself.
+        // Include `tag` and `text` per patch so the server can match JSX
+        // elements by structure rather than CSS selector.
+        const jsxRes = await fetch(jsxUrl, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ patches }),
+        });
+        if (jsxRes.ok) {
+          jsxBody = (await jsxRes.json()) as JsxBody;
+        } else {
+          // 404 (no .jsx in folder) or 500 — leave jsxBody null, surface the
+          // html-skip warning to the user.
+          console.warn(
+            "[ImportedSite] jsx-patch fallback failed",
+            await jsxRes.text(),
+          );
+        }
+      }
+
+      const combinedApplied = htmlBody.applied + (jsxBody?.applied ?? 0);
+      const combinedSkipped = jsxBody
+        ? jsxBody.skipped
+        : htmlBody.skipped;
+
+      if (combinedSkipped > 0) {
+        const reasons = htmlBody.skippedDetails
           ?.map((s) => s.reason)
           .slice(0, 3)
           .join("; ");
         console.warn(
-          `[ImportedSite] ${body.skipped} patch saltate: ${reasons ?? ""}`,
+          `[ImportedSite] ${combinedSkipped} patch saltate: ${reasons ?? ""}`,
         );
       }
+
       patchesRef.current = [];
       setDirty(false);
-      return { applied: body.applied, skipped: body.skipped };
+      return { applied: combinedApplied, skipped: combinedSkipped };
     } catch (err) {
       console.error("[ImportedSite] save inline failed", err);
       throw err;
