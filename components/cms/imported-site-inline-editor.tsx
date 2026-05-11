@@ -45,6 +45,36 @@ const SWATCHES: Array<{ key: StyleProp; label: string }> = [
 ];
 
 /**
+ * Curated Google Fonts palette. The `family` is the on-the-wire CSS
+ * font-family value (with stack); the `gName` matches the route's auto-link
+ * injection map. Keep these two in sync with route.ts GOOGLE_FONTS.
+ */
+const FONT_FAMILIES: Array<{ gName: string; family: string; label: string }> = [
+  { gName: "__inherit__", family: "", label: "Default (inherit)" },
+  { gName: "Inter", family: "Inter, sans-serif", label: "Inter · sans" },
+  { gName: "Manrope", family: "Manrope, sans-serif", label: "Manrope · sans" },
+  { gName: "DM Sans", family: "'DM Sans', sans-serif", label: "DM Sans · sans" },
+  { gName: "Plus Jakarta Sans", family: "'Plus Jakarta Sans', sans-serif", label: "Plus Jakarta · sans" },
+  { gName: "Space Grotesk", family: "'Space Grotesk', sans-serif", label: "Space Grotesk · sans" },
+  { gName: "Playfair Display", family: "'Playfair Display', serif", label: "Playfair · serif" },
+  { gName: "Lora", family: "Lora, serif", label: "Lora · serif" },
+  { gName: "Instrument Serif", family: "'Instrument Serif', serif", label: "Instrument · serif" },
+  { gName: "JetBrains Mono", family: "'JetBrains Mono', monospace", label: "JetBrains · mono" },
+  { gName: "Bebas Neue", family: "'Bebas Neue', sans-serif", label: "Bebas · display" },
+];
+
+const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 72, 96];
+
+const FONT_WEIGHTS: Array<{ value: string; label: string }> = [
+  { value: "300", label: "300" },
+  { value: "400", label: "400" },
+  { value: "500", label: "500" },
+  { value: "600", label: "600" },
+  { value: "700", label: "700" },
+  { value: "800", label: "800" },
+];
+
+/**
  * Convert any CSS color (rgb/rgba/named) to a #rrggbb string suitable for the
  * color picker. Falls back to a neutral grey when unparseable — the picker
  * still shows it, the user can change it.
@@ -143,6 +173,32 @@ export function ImportedSiteInlineEditor({
       borderColor: toHex(styles.borderColor),
     } as Record<"color" | "backgroundColor" | "borderColor", string>;
   }, [selection.styles]);
+
+  /**
+   * Match the current selection.styles.fontFamily against our curated list.
+   * Computed fontFamily strings are messy (`"Inter", sans-serif`, quotes
+   * inconsistent across browsers) — we normalize to the first family token
+   * and compare lowercased.
+   */
+  const currentFontGName = useMemo(() => {
+    const ff = selection.styles?.fontFamily ?? "";
+    if (!ff) return "__inherit__";
+    const first = ff
+      .split(",")[0]
+      .replace(/['"]/g, "")
+      .trim()
+      .toLowerCase();
+    const found = FONT_FAMILIES.find((f) => f.gName.toLowerCase() === first);
+    return found?.gName ?? "__inherit__";
+  }, [selection.styles]);
+
+  const currentFontSize = useMemo(() => {
+    const fs = selection.styles?.fontSize ?? "";
+    const m = fs.match(/(\d+(?:\.\d+)?)/);
+    return m ? Math.round(Number(m[1])) : 0;
+  }, [selection.styles]);
+
+  const currentFontWeight = selection.styles?.fontWeight ?? "";
 
   async function handleSave() {
     try {
@@ -359,6 +415,81 @@ export function ImportedSiteInlineEditor({
           </div>
         )}
       </div>
+
+      {/* Tipografia — family + size + weight. Su <img> non ha senso. */}
+      {isTextual && (
+        <div className="flex flex-col gap-2">
+          <span className="text-label-xs font-medium uppercase tracking-wider text-text-muted">
+            Stile · tipografia
+          </span>
+          {/* Family */}
+          <label className="flex flex-col gap-1">
+            <span className="text-label-xs text-text-muted">Famiglia</span>
+            <select
+              value={currentFontGName}
+              onChangeCapture={(e) => {
+                e.stopPropagation();
+                const gName = (e.target as HTMLSelectElement).value;
+                const entry = FONT_FAMILIES.find((f) => f.gName === gName);
+                onApplyPatch("style", entry?.family ?? "", "fontFamily");
+              }}
+              style={{ pointerEvents: "auto" }}
+              className="rounded-md border border-outline/30 bg-surface-container-lowest px-2 py-1.5 text-body-sm text-on-surface focus:border-molten-primary focus:outline-none"
+            >
+              {FONT_FAMILIES.map((f) => (
+                <option key={f.gName} value={f.gName}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {/* Size + Weight side by side */}
+          <div className="flex items-end gap-2">
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-label-xs text-text-muted">
+                Size {currentFontSize ? `· ${currentFontSize}px` : ""}
+              </span>
+              <select
+                value={currentFontSize || ""}
+                onChangeCapture={(e) => {
+                  e.stopPropagation();
+                  const v = (e.target as HTMLSelectElement).value;
+                  onApplyPatch("style", v ? `${v}px` : "", "fontSize");
+                }}
+                style={{ pointerEvents: "auto" }}
+                className="rounded-md border border-outline/30 bg-surface-container-lowest px-2 py-1.5 text-body-sm focus:border-molten-primary focus:outline-none"
+              >
+                <option value="">—</option>
+                {FONT_SIZES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}px
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-label-xs text-text-muted">Weight</span>
+              <select
+                value={currentFontWeight}
+                onChangeCapture={(e) => {
+                  e.stopPropagation();
+                  const v = (e.target as HTMLSelectElement).value;
+                  onApplyPatch("style", v, "fontWeight");
+                }}
+                style={{ pointerEvents: "auto" }}
+                className="rounded-md border border-outline/30 bg-surface-container-lowest px-2 py-1.5 text-body-sm focus:border-molten-primary focus:outline-none"
+              >
+                <option value="">—</option>
+                {FONT_WEIGHTS.map((w) => (
+                  <option key={w.value} value={w.value}>
+                    {w.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
 
       <p className="text-label-xs text-text-muted">
         Suggerimento: doppio-click sul sito per editare il testo inline. I

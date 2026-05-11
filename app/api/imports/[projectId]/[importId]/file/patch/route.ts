@@ -43,6 +43,49 @@ function toKebab(s: string): string {
 }
 
 /**
+ * Map of human-readable Google Font names to URL-encoded family tokens for
+ * fonts.googleapis.com/css2?family=… requests. When a fontFamily patch is
+ * applied, we ensure the corresponding <link> tag exists in <head> so the
+ * font actually renders. Keep in sync with FONT_FAMILIES in the side panel.
+ */
+const GOOGLE_FONTS: Record<string, string> = {
+  "Inter": "Inter:wght@100..900",
+  "Manrope": "Manrope:wght@200..800",
+  "DM Sans": "DM+Sans:wght@100..1000",
+  "Plus Jakarta Sans": "Plus+Jakarta+Sans:wght@200..800",
+  "Space Grotesk": "Space+Grotesk:wght@300..700",
+  "Playfair Display": "Playfair+Display:wght@400..900",
+  "Lora": "Lora:wght@400..700",
+  "Instrument Serif": "Instrument+Serif",
+  "JetBrains Mono": "JetBrains+Mono:wght@100..800",
+  "Bebas Neue": "Bebas+Neue",
+};
+
+/**
+ * Extracts the first family name from a CSS font-family value, stripping
+ * quotes and stack fallbacks. "'Inter', sans-serif" → "Inter".
+ */
+function firstFamilyName(value: string): string {
+  const first = value.split(",")[0] || "";
+  return first.replace(/['"]/g, "").trim();
+}
+
+/**
+ * Idempotently appends the Google Fonts <link> for `family` to <head>.
+ * No-op when family isn't in our curated map or link already exists.
+ */
+function ensureGoogleFontLink(
+  $: cheerio.CheerioAPI,
+  family: string,
+): void {
+  const token = GOOGLE_FONTS[family];
+  if (!token) return;
+  const href = `https://fonts.googleapis.com/css2?family=${token}&display=swap`;
+  if ($(`link[href="${href}"]`).length) return;
+  $("head").append(`<link rel="stylesheet" href="${href}">`);
+}
+
+/**
  * Merge a single property into an inline style attribute, preserving the rest.
  * Empty value removes the property. Last write wins.
  */
@@ -189,6 +232,12 @@ export async function POST(
             // Only call removeAttr when there's actually a style attr to
             // remove. Older cheerio builds throw on no-op removeAttr.
             el.removeAttr("style");
+          }
+          // Side-effect: when changing fontFamily to one of our curated
+          // Google Fonts, also ensure the <link> is in <head>. Otherwise
+          // the user sees the fallback even though style is "correct".
+          if (sp === "fontFamily" && patch.value) {
+            ensureGoogleFontLink($, firstFamilyName(patch.value));
           }
           applied.push(patch);
           break;

@@ -271,6 +271,40 @@ export function buildBridgeScript(): string {
     return s.replace(/[A-Z]/g, function(m){ return '-' + m.toLowerCase(); });
   }
 
+  // Mirror of server-side route GOOGLE_FONTS map. Used to inject <link> tags
+  // into the iframe head so live-preview shows the actual webfont instead of
+  // the OS fallback. Idempotent — keyed on href.
+  var GOOGLE_FONTS = {
+    'Inter': 'Inter:wght@100..900',
+    'Manrope': 'Manrope:wght@200..800',
+    'DM Sans': 'DM+Sans:wght@100..1000',
+    'Plus Jakarta Sans': 'Plus+Jakarta+Sans:wght@200..800',
+    'Space Grotesk': 'Space+Grotesk:wght@300..700',
+    'Playfair Display': 'Playfair+Display:wght@400..900',
+    'Lora': 'Lora:wght@400..700',
+    'Instrument Serif': 'Instrument+Serif',
+    'JetBrains Mono': 'JetBrains+Mono:wght@100..800',
+    'Bebas Neue': 'Bebas+Neue'
+  };
+
+  function firstFamilyName(value) {
+    var first = (value || '').split(',')[0] || '';
+    return first.replace(/['"]/g, '').trim();
+  }
+
+  function ensureFontLink(value) {
+    var fam = firstFamilyName(value);
+    var token = GOOGLE_FONTS[fam];
+    if (!token) return;
+    var href = 'https://fonts.googleapis.com/css2?family=' + token + '&display=swap';
+    var existing = document.querySelector('link[href="' + href + '"]');
+    if (existing) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   function onMessage(e) {
     var msg = e && e.data;
     if (!msg || typeof msg !== 'object') return;
@@ -285,7 +319,16 @@ export function buildBridgeScript(): string {
         else if (msg.prop === 'style' && msg.styleProp) {
           // setProperty with kebab-case + priority "important" so inline wins
           // over external CSS without us having to walk the cascade.
-          el.style.setProperty(toKebab(msg.styleProp), msg.value, 'important');
+          if (msg.value) {
+            el.style.setProperty(toKebab(msg.styleProp), msg.value, 'important');
+          } else {
+            el.style.removeProperty(toKebab(msg.styleProp));
+          }
+          // Mirror server-side font-link injection so live preview shows the
+          // actual webfont, not OS fallback.
+          if (msg.styleProp === 'fontFamily' && msg.value) {
+            ensureFontLink(msg.value);
+          }
         }
       } catch(err) {}
       return;
