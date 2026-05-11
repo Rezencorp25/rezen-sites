@@ -1493,7 +1493,9 @@ function ImportedSiteRender({
           }
           return prev;
         });
-        // Coalesce into the patch queue (same logic as applyPatch).
+        // Coalesce into the patch queue (same logic as applyPatch). Preserve
+        // the FIRST-captured tag/text on subsequent updates so the JSX
+        // server matcher always sees the original text the user clicked.
         const queue = patchesRef.current;
         const existingIdx = queue.findIndex(
           (p) =>
@@ -1501,14 +1503,22 @@ function ImportedSiteRender({
             p.prop === m.prop &&
             p.styleProp === m.styleProp,
         );
-        const next: InlinePatch = {
-          selector: m.selector ?? "",
-          prop: m.prop,
-          styleProp: m.styleProp,
-          value: m.value,
-          tag: selectionRef.current?.tag,
-          text: selectionRef.current?.text,
-        };
+        const next: InlinePatch =
+          existingIdx >= 0
+            ? {
+                ...queue[existingIdx],
+                prop: m.prop,
+                styleProp: m.styleProp,
+                value: m.value,
+              }
+            : {
+                selector: m.selector ?? "",
+                prop: m.prop,
+                styleProp: m.styleProp,
+                value: m.value,
+                tag: selectionRef.current?.tag,
+                text: selectionRef.current?.text,
+              };
         if (existingIdx >= 0) queue[existingIdx] = next;
         else if (next.selector) queue.push(next);
       }
@@ -1544,14 +1554,29 @@ function ImportedSiteRender({
           p.prop === prop &&
           p.styleProp === styleProp,
       );
-      const next: InlinePatch = {
-        selector: selection.selector,
-        prop,
-        styleProp,
-        value,
-        tag: selection.tag,
-        text: selection.text,
-      };
+      // Preserve the FIRST-captured tag/text snapshot through subsequent
+      // coalesce updates. Otherwise repeated text edits would overwrite
+      // patch.text with the previous edit's new value (since selection.text
+      // is optimistically updated on each applyPatch) — the JSX matcher
+      // server-side needs the ORIGINAL text content to locate the right
+      // JSX element in source.
+      const next: InlinePatch =
+        existingIdx >= 0
+          ? {
+              ...queue[existingIdx],
+              prop,
+              styleProp,
+              value,
+              selector: selection.selector,
+            }
+          : {
+              selector: selection.selector,
+              prop,
+              styleProp,
+              value,
+              tag: selection.tag,
+              text: selection.text,
+            };
       if (existingIdx >= 0) queue[existingIdx] = next;
       else queue.push(next);
       setSelection((prev) => {
