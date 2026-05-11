@@ -20,9 +20,15 @@ export type IntegrationProviderId =
   | "gemini"
   | "dataforseo"
   | "adsense"
-  | "ga4";
+  | "ga4"
+  | "godaddy";
 
-export type IntegrationCategory = "llm" | "seo" | "ads" | "analytics";
+export type IntegrationCategory =
+  | "llm"
+  | "seo"
+  | "ads"
+  | "analytics"
+  | "dns";
 
 export type IntegrationFieldType = "text" | "password" | "json";
 
@@ -243,6 +249,45 @@ export const INTEGRATION_PROVIDERS: Record<
     },
   },
 
+  godaddy: {
+    id: "godaddy",
+    label: "GoDaddy",
+    category: "dns",
+    description:
+      "Lista domini + gestione DNS records (TXT/A/CNAME) per collegare il sito a un dominio custom posseduto su GoDaddy.",
+    difficulty: 2,
+    fields: [
+      {
+        key: "apiKey",
+        label: "API Key",
+        type: "text",
+        placeholder: "dGfXp...",
+        required: true,
+        hint: "Key (parte prima dei due punti) generata su developer.godaddy.com",
+      },
+      {
+        key: "apiSecret",
+        label: "API Secret",
+        type: "password",
+        placeholder: "C8j...",
+        required: true,
+        hint: "Secret (parte dopo i due punti). Mostrato una sola volta",
+      },
+    ],
+    last4Source: { fieldKey: "apiKey" },
+    guide: {
+      headline: "Come ottenere le credenziali GoDaddy",
+      steps: [
+        "Vai su developer.godaddy.com/keys (accedi col tuo account GoDaddy proprietario dei domini)",
+        "Click 'Create New API Key'",
+        "Nome a piacere (es. 'rezen-sites'), Environment: 'Production' (NON OTE — non vede i tuoi domini reali)",
+        "GoDaddy mostra una stringa 'API Key:API Secret' separata da due punti — copia entrambi i pezzi",
+        "Incolla la parte prima dei `:` come API Key e dopo come API Secret",
+      ],
+      docsUrl: "https://developer.godaddy.com/getstarted",
+    },
+  },
+
   ga4: {
     id: "ga4",
     label: "Google Analytics 4",
@@ -291,6 +336,7 @@ export const INTEGRATION_CATEGORY_LABEL: Record<IntegrationCategory, string> = {
   seo: "SEO data",
   ads: "Pubblicità",
   analytics: "Web Analytics",
+  dns: "Domini & DNS",
 };
 
 export const INTEGRATION_PROVIDER_ORDER: IntegrationProviderId[] = [
@@ -300,6 +346,7 @@ export const INTEGRATION_PROVIDER_ORDER: IntegrationProviderId[] = [
   "dataforseo",
   "ga4",
   "adsense",
+  "godaddy",
 ];
 
 /**

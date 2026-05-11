@@ -242,6 +242,40 @@ async function testAdSense(fields: Fields): Promise<TestResult> {
   }
 }
 
+async function testGoDaddy(fields: Fields): Promise<TestResult> {
+  const apiKey = fields.apiKey;
+  const apiSecret = fields.apiSecret;
+  if (!apiKey || !apiSecret) return bad("Manca apiKey o apiSecret");
+  try {
+    // GET /v1/domains: lista domini visibili al key owner. Conferma auth +
+    // proprietà account. Limit=1 perché ci basta sapere che la 401 non scatta.
+    const res = await safeFetch(
+      "https://api.godaddy.com/v1/domains?limit=1",
+      {
+        method: "GET",
+        headers: {
+          authorization: `sso-key ${apiKey}:${apiSecret}`,
+          accept: "application/json",
+        },
+      },
+    );
+    if (res.status === 401 || res.status === 403) {
+      return bad(
+        "Credenziali GoDaddy non valide o non Production-tier (le key OTE non vedono i domini reali)",
+      );
+    }
+    if (res.status === 429) {
+      return bad("Rate limit GoDaddy (60 req/min). Riprova fra qualche secondo");
+    }
+    if (!res.ok) {
+      return bad(`GoDaddy ${res.status}: ${(await res.text()).slice(0, 120)}`);
+    }
+    return ok();
+  } catch (err) {
+    return bad(formatErr(err, "GoDaddy"));
+  }
+}
+
 // ─── Google Service Account JWT helper ───────────────────────────────
 
 import { createSign } from "node:crypto";
@@ -310,6 +344,7 @@ const TESTS: Record<string, (fields: Fields) => Promise<TestResult>> = {
   dataforseo: testDataForSEO,
   adsense: testAdSense,
   ga4: testGa4,
+  godaddy: testGoDaddy,
 };
 
 export async function runProviderTest(
