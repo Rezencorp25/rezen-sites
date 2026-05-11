@@ -173,11 +173,24 @@ export function PuckEditor({ projectId, pageId }: Props) {
   const handlePublishConfirm = useCallback(async () => {
     if (!pendingImportMatch) return;
     setPublishing(true);
-    const promise = fetch("/api/sites/publish", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(pendingImportMatch),
-    })
+    // S7.14 — Quando il progetto ha un repo GitHub linked (S7.13), pubblicare
+    // significa "merge main → production + sync su Storage da production".
+    // Repo è SOT; le edits inline sono già committed lì. Fallback al legacy
+    // (copia da /public/imports) per progetti vecchi senza repo.
+    const usesPublishProd = Boolean(project?.githubRepo);
+    const promise = (
+      usesPublishProd
+        ? fetch(`/api/projects/${projectId}/publish-prod`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ githubRepo: project!.githubRepo }),
+          })
+        : fetch("/api/sites/publish", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(pendingImportMatch),
+          })
+    )
       .then(async (r) => {
         const body = (await r.json()) as {
           ok?: boolean;
@@ -185,8 +198,9 @@ export function PuckEditor({ projectId, pageId }: Props) {
           error?: string;
           filesUploaded?: number;
           totalBytes?: number;
+          productionSha?: string;
         };
-        if (!r.ok || !body.ok) {
+        if (!r.ok || (!body.ok && !body.productionSha)) {
           throw new Error(body.error ?? "Publish fallito");
         }
         return body;
@@ -197,15 +211,22 @@ export function PuckEditor({ projectId, pageId }: Props) {
       });
 
     toast.promise(promise, {
-      loading: "Carico il sito su Firebase Storage…",
+      loading: usesPublishProd
+        ? "Merge main → production e sync su Storage…"
+        : "Carico il sito su Firebase Storage…",
       success: (body) => {
         const sizeMb = ((body.totalBytes ?? 0) / 1024 / 1024).toFixed(1);
+        const url =
+          body.url ??
+          (typeof window !== "undefined"
+            ? `${window.location.origin}/sites/${projectId}/`
+            : `/sites/${projectId}/`);
         return (
           <span>
             Sito pubblicato · {body.filesUploaded} file · {sizeMb} MB
             <br />
             <a
-              href={body.url}
+              href={url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-molten-primary underline"
@@ -218,7 +239,7 @@ export function PuckEditor({ projectId, pageId }: Props) {
       error: (err: Error) => `Publish Firebase: ${err.message}`,
     });
     await promise.catch(() => {});
-  }, [pendingImportMatch]);
+  }, [pendingImportMatch, project, projectId]);
 
   const defaultPublishUrl = useMemo(() => {
     if (typeof window === "undefined") return `/sites/${projectId}/`;

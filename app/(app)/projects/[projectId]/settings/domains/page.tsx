@@ -11,7 +11,6 @@ import {
   Link2,
   Copy,
   CheckCircle2,
-  AlertCircle,
   ShieldCheck,
   RefreshCw,
   Cloud,
@@ -23,17 +22,9 @@ import { toast } from "sonner";
 import { useProjectsStore } from "@/lib/stores/projects-store";
 import { useSettingsStore } from "@/lib/stores/settings-store";
 import { StatusPill } from "@/components/luminous/status-pill";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { GradientButton } from "@/components/luminous/gradient-button";
 import { DnsRecordsPanel } from "@/components/seo/dns-records";
+import { ConnectDomainModal } from "@/components/domains/connect-domain-modal";
 
 export default function SettingsDomainsPage({
   params,
@@ -708,42 +699,15 @@ export default function SettingsDomainsPage({
         </section>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-surface-container-highest border-none sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Aggiungi Custom Domain</DialogTitle>
-            <DialogDescription className="text-secondary-text">
-              Inserisci il dominio. Ti mostriamo i record DNS da configurare.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 pt-2">
-            <Input
-              placeholder="example.ch"
-              className="bg-surface-container-low border-none h-11"
-            />
-            <div className="rounded-lg bg-surface-container-low p-4">
-              <div className="mb-2 flex items-center gap-1.5 text-label-md uppercase tracking-widest text-text-muted">
-                <AlertCircle className="h-3.5 w-3.5" />
-                Step successivi (mock)
-              </div>
-              <ol className="ml-4 list-decimal space-y-1 text-body-sm text-secondary-text">
-                <li>Verifica TXT record</li>
-                <li>CNAME → rezen.sites</li>
-                <li>Attivazione SSL (~5 min)</li>
-              </ol>
-            </div>
-            <GradientButton
-              size="md"
-              onClick={() => {
-                toast.success("Verifica avviata (mock)");
-                setOpen(false);
-              }}
-            >
-              Inizia verifica
-            </GradientButton>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConnectDomainModal
+        projectId={projectId}
+        open={open}
+        onOpenChange={setOpen}
+        onCompleted={(domain) => {
+          updateSection(projectId, "domain", { customDomain: domain });
+          toast.success(`${domain} è live`);
+        }}
+      />
     </div>
   );
 }
