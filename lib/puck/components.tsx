@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import * as LucideIcons from "lucide-react";
 import type { ComponentConfig } from "@measured/puck";
 import { cn } from "@/lib/utils";
+import { buildBridgeScript } from "@/lib/imports/inline-edit-bridge";
 
 type IconName = keyof typeof LucideIcons;
 
@@ -1277,6 +1278,15 @@ const ImportedSiteFileEditor = dynamic(
   { ssr: false },
 );
 
+const ImportedSiteInlineEditor = dynamic(
+  () =>
+    import("@/components/cms/imported-site-inline-editor").then(
+      (m) => m.ImportedSiteInlineEditor,
+    ),
+  { ssr: false },
+);
+
+
 /** Parse "/imports/{projectId}/{importId}/path/to/file.ext" → parts. */
 function parseImportSrc(src: string): {
   projectId: string;
@@ -1295,6 +1305,13 @@ function parseImportSrc(src: string): {
   };
 }
 
+type InlineSelection = {
+  selector: string;
+  tag: string;
+  text: string;
+  attrs: { href?: string; src?: string; alt?: string };
+};
+
 function ImportedSiteRender({
   src,
   height,
@@ -1307,29 +1324,160 @@ function ImportedSiteRender({
   const [autoHeight, setAutoHeight] = React.useState<number | null>(null);
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [reloadKey, setReloadKey] = React.useState(0);
+  const [inlineMode, setInlineMode] = React.useState(false);
+  const [selection, setSelection] = React.useState<InlineSelection | null>(null);
+  const [dirty, setDirty] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
 
-  const handleLoad = React.useCallback(() => {
-    if (!autoFit) return;
-    try {
-      const doc = iframeRef.current?.contentDocument;
-      if (!doc) return;
-      const measured = Math.max(
-        doc.documentElement?.scrollHeight ?? 0,
-        doc.body?.scrollHeight ?? 0,
-      );
-      if (measured > 0) setAutoHeight(measured + 40);
-    } catch {
-      // cross-origin: fallback to manual height
-    }
-  }, [autoFit]);
-
-  const effectiveHeight = autoFit && autoHeight ? autoHeight : height;
   const parsed = parseImportSrc(src);
   const niceUrl = parsed ? `/${parsed.filePath}` : src;
 
+  const injectBridge = React.useCallback(() => {
+    if (!inlineMode || !parsed) return;
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) return;
+      // Idempotent guard is inside the script (window['rzn-inline-edit-v1']).
+      const tag = doc.createElement("script");
+      tag.textContent = buildBridgeScript();
+      doc.head.appendChild(tag);
+    } catch (err) {
+      console.warn("[ImportedSite] bridge inject failed", err);
+    }
+  }, [inlineMode, parsed]);
+
+  const handleLoad = React.useCallback(() => {
+    if (autoFit) {
+      try {
+        const doc = iframeRef.current?.contentDocument;
+        if (doc) {
+          const measured = Math.max(
+            doc.documentElement?.scrollHeight ?? 0,
+            doc.body?.scrollHeight ?? 0,
+          );
+          if (measured > 0) setAutoHeight(measured + 40);
+        }
+      } catch {
+        // cross-origin: fallback to manual height
+      }
+    }
+    injectBridge();
+  }, [autoFit, injectBridge]);
+
+  // Inject bridge when toggling inline mode ON without reloading the iframe.
+  React.useEffect(() => {
+    if (inlineMode) injectBridge();
+  }, [inlineMode, injectBridge]);
+
+  // Listen to messages from the iframe (select / edit / serialize-response).
+  React.useEffect(() => {
+    function onMsg(ev: MessageEvent) {
+      if (ev.source !== iframeRef.current?.contentWindow) return;
+      const data = ev.data as { type?: string } | undefined;
+      if (!data?.type) return;
+      if (data.type === "rzn:select") {
+        const m = data as unknown as InlineSelection & { type: string };
+        setSelection({
+          selector: m.selector,
+          tag: m.tag,
+          text: m.text,
+          attrs: m.attrs ?? {},
+        });
+      } else if (data.type === "rzn:edit") {
+        setDirty(true);
+        setSelection((prev) =>
+          prev
+            ? {
+                ...prev,
+                text:
+                  (data as unknown as { prop: string; value: string }).prop ===
+                  "text"
+                    ? (data as unknown as { value: string }).value
+                    : prev.text,
+              }
+            : prev,
+        );
+      }
+    }
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+
+  const applyPatch = React.useCallback(
+    (prop: "text" | "href" | "src" | "alt", value: string) => {
+      if (!selection) return;
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "rzn:patch", selector: selection.selector, prop, value },
+        "*",
+      );
+      setSelection((prev) =>
+        prev
+          ? prop === "text"
+            ? { ...prev, text: value }
+            : { ...prev, attrs: { ...prev.attrs, [prop]: value } }
+          : prev,
+      );
+      setDirty(true);
+    },
+    [selection],
+  );
+
+  const saveInlineEdits = React.useCallback(async () => {
+    if (!parsed || !dirty) return;
+    setSaving(true);
+    try {
+      const win = iframeRef.current?.contentWindow;
+      if (!win) throw new Error("iframe non disponibile");
+      const nonce = Math.random().toString(36).slice(2);
+      const html = await new Promise<string>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          window.removeEventListener("message", handler);
+          reject(new Error("serialize timeout"));
+        }, 5000);
+        function handler(ev: MessageEvent) {
+          const d = ev.data as { type?: string; nonce?: string; html?: string };
+          if (d?.type === "rzn:serialize-response" && d.nonce === nonce) {
+            clearTimeout(timer);
+            window.removeEventListener("message", handler);
+            resolve(d.html ?? "");
+          }
+        }
+        window.addEventListener("message", handler);
+        win.postMessage({ type: "rzn:serialize-request", nonce }, "*");
+      });
+      const url = `/api/imports/${parsed.projectId}/${parsed.importId}/file?path=${encodeURIComponent(parsed.filePath)}`;
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ content: html }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setDirty(false);
+    } catch (err) {
+      console.error("[ImportedSite] save inline failed", err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, [parsed, dirty]);
+
   function reloadIframe() {
     setReloadKey((k) => k + 1);
+    setSelection(null);
   }
+
+  function toggleInlineMode() {
+    if (!inlineMode) {
+      setInlineMode(true);
+    } else {
+      // turning OFF: clear selection in iframe + local state
+      iframeRef.current?.contentWindow?.postMessage({ type: "rzn:clear" }, "*");
+      setInlineMode(false);
+      setSelection(null);
+    }
+  }
+
+  const effectiveHeight = autoFit && autoHeight ? autoHeight : height;
 
   // Default-on: show toolbar unless explicitly disabled (handles legacy
   // PuckData blocks where showToolbar is undefined, e.g. cached localStorage
@@ -1339,13 +1487,47 @@ function ImportedSiteRender({
   return (
     <div className="relative w-full">
       {toolbarVisible && (
-        <div className="flex items-center gap-2 rounded-t-md border-b border-outline/30 bg-surface-container-low px-3 py-1.5 text-label-sm">
-          <span className="font-mono text-text-muted truncate">{niceUrl}</span>
-          <span className="ml-auto flex items-center gap-1">
+        // Inline pointerEvents:auto is required to override Puck's
+        // `[data-puck-component] * { pointer-events: none }` rule, which
+        // otherwise swallows clicks on toolbar buttons. Tailwind classes
+        // lose on specificity; inline style wins without !important.
+        <div
+          className="relative z-20 flex items-center gap-2 rounded-t-md border-b border-outline/30 bg-surface-container-low px-3 py-1.5 text-label-sm"
+          style={{ pointerEvents: "auto" }}
+        >
+          <span className="font-mono text-text-muted truncate" style={{ pointerEvents: "auto" }}>
+            {niceUrl}
+          </span>
+          <span className="ml-auto flex items-center gap-1" style={{ pointerEvents: "auto" }}>
             {parsed && (
               <button
                 type="button"
-                onClick={() => setEditorOpen(true)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleInlineMode();
+                }}
+                style={{ pointerEvents: "auto", cursor: "pointer" }}
+                className={`rounded px-2 py-0.5 ${
+                  inlineMode
+                    ? "bg-molten-primary text-on-primary"
+                    : "text-molten-primary hover:bg-surface-container"
+                }`}
+                title="Attiva/disattiva modifica inline (clic su elementi del sito)"
+              >
+                {inlineMode ? "● Modifica ON" : "✎ Modifica contenuto"}
+                {dirty && inlineMode ? " •" : ""}
+              </button>
+            )}
+            {parsed && (
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditorOpen(true);
+                }}
+                style={{ pointerEvents: "auto", cursor: "pointer" }}
                 className="rounded px-2 py-0.5 text-molten-primary hover:bg-surface-container"
                 title="Apri editor file (HTML / CSS / JS)"
               >
@@ -1354,7 +1536,12 @@ function ImportedSiteRender({
             )}
             <button
               type="button"
-              onClick={reloadIframe}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                reloadIframe();
+              }}
+              style={{ pointerEvents: "auto", cursor: "pointer" }}
               className="rounded px-2 py-0.5 text-text-muted hover:bg-surface-container hover:text-on-surface"
               title="Ricarica iframe"
             >
@@ -1364,6 +1551,9 @@ function ImportedSiteRender({
               href={src}
               target="_blank"
               rel="noopener noreferrer"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              style={{ pointerEvents: "auto", cursor: "pointer" }}
               className="rounded px-2 py-0.5 text-molten-primary hover:bg-surface-container"
               title="Apri in nuova scheda"
             >
@@ -1378,8 +1568,13 @@ function ImportedSiteRender({
       {!toolbarVisible && parsed && (
         <button
           type="button"
-          onClick={() => setEditorOpen(true)}
-          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-surface-container-highest/90 px-3 py-1.5 text-label-md text-on-surface shadow-lg ring-1 ring-outline-variant/40 backdrop-blur hover:bg-surface-container-highest"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setEditorOpen(true);
+          }}
+          style={{ pointerEvents: "auto", cursor: "pointer" }}
+          className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-lg bg-surface-container-highest/90 px-3 py-1.5 text-label-md text-on-surface shadow-lg ring-1 ring-outline-variant/40 backdrop-blur hover:bg-surface-container-highest"
           title="Apri editor file"
         >
           ✎ Modifica sito
@@ -1409,6 +1604,22 @@ function ImportedSiteRender({
           initialPath={parsed.filePath}
           iframeSrcRoot={parsed.rootPrefix}
           onSaved={reloadIframe}
+        />
+      )}
+      {inlineMode && selection && (
+        <ImportedSiteInlineEditor
+          selection={selection}
+          dirty={dirty}
+          saving={saving}
+          onApplyPatch={applyPatch}
+          onSave={saveInlineEdits}
+          onClose={() => {
+            iframeRef.current?.contentWindow?.postMessage(
+              { type: "rzn:clear" },
+              "*",
+            );
+            setSelection(null);
+          }}
         />
       )}
     </div>

@@ -36,25 +36,35 @@ function importedSitePuckData(src: string, title: string): PuckData {
 
 const VERUMFLOW_IMPORT_BASE = "/imports/verumflow-ch/static-real";
 
-export const VERUMFLOW_PAGES: PageSeed[] = [
-  {
-    id: "home",
+// Helper: scaffold a Page seeded from an imported HTML file. Keeps the 10
+// VerumFlow pages declarative (title + slug + seo) without repeating
+// IframeEmbed + analytics + timestamps boilerplate.
+function verumflowImportedPage(input: {
+  id: string;
+  title: string;
+  slug: string;
+  htmlFile: string;
+  metaTitle: string;
+  metaDescription: string;
+  status?: "published" | "draft";
+  canonicalPath?: string;
+}): PageSeed {
+  return {
+    id: input.id,
     projectId: "verumflow-ch",
-    title: "VerumFlow.ch",
-    slug: "/",
-    status: "published",
+    title: input.title,
+    slug: input.slug,
+    status: input.status ?? "published",
     puckData: importedSitePuckData(
-      `${VERUMFLOW_IMPORT_BASE}/index.html`,
-      "VerumFlow — Sistemi gestionali su misura, in 14 giorni",
+      `${VERUMFLOW_IMPORT_BASE}/${input.htmlFile}`,
+      input.metaTitle,
     ),
     seo: {
-      metaTitle:
-        "VerumFlow — Sistemi gestionali su misura, in 14 giorni",
-      metaDescription:
-        "AI-native agency. Costruiamo software custom per micro-imprese in Ticino e Nord Italia.",
-      canonicalUrl: "https://verumflow.ch/",
-      indexable: true,
-      internalSearch: true,
+      metaTitle: input.metaTitle,
+      metaDescription: input.metaDescription,
+      canonicalUrl: `https://verumflow.ch${input.canonicalPath ?? input.slug}`,
+      indexable: input.status !== "draft",
+      internalSearch: input.status !== "draft",
       og: {},
     },
     analytics: {
@@ -67,7 +77,101 @@ export const VERUMFLOW_PAGES: PageSeed[] = [
     },
     createdAt: new Date("2026-05-10T14:00:00Z"),
     updatedAt: new Date("2026-05-10T14:00:00Z"),
-  },
+  };
+}
+
+export const VERUMFLOW_PAGES: PageSeed[] = [
+  verumflowImportedPage({
+    id: "home",
+    title: "VerumFlow.ch",
+    slug: "/",
+    htmlFile: "index.html",
+    metaTitle: "VerumFlow — Sistemi gestionali su misura, in 14 giorni",
+    metaDescription:
+      "AI-native agency. Costruiamo software custom per micro-imprese in Ticino e Nord Italia.",
+  }),
+  verumflowImportedPage({
+    id: "servizi",
+    title: "Servizi",
+    slug: "/servizi",
+    htmlFile: "servizi.html",
+    metaTitle: "Servizi — VerumFlow",
+    metaDescription:
+      "Sistemi gestionali, VerumAudit, automazioni AI e integrazioni. Quattro modi di costruire il tuo sistema su misura.",
+  }),
+  verumflowImportedPage({
+    id: "case-studies",
+    title: "Case studies",
+    slug: "/case-studies",
+    htmlFile: "case-studies.html",
+    metaTitle: "Case studies — VerumFlow",
+    metaDescription:
+      "Sistemi reali, misurabili. Quattro micro-imprese in Ticino e Nord Italia.",
+  }),
+  verumflowImportedPage({
+    id: "case-af-real-estate",
+    title: "Case · A&F Real Estate",
+    slug: "/case-studies/a-f-real-estate",
+    htmlFile: "case-af-real-estate.html",
+    metaTitle: "A&F Real Estate — Case Study · VerumFlow",
+    metaDescription:
+      "CRM custom centralizzato in 14 giorni: pipeline mandati, scheda immobile, calendario visite, automazione follow-up.",
+  }),
+  verumflowImportedPage({
+    id: "case-stanzasemplice",
+    title: "Case · StanzaSemplice",
+    slug: "/case-studies/stanzasemplice",
+    htmlFile: "case-stanzasemplice.html",
+    metaTitle: "StanzaSemplice — Case Study · VerumFlow",
+    metaDescription:
+      "Sistema property-rental end-to-end: prenotazioni, prezzi dinamici, pulizie e fatturazione in un solo flusso.",
+  }),
+  verumflowImportedPage({
+    id: "contatti",
+    title: "Contatti",
+    slug: "/contatti",
+    htmlFile: "contatti.html",
+    metaTitle: "Contatti — VerumFlow",
+    metaDescription:
+      "Scrivici a sales@verumflow.com o prenota un VerumAudit. Canton Ticino, Svizzera.",
+  }),
+  verumflowImportedPage({
+    id: "book",
+    title: "Prenota Audit",
+    slug: "/book",
+    htmlFile: "book.html",
+    metaTitle: "Prenota VerumAudit — VerumFlow",
+    metaDescription:
+      "45 minuti di voice-AI audit con il tuo team. Blueprint con preventivo fisso entro 72 ore. Nessun contratto vincolante prima.",
+  }),
+  verumflowImportedPage({
+    id: "privacy",
+    title: "Privacy Policy",
+    slug: "/privacy",
+    htmlFile: "privacy.html",
+    metaTitle: "Privacy Policy — VerumFlow",
+    metaDescription:
+      "Informativa privacy ai sensi del GDPR e della LPD svizzera.",
+  }),
+  verumflowImportedPage({
+    id: "cookie",
+    title: "Cookie Policy",
+    slug: "/cookie",
+    htmlFile: "cookie.html",
+    metaTitle: "Cookie Policy — VerumFlow",
+    metaDescription:
+      "Quali cookie usiamo, perché, e come gestire le preferenze.",
+  }),
+  verumflowImportedPage({
+    id: "mobile-preview",
+    title: "Mobile Preview",
+    slug: "/mobile-preview",
+    htmlFile: "mobile-preview.html",
+    metaTitle: "VerumFlow — Mobile Preview",
+    metaDescription:
+      "Preview interna mobile-first del sito. Non indicizzata.",
+    status: "draft",
+  }),
 ];
 
 export const CARFI_PAGES: PageSeed[] = [

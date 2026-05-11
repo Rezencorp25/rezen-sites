@@ -237,29 +237,40 @@ export function AddPageDialog({
       if (!res.ok) throw new Error(await res.text());
       const body = (await res.json()) as {
         page: import("@/types").Page;
+        pages?: import("@/types").Page[];
         stats?: {
           filesWritten: number;
+          pagesCreated?: number;
           skipped: string[];
           totalBytes: number;
           blocksProduced?: number;
           fallbackBlocks?: number;
         };
       };
+      // Multi-page ZIPs (Webflow/Framer/WordPress exports) return every .html
+      // as a separate Page. Add all of them and navigate to the homepage.
+      const importedPages = body.pages ?? (body.page ? [body.page] : []);
       if (body.stats) {
+        const pagesCount = body.stats.pagesCreated ?? importedPages.length;
         if (staticMode === "parse" && body.stats.blocksProduced != null) {
           const fb = body.stats.fallbackBlocks ?? 0;
           toast.success(
             `${body.stats.blocksProduced} blocchi Puck${
               fb > 0 ? ` · ${fb} in fallback raw HTML` : ""
-            }`,
+            }${pagesCount > 1 ? ` · ${pagesCount} pagine` : ""}`,
           );
         } else {
           toast.success(
-            `${body.stats.filesWritten} file estratti · ${(body.stats.totalBytes / 1024).toFixed(0)} KB`,
+            `${body.stats.filesWritten} file estratti · ${pagesCount} pagina${pagesCount === 1 ? "" : "e"} · ${(body.stats.totalBytes / 1024).toFixed(0)} KB`,
           );
         }
       }
-      pushAndClose(body.page, false);
+      // Push every page into the store; the homepage (pages[0]) is the one
+      // we navigate to via pushAndClose.
+      const primary = importedPages[0];
+      if (!primary) throw new Error("Nessuna pagina creata dall'import");
+      for (const extra of importedPages.slice(1)) addPage(extra);
+      pushAndClose(primary, false);
     } catch (err) {
       toast.error(`Errore import static zip: ${(err as Error).message}`);
     } finally {

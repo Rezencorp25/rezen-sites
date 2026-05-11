@@ -142,67 +142,102 @@ export async function POST(req: Request) {
       filesWritten += 1;
     }
 
-    const publicSrc = `/imports/${projectId}/${pageId}/index.html`;
     const assetBaseUrl = `/imports/${projectId}/${pageId}/`;
 
-    let puckData: PuckData;
+    // Collect every .html written to disk and produce a Page per file.
+    // Index is always first so we can keep it as the "primary" page returned
+    // for back-compat consumers that read `body.page`.
+    const htmlEntries = entries.filter((e) => {
+      if (e.dir) return false;
+      const rel = rootDir && e.name.startsWith(rootDir)
+        ? e.name.slice(rootDir.length)
+        : e.name;
+      if (!rel || rel.includes("..")) return false;
+      const ext = path.extname(rel).toLowerCase();
+      return ext === ".html" || ext === ".htm";
+    });
+
     let parseStats:
       | { blocksProduced: number; fallbackBlocks: number }
       | undefined;
-    let detectedTitle: string | undefined;
-    let detectedDescription: string | undefined;
+    const pages: Page[] = [];
+    const now = new Date();
 
-    if (importMode === "parse") {
-      const indexHtml = await indexEntry.async("string");
-      const parsed = parseHtmlToPuck(indexHtml, { assetBaseUrl });
-      puckData = parsed.puckData;
-      parseStats = {
-        blocksProduced: parsed.stats.blocksProduced,
-        fallbackBlocks: parsed.stats.fallbackBlocks,
-      };
-      detectedTitle = parsed.stats.detectedTitle;
-      detectedDescription = parsed.stats.detectedDescription;
-    } else {
-      puckData = {
-        content: [
-          {
-            type: "IframeEmbed",
-            props: {
-              id: "iframe-import",
-              src: publicSrc,
-              height: 1600,
-              title,
-              badge: true,
+    for (const entry of htmlEntries) {
+      const rel = rootDir && entry.name.startsWith(rootDir)
+        ? entry.name.slice(rootDir.length)
+        : entry.name;
+      const isIndex = /(?:^|\/)index\.html?$/i.test(rel);
+      const html = await entry.async("string");
+      const detectedTitle = extractTitle(html);
+      const detectedDescription = extractDescription(html);
+
+      const fileTitle = detectedTitle || (isIndex ? title : prettifyName(rel));
+      const fileSlug = isIndex ? slug || "/" : `/${rel.replace(/\.html?$/i, "")}`;
+      const filePuckSrc = `/imports/${projectId}/${pageId}/${rel}`;
+
+      let filePuckData: PuckData;
+      if (importMode === "parse" && isIndex) {
+        const parsed = parseHtmlToPuck(html, { assetBaseUrl });
+        filePuckData = parsed.puckData;
+        parseStats = {
+          blocksProduced: parsed.stats.blocksProduced,
+          fallbackBlocks: parsed.stats.fallbackBlocks,
+        };
+      } else {
+        filePuckData = {
+          content: [
+            {
+              type: "IframeEmbed",
+              props: {
+                id: `iframe-import-${slugifyId(rel)}`,
+                src: filePuckSrc,
+                height: 1600,
+                title: fileTitle,
+                badge: true,
+                autoFit: true,
+                showToolbar: true,
+              },
             },
-          },
-        ],
-        root: { props: { title } },
-      } as unknown as PuckData;
+          ],
+          root: { props: { title: fileTitle } },
+        } as unknown as PuckData;
+      }
+
+      const seo = defaultSeo(fileTitle);
+      if (detectedDescription) seo.metaDescription = detectedDescription.slice(0, 160);
+
+      pages.push({
+        id: isIndex ? pageId : `${pageId}-${slugifyId(rel)}`,
+        projectId,
+        title: fileTitle,
+        slug: fileSlug,
+        status: "draft",
+        puckData: filePuckData,
+        seo,
+        analytics: defaultAnalytics(),
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
-    const finalTitle = detectedTitle || title;
-    const seo = defaultSeo(finalTitle);
-    if (detectedDescription) seo.metaDescription = detectedDescription.slice(0, 160);
-
-    const page: Page = {
-      id: pageId,
-      projectId,
-      title: finalTitle,
-      slug: slug || `static-${pageId}`,
-      status: "draft",
-      puckData,
-      seo,
-      analytics: defaultAnalytics(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // Move the index page to position 0 so consumers can rely on pages[0]
+    // being the homepage of the imported site.
+    pages.sort((a, b) => {
+      if (a.slug === "/") return -1;
+      if (b.slug === "/") return 1;
+      return a.slug.localeCompare(b.slug);
+    });
 
     return NextResponse.json({
-      page,
+      // Back-compat: consumers that still read `page` get the homepage.
+      page: pages[0] ?? null,
+      pages,
       source: "static-zip",
       mode: importMode,
       stats: {
         filesWritten,
+        pagesCreated: pages.length,
         skipped,
         totalBytes: totalWritten,
         ...(parseStats ?? {}),
@@ -246,6 +281,42 @@ function slugify(s: string) {
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function slugifyId(filePath: string): string {
+  // Strip extension, collapse slashes to dashes, then slugify.
+  return slugify(filePath.replace(/\.html?$/i, "").replace(/[/\\]+/g, "-"));
+}
+
+function prettifyName(filePath: string): string {
+  const base = filePath.replace(/\.html?$/i, "").split(/[/\\]/).pop() ?? filePath;
+  return base
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function extractTitle(html: string): string | undefined {
+  const m = html.match(/<title>([^<]+)<\/title>/i);
+  return m ? decodeEntities(m[1].trim()) : undefined;
+}
+
+function extractDescription(html: string): string | undefined {
+  const m = html.match(
+    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i,
+  );
+  return m ? decodeEntities(m[1].trim()) : undefined;
+}
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
 }
 
 function formatBytes(n: number): string {
