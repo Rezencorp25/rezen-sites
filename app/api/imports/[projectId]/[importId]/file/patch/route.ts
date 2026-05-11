@@ -126,23 +126,27 @@ export async function POST(
     const skipped: Array<{ patch: Patch; reason: string }> = [];
 
     for (const patch of body.patches) {
-      if (typeof patch?.selector !== "string" || typeof patch?.value !== "string") {
-        skipped.push({ patch, reason: "patch malformata" });
-        continue;
-      }
-      let el;
+      // Per-patch try/catch so a single malformed/throwing patch doesn't
+      // tank the whole batch with a 500. We collect partial results and
+      // report them back via skippedDetails.
       try {
-        el = $(patch.selector).first();
-      } catch (err) {
-        skipped.push({ patch, reason: `selector invalido: ${(err as Error).message}` });
-        continue;
-      }
-      if (!el.length) {
-        skipped.push({ patch, reason: "selector non matcha alcun elemento" });
-        continue;
-      }
-      const tag = (el.prop("tagName") || "").toString().toUpperCase();
-      switch (patch.prop) {
+        if (typeof patch?.selector !== "string" || typeof patch?.value !== "string") {
+          skipped.push({ patch, reason: "patch malformata" });
+          continue;
+        }
+        let el;
+        try {
+          el = $(patch.selector).first();
+        } catch (err) {
+          skipped.push({ patch, reason: `selector invalido: ${(err as Error).message}` });
+          continue;
+        }
+        if (!el.length) {
+          skipped.push({ patch, reason: "selector non matcha alcun elemento" });
+          continue;
+        }
+        const tag = (el.prop("tagName") || "").toString().toUpperCase();
+        switch (patch.prop) {
         case "text":
           el.text(patch.value);
           applied.push(patch);
@@ -173,19 +177,27 @@ export async function POST(
           break;
         case "style": {
           const sp = patch.styleProp;
-          if (!sp || !ALLOWED_STYLE_PROPS.includes(sp)) {
+          if (!sp || !(ALLOWED_STYLE_PROPS as readonly string[]).includes(sp)) {
             skipped.push({ patch, reason: `styleProp non supportato: ${sp ?? "(missing)"}` });
             break;
           }
           const existingStyle = el.attr("style") ?? "";
           const merged = mergeStyle(existingStyle, sp, patch.value);
-          if (merged) el.attr("style", merged);
-          else el.removeAttr("style");
+          if (merged) {
+            el.attr("style", merged);
+          } else if (existingStyle) {
+            // Only call removeAttr when there's actually a style attr to
+            // remove. Older cheerio builds throw on no-op removeAttr.
+            el.removeAttr("style");
+          }
           applied.push(patch);
           break;
         }
         default:
           skipped.push({ patch, reason: `prop sconosciuta: ${patch.prop}` });
+      }
+      } catch (perPatchErr) {
+        skipped.push({ patch, reason: `errore: ${(perPatchErr as Error).message}` });
       }
     }
 
@@ -208,6 +220,17 @@ export async function POST(
       updatedAt: new Date().toISOString(),
     });
   } catch (err) {
+    // Surface to Cloud Run logs — the JSON response is opaque to clients
+    // when App Hosting catches an unhandled-looking error and replaces our
+    // body with its own 500 HTML page. Logging here lets us diagnose
+    // from gcloud / Firebase Console.
+    console.error("[api/imports/patch] fatal", {
+      err: (err as Error).message,
+      stack: (err as Error).stack?.slice(0, 500),
+      projectId,
+      importId,
+      relPath,
+    });
     return NextResponse.json(
       { error: (err as Error).message ?? "patch failed" },
       { status: 500 },
