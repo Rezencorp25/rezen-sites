@@ -74,14 +74,18 @@ export async function initRepoFromBundle(
 
   const octokit = await getInstallationOctokit();
 
-  // 1. Create repo (idempotent — 422 if already exists, treat as ok)
+  // 1. Create repo (idempotent — 422 if already exists, treat as ok).
+  // auto_init=true creates an initial README commit so the Git Data API
+  // (createBlob/createTree/createCommit) has a starting ref to work with —
+  // calling createBlob on a totally empty repo returns "Git Repository is
+  // empty". We later overwrite main with our own bundle commit.
   let repoExists = false;
   try {
     await octokit.request("POST /orgs/{org}/repos", {
       org: ORG,
       name: repoName,
       private: true,
-      auto_init: false, // we push our own initial commit
+      auto_init: true,
       description: `Source for REZEN Sites project ${projectId}`,
     });
   } catch (err) {
@@ -102,8 +106,10 @@ export async function initRepoFromBundle(
     throw new Error(`bundle troppo grande (${files.length} file, max 1000)`);
   }
 
-  // 3. If repo existed, we don't re-bootstrap (avoid clobbering edits).
-  //    Return current main HEAD instead.
+  // 3. If repo existed BEFORE this call (not just-created), don't clobber
+  //    user edits. Return current main HEAD instead. Fresh `auto_init=true`
+  //    creates the repo + initial README — that's NOT an "edit", so we
+  //    proceed to overwrite below.
   if (repoExists) {
     try {
       const ref = await octokit.request(
@@ -124,6 +130,50 @@ export async function initRepoFromBundle(
       };
     } catch {
       // Repo exists but main branch doesn't — fall through to bootstrap
+    }
+  }
+
+  // Fetch current main HEAD (from auto_init README commit). Required as
+  // parent for our bundle commit — using parents:[] on a non-empty repo
+  // would create a detached commit GitHub rejects on updateRef.
+  let parentSha: string | undefined;
+  try {
+    const head = await octokit.request(
+      "GET /repos/{owner}/{repo}/git/ref/{ref}",
+      {
+        owner: ORG,
+        repo: repoName,
+        ref: `heads/${MAIN_BRANCH}`,
+      },
+    );
+    parentSha = head.data.object.sha;
+  } catch {
+    parentSha = undefined;
+  }
+
+  // If repo is totally empty (no main branch, no commits — happens when
+  // repo was previously created with auto_init:false), bootstrap it with
+  // a placeholder file via PUT /contents. That call automatically creates
+  // the first commit + main branch ref, which then makes the Git Data API
+  // (createBlob/createTree/createCommit) usable for our bundle.
+  if (!parentSha) {
+    try {
+      const seed = await octokit.request(
+        "PUT /repos/{owner}/{repo}/contents/{path}",
+        {
+          owner: ORG,
+          repo: repoName,
+          path: ".rezen-bootstrap",
+          message: "chore: bootstrap empty repo",
+          content: Buffer.from("rezen-sites placeholder\n").toString("base64"),
+          branch: MAIN_BRANCH,
+        },
+      );
+      parentSha = seed.data.commit.sha;
+    } catch (err) {
+      throw new Error(
+        `Failed to bootstrap empty repo: ${(err as Error).message}`,
+      );
     }
   }
 
@@ -156,7 +206,8 @@ export async function initRepoFromBundle(
     })),
   });
 
-  // 6. Create commit pointing at tree (no parent — initial commit)
+  // 6. Create commit pointing at tree. Parent is the auto_init README
+  //    commit (if present) so updateRef accepts the fast-forward.
   const commit = await octokit.request(
     "POST /repos/{owner}/{repo}/git/commits",
     {
@@ -164,25 +215,52 @@ export async function initRepoFromBundle(
       repo: repoName,
       message: `chore: bootstrap site from import ${importId}`,
       tree: tree.data.sha,
-      parents: [],
+      parents: parentSha ? [parentSha] : [],
     },
   );
 
-  // 7. Create main branch ref pointing at commit
-  await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
-    owner: ORG,
-    repo: repoName,
-    ref: `refs/heads/${MAIN_BRANCH}`,
-    sha: commit.data.sha,
-  });
+  // 7. Force-update main branch ref to point at our bundle commit. Use
+  //    force=true to overwrite the auto_init README (we don't want it).
+  if (parentSha) {
+    await octokit.request("PATCH /repos/{owner}/{repo}/git/refs/{ref}", {
+      owner: ORG,
+      repo: repoName,
+      ref: `heads/${MAIN_BRANCH}`,
+      sha: commit.data.sha,
+      force: true,
+    });
+  } else {
+    await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
+      owner: ORG,
+      repo: repoName,
+      ref: `refs/heads/${MAIN_BRANCH}`,
+      sha: commit.data.sha,
+    });
+  }
 
-  // 8. Mirror to production branch (initial state = same as main)
-  await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
-    owner: ORG,
-    repo: repoName,
-    ref: `refs/heads/${PRODUCTION_BRANCH}`,
-    sha: commit.data.sha,
-  });
+  // 8. Mirror to production branch (initial state = same as main).
+  //    createRef returns 422 if it already exists (e.g. on re-init), in
+  //    which case force-update to the new commit.
+  try {
+    await octokit.request("POST /repos/{owner}/{repo}/git/refs", {
+      owner: ORG,
+      repo: repoName,
+      ref: `refs/heads/${PRODUCTION_BRANCH}`,
+      sha: commit.data.sha,
+    });
+  } catch (err) {
+    if ((err as { status?: number }).status === 422) {
+      await octokit.request("PATCH /repos/{owner}/{repo}/git/refs/{ref}", {
+        owner: ORG,
+        repo: repoName,
+        ref: `heads/${PRODUCTION_BRANCH}`,
+        sha: commit.data.sha,
+        force: true,
+      });
+    } else {
+      throw err;
+    }
+  }
 
   // 9. Set main as default branch
   try {
