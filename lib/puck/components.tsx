@@ -1500,13 +1500,19 @@ function ImportedSiteRender({
 
   const effectiveHeight = autoFit && autoHeight ? autoHeight : height;
 
+  // Mark the root with a data attribute so we can target Puck's overlay
+  // chrome (ActionBar Duplicate/Delete) via :has() in global CSS and hide
+  // it for this specific block type — the IframeEmbed already has its
+  // own toolbar with editing controls, the extra Puck header is just noise.
+  const rootDataAttr: Record<string, string> = { "data-rzn-iframe-embed": "1" };
+
   // Default-on: show toolbar unless explicitly disabled (handles legacy
   // PuckData blocks where showToolbar is undefined, e.g. cached localStorage
   // from before this prop existed).
   const toolbarVisible = showToolbar !== false;
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" {...rootDataAttr}>
       {toolbarVisible && (
         // Inline pointerEvents:auto is required to override Puck's
         // `[data-puck-component] * { pointer-events: none }` rule, which
@@ -1650,16 +1656,10 @@ function ImportedSiteRender({
 export const IframeEmbed: ComponentConfig<IframeEmbedProps> = {
   label: "Iframe (Imported Site)",
   fields: {
-    src: {
-      type: "text",
-      label: "URL pagina (es. /imports/{id}/static-real/index.html)",
-    },
-    height: {
-      type: "number",
-      label: "Altezza fissa (px) — usata se Auto-fit OFF",
-      min: 200,
-      max: 8000,
-    },
+    // Order matters: Puck renders fields in insertion order. We surface the
+    // *behavior* knobs first (rendering size, chrome visibility) because
+    // those are what the user actually tweaks; src/title/badge are import-
+    // time metadata that rarely change after the page is first imported.
     autoFit: {
       type: "radio",
       label: "Auto-fit altezza al contenuto",
@@ -1668,23 +1668,35 @@ export const IframeEmbed: ComponentConfig<IframeEmbedProps> = {
         { label: "No (altezza fissa)", value: false as unknown as string },
       ],
     },
+    height: {
+      type: "number",
+      label: "Altezza fissa (px) — usata se Auto-fit OFF",
+      min: 200,
+      max: 8000,
+    },
     showToolbar: {
       type: "radio",
-      label: "Toolbar in alto (URL + Apri + Ricarica)",
+      label: "Toolbar editor (Modifica contenuto / Modifica file / Apri)",
       options: [
         { label: "Mostra", value: true as unknown as string },
         { label: "Nascondi", value: false as unknown as string },
       ],
     },
-    title: { type: "text", label: "Titolo (accessibilità)" },
     badge: {
       type: "radio",
-      label: "Badge 'Imported, not editable'",
+      label: "Badge 'Imported, not editable' sull'iframe",
       options: [
         { label: "Mostra", value: true as unknown as string },
         { label: "Nascondi", value: false as unknown as string },
       ],
     },
+    // Import-time metadata — kept at the bottom because editing these
+    // typically means re-pointing the iframe to a different page (rare).
+    src: {
+      type: "text",
+      label: "URL pagina (es. /imports/{id}/static-real/index.html)",
+    },
+    title: { type: "text", label: "Titolo accessibilità (alt iframe)" },
   },
   defaultProps: {
     src: "/imports/placeholder/index.html",

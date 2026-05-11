@@ -423,9 +423,49 @@ const COLLECTION_TEMPLATE_PAGES: PageSeed[] = MOCK_COLLECTIONS.map((c) =>
   buildCollectionTemplatePage(c),
 );
 
+// Pure-HTML test site (no SPA, no React in the iframe). Used to prove the
+// patch-based inline editor end-to-end without the React-renders-the-page
+// constraint that affects verumflow-ch. Edits text/img/links on real HTML.
+export const STATIC_TEST_PAGES: PageSeed[] = [
+  {
+    // NOTE: globally unique id — the pages store keys by id only (no
+    // projectId tuple yet), so reusing "home" collides with verumflow's
+    // home page. Fix the store keying in a dedicated sprint.
+    id: "static-test-home",
+    projectId: "static-test",
+    title: "Atlas Studio — Home",
+    slug: "/",
+    status: "published",
+    puckData: importedSitePuckData(
+      "/imports/static-test/v1/index.html",
+      "Atlas Studio — Pure HTML test site",
+    ),
+    seo: {
+      metaTitle: "Atlas Studio — Pure HTML test site",
+      metaDescription:
+        "Sito di test pure-HTML per dimostrare l'editor inline di Red Insights. Modifica testi, immagini, link direttamente nel browser.",
+      canonicalUrl: "https://static-test.rezen.sites/",
+      indexable: false,
+      internalSearch: false,
+      og: {},
+    },
+    analytics: {
+      pageviews7d: 0,
+      pageviews30d: 0,
+      bounceRate: 0,
+      avgPosition: 0,
+      topKeyword: "",
+      seoScore: 0,
+    },
+    createdAt: new Date("2026-05-11T10:00:00Z"),
+    updatedAt: new Date("2026-05-11T10:00:00Z"),
+  },
+];
+
 export const ALL_PAGES = [
   ...VERUMFLOW_PAGES,
   ...CARFI_PAGES,
   ...BIO_PAGES,
   ...COLLECTION_TEMPLATE_PAGES,
+  ...STATIC_TEST_PAGES,
 ];

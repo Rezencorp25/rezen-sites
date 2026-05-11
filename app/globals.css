@@ -292,3 +292,19 @@
   color: #b3b5b9;
 }
 
+
+/* === Puck overrides for IframeEmbed ============================
+   The IframeEmbed block ships its own toolbar (Modifica contenuto,
+   Modifica file, ↻, ↗ Apri). Puck normally overlays its own ActionBar
+   on a selected block with the block label + Duplicate/Delete chips —
+   that overlay sits as a sibling under `_PuckPreview`, NOT inside
+   `[data-puck-component]`, so we can't scope by descendant. Use `:has()`
+   on the preview container: if the preview contains an IframeEmbed,
+   hide ALL actionsOverlay/overlayWrapper inside that preview.
+   Trade-off: pages mixing IframeEmbed with other blocks lose the
+   Puck ActionBar on those blocks too. Acceptable for now — all imported
+   sites are single-IframeEmbed pages. Revisit when pages get mixed. */
+[class*="_PuckPreview"]:has([data-rzn-iframe-embed]) [class*="_DraggableComponent-actionsOverlay"],
+[class*="_PuckPreview"]:has([data-rzn-iframe-embed]) [class*="_DraggableComponent-overlayWrapper"] {
+  display: none !important;
+}

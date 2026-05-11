@@ -61,4 +61,26 @@ export const MOCK_PROJECTS: Project[] = [
     },
     integrations: {},
   },
+  {
+    // Pure-HTML test project for the inline editor. No SPA, no Babel, no
+    // React in the iframe — just static HTML/CSS so patch-based saves
+    // actually mutate the file. Used to develop and demo the Webflow-style
+    // edit experience (text/image/color/font) without the SPA limitation.
+    id: "static-test",
+    name: "Static Test Site",
+    domain: "static-test.rezen.sites",
+    stagingDomain: "static-test-staging.rezen.sites",
+    baseDomain: "static-test-z01.rezen.sites",
+    thumbnail: "/mock-images/thumb-bio.svg",
+    status: "draft",
+    createdAt: new Date("2026-05-11T10:00:00Z"),
+    updatedAt: new Date("2026-05-11T10:00:00Z"),
+    kpis: {
+      pagesPublished: 1,
+      organicTraffic30d: 0,
+      adsenseRevenue30d: 0,
+      seoScore: 0,
+    },
+    integrations: {},
+  },
 ];
