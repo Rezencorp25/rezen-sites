@@ -10,6 +10,7 @@ type ProjectsStore = {
   getById: (id: string) => Project | undefined;
   addProject: (p: Project) => void;
   removeProject: (id: string) => void;
+  updateProject: (id: string, patch: Partial<Project>) => void;
 };
 
 export const useProjectsStore = create<ProjectsStore>()(
@@ -21,6 +22,12 @@ export const useProjectsStore = create<ProjectsStore>()(
         set((s) => ({ projects: [p, ...s.projects] })),
       removeProject: (id) =>
         set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
+      updateProject: (id, patch) =>
+        set((s) => ({
+          projects: s.projects.map((p) =>
+            p.id === id ? { ...p, ...patch, updatedAt: new Date() } : p,
+          ),
+        })),
     }),
     {
       name: "rezen.projects",

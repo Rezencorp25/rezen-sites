@@ -34,6 +34,7 @@ import { SEOSheet } from "./seo-sheet";
 import { ExportMenu } from "./export-menu";
 import { EditorKeyboardShortcuts } from "./keyboard-shortcuts";
 import { CanvasErrorBoundary } from "./canvas-error-boundary";
+import { PublishConfirmDialog } from "./publish-confirm-dialog";
 import type { Page } from "@/types";
 
 const DEVICE_VIEWPORTS: Record<Device, { width: number; label: string }> = {
@@ -106,8 +107,19 @@ export function PuckEditor({ projectId, pageId }: Props) {
   const allPages = usePagesStore((s) => s.pages);
 
   const [publishing, setPublishing] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  // Cached during the dialog phase so the actual fetch only fires when the
+  // user clicks "Pubblica ora" inside the modal.
+  const [pendingImportMatch, setPendingImportMatch] = useState<{
+    projectId: string;
+    importId: string;
+  } | null>(null);
 
-  const handlePublish = useCallback(async () => {
+  // First click on "Pubblica": persist the in-flight Puck data, snapshot the
+  // version, then open the confirmation dialog. The actual deploy to
+  // Firebase Storage only fires from handlePublishConfirm below — this lets
+  // the user review the URL and configure a custom domain first.
+  const handlePublish = useCallback(() => {
     if (!data || !page) return;
     savePuckData(pageId, data);
     updatePage(pageId, { status: "published" });
@@ -126,7 +138,7 @@ export function PuckEditor({ projectId, pageId }: Props) {
     });
 
     // S7.10 — se la pagina contiene un IframeEmbed che punta a un sito
-    // importato, deploya i file a Firebase Storage e mostra l'URL pubblico.
+    // importato, raccogliamo le coordinate per il deploy.
     const importMatch = (() => {
       type Block = { type?: string; props?: { src?: string } };
       const content = (data as { content?: Block[] }).content ?? [];
@@ -140,49 +152,10 @@ export function PuckEditor({ projectId, pageId }: Props) {
     })();
 
     if (importMatch) {
-      setPublishing(true);
-      const promise = fetch("/api/sites/publish", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(importMatch),
-      })
-        .then(async (r) => {
-          const body = (await r.json()) as {
-            ok?: boolean;
-            url?: string;
-            error?: string;
-            filesUploaded?: number;
-            totalBytes?: number;
-          };
-          if (!r.ok || !body.ok) {
-            throw new Error(body.error ?? "Publish fallito");
-          }
-          return body;
-        })
-        .finally(() => setPublishing(false));
-
-      toast.promise(promise, {
-        loading: "Carico il sito su Firebase Storage…",
-        success: (body) => {
-          const sizeMb = ((body.totalBytes ?? 0) / 1024 / 1024).toFixed(1);
-          return (
-            <span>
-              Sito pubblicato · {body.filesUploaded} file · {sizeMb} MB
-              <br />
-              <a
-                href={body.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-molten-primary underline"
-              >
-                Apri sito pubblicato →
-              </a>
-            </span>
-          );
-        },
-        error: (err: Error) => `Publish Firebase: ${err.message}`,
-      });
+      setPendingImportMatch(importMatch);
+      setPublishDialogOpen(true);
     } else {
+      // Plain Puck-only pages skip the publish-to-Storage flow.
       toast.success("Pagina pubblicata · nuova versione creata");
     }
   }, [
@@ -196,6 +169,61 @@ export function PuckEditor({ projectId, pageId }: Props) {
     setDirty,
     recordVersion,
   ]);
+
+  const handlePublishConfirm = useCallback(async () => {
+    if (!pendingImportMatch) return;
+    setPublishing(true);
+    const promise = fetch("/api/sites/publish", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(pendingImportMatch),
+    })
+      .then(async (r) => {
+        const body = (await r.json()) as {
+          ok?: boolean;
+          url?: string;
+          error?: string;
+          filesUploaded?: number;
+          totalBytes?: number;
+        };
+        if (!r.ok || !body.ok) {
+          throw new Error(body.error ?? "Publish fallito");
+        }
+        return body;
+      })
+      .finally(() => {
+        setPublishing(false);
+        setPublishDialogOpen(false);
+      });
+
+    toast.promise(promise, {
+      loading: "Carico il sito su Firebase Storage…",
+      success: (body) => {
+        const sizeMb = ((body.totalBytes ?? 0) / 1024 / 1024).toFixed(1);
+        return (
+          <span>
+            Sito pubblicato · {body.filesUploaded} file · {sizeMb} MB
+            <br />
+            <a
+              href={body.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-molten-primary underline"
+            >
+              Apri sito pubblicato →
+            </a>
+          </span>
+        );
+      },
+      error: (err: Error) => `Publish Firebase: ${err.message}`,
+    });
+    await promise.catch(() => {});
+  }, [pendingImportMatch]);
+
+  const defaultPublishUrl = useMemo(() => {
+    if (typeof window === "undefined") return `/sites/${projectId}/`;
+    return `${window.location.origin}/sites/${projectId}/`;
+  }, [projectId]);
 
   const viewport = DEVICE_VIEWPORTS[device];
 
@@ -249,6 +277,16 @@ export function PuckEditor({ projectId, pageId }: Props) {
           updatePage(pageId, { seo });
           toast.success("SEO aggiornato");
         }}
+      />
+      <PublishConfirmDialog
+        open={publishDialogOpen}
+        onOpenChange={(next) => {
+          if (!publishing) setPublishDialogOpen(next);
+        }}
+        project={project}
+        defaultPublishUrl={defaultPublishUrl}
+        onConfirm={handlePublishConfirm}
+        publishing={publishing}
       />
     </div>
   );
