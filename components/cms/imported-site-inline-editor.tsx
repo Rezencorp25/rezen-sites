@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { HexColorPicker } from "react-colorful";
 import { toast } from "sonner";
 
@@ -166,12 +167,20 @@ export function ImportedSiteInlineEditor({
     }
   }
 
-  return (
+  // SSR guard: createPortal must be called only on the client. During the
+  // first render (hydration), document doesn't exist on server. Return null
+  // until mounted client-side.
+  if (typeof document === "undefined") return null;
+
+  // Portal'd to document.body to escape Puck's _DraggableComponent wrapper.
+  // Puck installs a capture-phase click listener on its DraggableComponent
+  // that calls stopPropagation() when the block is selected — that eats
+  // every click inside the wrapper, even with onClickCapture on our buttons.
+  // Rendering outside the wrapper bypasses Puck entirely.
+  return createPortal(
     <div
-      className="absolute right-3 top-14 z-30 flex w-80 flex-col gap-3 rounded-xl border border-outline/40 bg-surface-container/95 p-4 text-on-surface shadow-2xl backdrop-blur"
-      style={{ pointerEvents: "auto" }}
-      onPointerDownCapture={(e) => e.stopPropagation()}
-      onClickCapture={(e) => e.stopPropagation()}
+      className="fixed z-[60] flex w-80 flex-col gap-3 rounded-xl border border-outline/40 bg-surface-container/95 p-4 text-on-surface shadow-2xl backdrop-blur"
+      style={{ pointerEvents: "auto", top: 96, right: 296 }}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -377,6 +386,7 @@ export function ImportedSiteInlineEditor({
           {saving ? "Salvataggio..." : "Salva"}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
