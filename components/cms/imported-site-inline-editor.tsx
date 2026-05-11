@@ -10,6 +10,8 @@ type Selection = {
   attrs: { href?: string; src?: string; alt?: string };
 };
 
+type SaveOutcome = { applied: number; skipped: number };
+
 type Props = {
   selection: Selection;
   dirty: boolean;
@@ -18,7 +20,7 @@ type Props = {
     prop: "text" | "href" | "src" | "alt",
     value: string,
   ) => void;
-  onSave: () => Promise<void>;
+  onSave: () => Promise<SaveOutcome | void>;
   onClose: () => void;
 };
 
@@ -57,8 +59,22 @@ export function ImportedSiteInlineEditor({
 
   async function handleSave() {
     try {
-      await onSave();
-      toast.success("Modifiche salvate sul file HTML");
+      const outcome = (await onSave()) as SaveOutcome | void;
+      if (outcome && outcome.applied === 0 && outcome.skipped > 0) {
+        // Common case: site is a client-rendered SPA (e.g. React + Babel
+        // in-browser). The selector doesn't match anything in the static
+        // HTML because the markup lives in .jsx templates fetched at runtime.
+        toast.warning(
+          "Patch non applicate — il sito sembra essere renderizzato lato client (SPA). Usa 'Modifica file' sui .jsx per editare il sorgente.",
+          { duration: 6000 },
+        );
+      } else if (outcome && outcome.skipped > 0) {
+        toast.success(
+          `${outcome.applied} modifica${outcome.applied === 1 ? "" : "e"} salvata${outcome.applied === 1 ? "" : "e"} · ${outcome.skipped} saltate`,
+        );
+      } else {
+        toast.success("Modifiche salvate sul file HTML");
+      }
     } catch (err) {
       toast.error(`Errore salvataggio: ${(err as Error).message}`);
     }

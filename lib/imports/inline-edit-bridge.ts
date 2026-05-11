@@ -52,22 +52,11 @@ export type PatchMessage = {
   value: string;
 };
 
-/** parent → iframe: ask for serialized HTML to persist. */
-export type SerializeRequest = { type: "rzn:serialize-request"; nonce: string };
-
-/** iframe → parent: serialized HTML response. */
-export type SerializeResponse = {
-  type: "rzn:serialize-response";
-  nonce: string;
-  html: string;
-};
-
 export type BridgeMessage =
   | ReadyMessage
   | SelectMessage
   | EditMessage
-  | ClearMessage
-  | SerializeResponse;
+  | ClearMessage;
 
 /**
  * Builds the JS script (as a string) injected into the iframe. Kept as a
@@ -248,22 +237,6 @@ export function buildBridgeScript(): string {
         else if (msg.prop === 'src' && el.tagName === 'IMG') el.setAttribute('src', msg.value);
         else if (msg.prop === 'alt' && el.tagName === 'IMG') el.setAttribute('alt', msg.value);
       } catch(err) {}
-      return;
-    }
-    if (msg.type === 'rzn:serialize-request') {
-      // Strip edit-only attributes/styles before persisting.
-      clearHover();
-      clearSelected();
-      var style = document.getElementById(OUTLINE_STYLE);
-      if (style && style.parentNode) style.parentNode.removeChild(style);
-      var html = '<!DOCTYPE html>\\n' + document.documentElement.outerHTML;
-      // Re-inject style so the editor keeps working after save
-      ensureStyle();
-      parent.postMessage({
-        type: 'rzn:serialize-response',
-        nonce: msg.nonce,
-        html: html,
-      }, '*');
       return;
     }
     if (msg.type === 'rzn:clear') {

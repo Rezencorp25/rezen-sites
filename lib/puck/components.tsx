@@ -1312,6 +1312,12 @@ type InlineSelection = {
   attrs: { href?: string; src?: string; alt?: string };
 };
 
+type InlinePatch = {
+  selector: string;
+  prop: "text" | "href" | "src" | "alt";
+  value: string;
+};
+
 function ImportedSiteRender({
   src,
   height,
@@ -1326,8 +1332,12 @@ function ImportedSiteRender({
   const [reloadKey, setReloadKey] = React.useState(0);
   const [inlineMode, setInlineMode] = React.useState(false);
   const [selection, setSelection] = React.useState<InlineSelection | null>(null);
-  const [dirty, setDirty] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  // Patches accumulate across multiple element edits between saves. The
+  // *last* patch wins per (selector, prop) — we coalesce on push so the
+  // server only sees one update per field.
+  const patchesRef = React.useRef<InlinePatch[]>([]);
+  const [dirty, setDirty] = React.useState(false);
 
   const parsed = parseImportSrc(src);
   const niceUrl = parsed ? `/${parsed.filePath}` : src;
@@ -1410,6 +1420,15 @@ function ImportedSiteRender({
         { type: "rzn:patch", selector: selection.selector, prop, value },
         "*",
       );
+      // Coalesce: last write wins per (selector, prop). Avoids replaying
+      // every keystroke when the textarea blurs multiple times.
+      const queue = patchesRef.current;
+      const existingIdx = queue.findIndex(
+        (p) => p.selector === selection.selector && p.prop === prop,
+      );
+      const next: InlinePatch = { selector: selection.selector, prop, value };
+      if (existingIdx >= 0) queue[existingIdx] = next;
+      else queue.push(next);
       setSelection((prev) =>
         prev
           ? prop === "text"
@@ -1423,36 +1442,38 @@ function ImportedSiteRender({
   );
 
   const saveInlineEdits = React.useCallback(async () => {
-    if (!parsed || !dirty) return;
+    if (!parsed || !dirty) return { applied: 0, skipped: 0 };
+    const patches = patchesRef.current.slice();
+    if (patches.length === 0) {
+      setDirty(false);
+      return { applied: 0, skipped: 0 };
+    }
     setSaving(true);
     try {
-      const win = iframeRef.current?.contentWindow;
-      if (!win) throw new Error("iframe non disponibile");
-      const nonce = Math.random().toString(36).slice(2);
-      const html = await new Promise<string>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          window.removeEventListener("message", handler);
-          reject(new Error("serialize timeout"));
-        }, 5000);
-        function handler(ev: MessageEvent) {
-          const d = ev.data as { type?: string; nonce?: string; html?: string };
-          if (d?.type === "rzn:serialize-response" && d.nonce === nonce) {
-            clearTimeout(timer);
-            window.removeEventListener("message", handler);
-            resolve(d.html ?? "");
-          }
-        }
-        window.addEventListener("message", handler);
-        win.postMessage({ type: "rzn:serialize-request", nonce }, "*");
-      });
-      const url = `/api/imports/${parsed.projectId}/${parsed.importId}/file?path=${encodeURIComponent(parsed.filePath)}`;
+      const url = `/api/imports/${parsed.projectId}/${parsed.importId}/file/patch`;
       const res = await fetch(url, {
-        method: "PUT",
+        method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ content: html }),
+        body: JSON.stringify({ path: parsed.filePath, patches }),
       });
       if (!res.ok) throw new Error(await res.text());
+      const body = (await res.json()) as {
+        applied: number;
+        skipped: number;
+        skippedDetails?: Array<{ reason: string }>;
+      };
+      if (body.skipped > 0) {
+        const reasons = body.skippedDetails
+          ?.map((s) => s.reason)
+          .slice(0, 3)
+          .join("; ");
+        console.warn(
+          `[ImportedSite] ${body.skipped} patch saltate: ${reasons ?? ""}`,
+        );
+      }
+      patchesRef.current = [];
       setDirty(false);
+      return { applied: body.applied, skipped: body.skipped };
     } catch (err) {
       console.error("[ImportedSite] save inline failed", err);
       throw err;
