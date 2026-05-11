@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { parse } from "@babel/parser";
+import { commitFiles } from "@/lib/github/commit-files";
 
 /**
  * JSX-AST patch endpoint for SPA-rendered imported sites (e.g. Verumflow,
@@ -470,7 +471,16 @@ export async function POST(
     return NextResponse.json({ error: "invalid path" }, { status: 400 });
   }
   const importDir: string = maybeImportDir;
-  const body = (await req.json()) as { patches?: Patch[]; path?: string };
+  const body = (await req.json()) as {
+    patches?: Patch[];
+    path?: string;
+    /**
+     * S7.13 — When the project has a GitHub repo, the client passes its
+     * coords so we can commit the modified .jsx files alongside the local
+     * fs write. Repo is the source of truth (Cloud Run fs is ephemeral).
+     */
+    githubRepo?: { owner: string; name: string; branch: string };
+  };
   if (!Array.isArray(body.patches) || body.patches.length === 0) {
     return NextResponse.json({ error: "patches array richiesto" }, { status: 400 });
   }
@@ -607,6 +617,36 @@ export async function POST(
     );
   }
 
+  // S7.13 Fase B — commit all modified .jsx files in a single atomic commit
+  // to the project's GitHub repo. Best-effort: a commit failure shouldn't
+  // undo the successful local write — we report it via commitError so the
+  // client can surface a warning.
+  let commitSha: string | undefined;
+  let commitError: string | undefined;
+  if (body.githubRepo && fileWrites.size > 0) {
+    try {
+      const { sha } = await commitFiles({
+        owner: body.githubRepo.owner,
+        repo: body.githubRepo.name,
+        branch: body.githubRepo.branch,
+        message: `edit: ${fileWrites.size} jsx file (${applied.length} patches)`,
+        files: Array.from(fileWrites.entries()).map(([fname, src]) => ({
+          path: fname,
+          content: src,
+        })),
+      });
+      commitSha = sha;
+    } catch (err) {
+      commitError = (err as Error).message;
+      console.error("[api/imports/jsx-patch] commit failed", {
+        projectId,
+        importId,
+        files: Array.from(fileWrites.keys()),
+        err: commitError,
+      });
+    }
+  }
+
   return NextResponse.json({
     applied: applied.length,
     skipped: skipped.length,
@@ -618,5 +658,7 @@ export async function POST(
     })),
     skippedDetails: skipped.slice(0, 10),
     updatedAt: new Date().toISOString(),
+    ...(commitSha && { commitSha }),
+    ...(commitError && { commitError }),
   });
 }

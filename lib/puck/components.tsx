@@ -6,6 +6,7 @@ import * as LucideIcons from "lucide-react";
 import type { ComponentConfig } from "@measured/puck";
 import { cn } from "@/lib/utils";
 import { buildBridgeScript } from "@/lib/imports/inline-edit-bridge";
+import { useProjectsStore } from "@/lib/stores/projects-store";
 
 type IconName = keyof typeof LucideIcons;
 
@@ -1370,6 +1371,16 @@ function ImportedSiteRender({
   const parsed = parseImportSrc(src);
   const niceUrl = parsed ? `/${parsed.filePath}` : src;
 
+  // S7.13 — Pull the linked GitHub repo (if any) from the projects store so
+  // inline-edit saves can request a server-side commit alongside the local
+  // fs write. Cloud Run filesystem is ephemeral; the repo is the source of
+  // truth across cold starts. updateProject is used to bump lastSha after
+  // each successful commit (display-only today, will gate publish later).
+  const projectGithub = useProjectsStore((s) =>
+    parsed ? s.getById(parsed.projectId)?.githubRepo : undefined,
+  );
+  const updateProject = useProjectsStore((s) => s.updateProject);
+
   const injectBridge = React.useCallback(() => {
     if (!inlineMode || !parsed) return;
     try {
@@ -1603,18 +1614,35 @@ function ImportedSiteRender({
       return { applied: 0, skipped: 0 };
     }
     setSaving(true);
+    // Subset of the project's githubRepo shape that the API expects. We
+    // intentionally don't ship lastSha/productionBranch to the server — it
+    // resolves HEAD fresh each commit (the lastSha is for client display
+    // only and gets refreshed from the response).
+    const repoForApi = projectGithub
+      ? {
+          owner: projectGithub.owner,
+          name: projectGithub.name,
+          branch: projectGithub.branch,
+        }
+      : undefined;
     try {
       const htmlUrl = `/api/imports/${parsed.projectId}/${parsed.importId}/file/patch`;
       const htmlRes = await fetch(htmlUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ path: parsed.filePath, patches }),
+        body: JSON.stringify({
+          path: parsed.filePath,
+          patches,
+          ...(repoForApi && { githubRepo: repoForApi }),
+        }),
       });
       if (!htmlRes.ok) throw new Error(await htmlRes.text());
       const htmlBody = (await htmlRes.json()) as {
         applied: number;
         skipped: number;
         skippedDetails?: Array<{ reason: string }>;
+        commitSha?: string;
+        commitError?: string;
       };
 
       // SPA fallback: if the HTML patch matched zero selectors but had
@@ -1625,7 +1653,13 @@ function ImportedSiteRender({
       // and surgically patches matching JSX elements.
       const spaFallbackNeeded =
         htmlBody.applied === 0 && htmlBody.skipped > 0;
-      type JsxBody = { applied: number; skipped: number; files?: string[] };
+      type JsxBody = {
+        applied: number;
+        skipped: number;
+        files?: string[];
+        commitSha?: string;
+        commitError?: string;
+      };
       let jsxBody: JsxBody | null = null;
       if (spaFallbackNeeded) {
         const jsxUrl = `/api/imports/${parsed.projectId}/${parsed.importId}/file/jsx-patch`;
@@ -1638,7 +1672,11 @@ function ImportedSiteRender({
           // Pass the iframe html path → server scopes the AST scan to the
           // .jsx files actually loaded by that index.html, avoiding wrong-
           // file matches in sibling page-*.jsx duplicates.
-          body: JSON.stringify({ patches, path: parsed.filePath }),
+          body: JSON.stringify({
+            patches,
+            path: parsed.filePath,
+            ...(repoForApi && { githubRepo: repoForApi }),
+          }),
         });
         if (jsxRes.ok) {
           jsxBody = (await jsxRes.json()) as JsxBody;
@@ -1667,6 +1705,20 @@ function ImportedSiteRender({
         );
       }
 
+      // S7.13 — Bubble up commit status. Prefer jsx-patch sha when present
+      // (SPA fallback path); otherwise html-patch sha. Persist on Project so
+      // the editor UI can show "last synced commit".
+      const newSha = jsxBody?.commitSha ?? htmlBody.commitSha;
+      const commitErr = jsxBody?.commitError ?? htmlBody.commitError;
+      if (newSha && projectGithub && parsed) {
+        updateProject(parsed.projectId, {
+          githubRepo: { ...projectGithub, lastSha: newSha },
+        });
+      }
+      if (commitErr) {
+        console.warn(`[ImportedSite] commit GitHub fallito: ${commitErr}`);
+      }
+
       patchesRef.current = [];
       setDirty(false);
       return { applied: combinedApplied, skipped: combinedSkipped };
@@ -1676,7 +1728,7 @@ function ImportedSiteRender({
     } finally {
       setSaving(false);
     }
-  }, [parsed, dirty]);
+  }, [parsed, dirty, projectGithub, updateProject]);
 
   function reloadIframe() {
     setReloadKey((k) => k + 1);

@@ -99,7 +99,7 @@ export type Project = {
    * Pubblica = merge main→production + Firebase App Hosting rollout.
    */
   githubRepo?: {
-    /** Org GitHub che possiede il repo (es. "rezencorp25"). */
+    /** Org GitHub che possiede il repo (es. "Rezencorp26"). */
     owner: string;
     /** Nome repo, convenzione `site-{projectId}`. */
     name: string;

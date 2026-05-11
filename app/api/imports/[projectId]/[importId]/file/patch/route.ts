@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import * as cheerio from "cheerio";
+import { commitFiles } from "@/lib/github/commit-files";
 
 /**
  * Patch-based save for imported-site inline edits.
@@ -133,7 +134,16 @@ export async function POST(
   { params }: { params: Promise<{ projectId: string; importId: string }> },
 ) {
   const { projectId, importId } = await params;
-  const body = (await req.json()) as { path?: string; patches?: Patch[] };
+  const body = (await req.json()) as {
+    path?: string;
+    patches?: Patch[];
+    /**
+     * S7.13 — When the project has a GitHub repo, the client passes its
+     * coords so we can commit the modified files alongside the local fs
+     * write. Repo is the source of truth (Cloud Run fs is ephemeral).
+     */
+    githubRepo?: { owner: string; name: string; branch: string };
+  };
   const relPath = body.path ?? "";
   const file = safeResolve(projectId, importId, relPath);
   if (!file) {
@@ -260,6 +270,32 @@ export async function POST(
     await fs.writeFile(file, out, "utf-8");
     const newStat = await fs.stat(file);
 
+    // S7.13 Fase B — commit to GitHub repo if linked. Best-effort: a commit
+    // failure shouldn't undo the successful local write (preview still works),
+    // but we report it so the client can surface a warning.
+    let commitSha: string | undefined;
+    let commitError: string | undefined;
+    if (body.githubRepo && applied.length > 0) {
+      try {
+        const { sha } = await commitFiles({
+          owner: body.githubRepo.owner,
+          repo: body.githubRepo.name,
+          branch: body.githubRepo.branch,
+          message: `edit: ${relPath} (${applied.length} patches)`,
+          files: [{ path: relPath, content: out }],
+        });
+        commitSha = sha;
+      } catch (err) {
+        commitError = (err as Error).message;
+        console.error("[api/imports/patch] commit failed", {
+          projectId,
+          importId,
+          relPath,
+          err: commitError,
+        });
+      }
+    }
+
     return NextResponse.json({
       path: relPath,
       size: newStat.size,
@@ -267,6 +303,8 @@ export async function POST(
       skipped: skipped.length,
       skippedDetails: skipped.slice(0, 10),
       updatedAt: new Date().toISOString(),
+      ...(commitSha && { commitSha }),
+      ...(commitError && { commitError }),
     });
   } catch (err) {
     // Surface to Cloud Run logs — the JSON response is opaque to clients
