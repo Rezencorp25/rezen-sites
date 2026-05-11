@@ -1,13 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { HexColorPicker } from "react-colorful";
 import { toast } from "sonner";
+
+type StyleProp =
+  | "color"
+  | "backgroundColor"
+  | "borderColor"
+  | "fontFamily"
+  | "fontSize"
+  | "fontWeight"
+  | "width"
+  | "height";
 
 type Selection = {
   selector: string;
   tag: string;
   text: string;
   attrs: { href?: string; src?: string; alt?: string };
+  styles?: Partial<Record<StyleProp, string>>;
 };
 
 type SaveOutcome = { applied: number; skipped: number };
@@ -17,12 +29,54 @@ type Props = {
   dirty: boolean;
   saving: boolean;
   onApplyPatch: (
-    prop: "text" | "href" | "src" | "alt",
+    prop: "text" | "href" | "src" | "alt" | "style",
     value: string,
+    styleProp?: StyleProp,
   ) => void;
   onSave: () => Promise<SaveOutcome | void>;
   onClose: () => void;
 };
+
+const SWATCHES: Array<{ key: StyleProp; label: string }> = [
+  { key: "color", label: "Testo" },
+  { key: "backgroundColor", label: "Sfondo" },
+  { key: "borderColor", label: "Bordo" },
+];
+
+/**
+ * Convert any CSS color (rgb/rgba/named) to a #rrggbb string suitable for the
+ * color picker. Falls back to a neutral grey when unparseable — the picker
+ * still shows it, the user can change it.
+ *
+ * We do parsing client-side via a hidden canvas; getComputedStyle returns rgb()
+ * which the picker doesn't understand directly.
+ */
+function toHex(input: string | undefined): string {
+  if (!input) return "#888888";
+  const s = input.trim();
+  if (!s) return "#888888";
+  if (/^#[0-9a-f]{6}$/i.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-f]{3}$/i.test(s)) {
+    return (
+      "#" +
+      s
+        .slice(1)
+        .split("")
+        .map((c) => c + c)
+        .join("")
+        .toLowerCase()
+    );
+  }
+  // rgb / rgba
+  const m = s.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (m) {
+    const r = Number(m[1]).toString(16).padStart(2, "0");
+    const g = Number(m[2]).toString(16).padStart(2, "0");
+    const b = Number(m[3]).toString(16).padStart(2, "0");
+    return `#${r}${g}${b}`;
+  }
+  return "#888888";
+}
 
 /**
  * Inline editor panel for elements selected inside an imported-site iframe.
@@ -44,6 +98,9 @@ export function ImportedSiteInlineEditor({
   const [localHref, setLocalHref] = useState(selection.attrs.href ?? "");
   const [localSrc, setLocalSrc] = useState(selection.attrs.src ?? "");
   const [localAlt, setLocalAlt] = useState(selection.attrs.alt ?? "");
+  /** Which color swatch popover is open. null = none. */
+  const [openPicker, setOpenPicker] = useState<StyleProp | null>(null);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
 
   // When selection changes (user clicks another element), sync inputs.
   useEffect(() => {
@@ -51,11 +108,40 @@ export function ImportedSiteInlineEditor({
     setLocalHref(selection.attrs.href ?? "");
     setLocalSrc(selection.attrs.src ?? "");
     setLocalAlt(selection.attrs.alt ?? "");
-  }, [selection.selector, selection.text, selection.attrs.href, selection.attrs.src, selection.attrs.alt]);
+    setOpenPicker(null);
+  }, [
+    selection.selector,
+    selection.text,
+    selection.attrs.href,
+    selection.attrs.src,
+    selection.attrs.alt,
+  ]);
+
+  // Close color popover on outside click.
+  useEffect(() => {
+    if (!openPicker) return;
+    function onDocClick(e: MouseEvent) {
+      const target = e.target as Node | null;
+      if (pickerRef.current && target && !pickerRef.current.contains(target)) {
+        setOpenPicker(null);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [openPicker]);
 
   const isImg = selection.tag === "IMG";
   const isLink = selection.tag === "A";
   const isTextual = !isImg;
+
+  const swatchValues = useMemo(() => {
+    const styles = selection.styles ?? {};
+    return {
+      color: toHex(styles.color),
+      backgroundColor: toHex(styles.backgroundColor),
+      borderColor: toHex(styles.borderColor),
+    } as Record<"color" | "backgroundColor" | "borderColor", string>;
+  }, [selection.styles]);
 
   async function handleSave() {
     try {
@@ -183,6 +269,83 @@ export function ImportedSiteInlineEditor({
           </label>
         </>
       )}
+
+      {/* Stile — colori (testo / sfondo / bordo).
+          Su <img> mostriamo solo Bordo (testo/sfondo non ha senso). */}
+      <div className="flex flex-col gap-1.5" ref={pickerRef}>
+        <span className="text-label-xs font-medium uppercase tracking-wider text-text-muted">
+          Stile · colori
+        </span>
+        <div className="flex items-center gap-2">
+          {SWATCHES.filter((s) => !isImg || s.key === "borderColor").map(
+            (sw) => (
+              <button
+                key={sw.key}
+                type="button"
+                onClick={() =>
+                  setOpenPicker((prev) => (prev === sw.key ? null : sw.key))
+                }
+                style={{ pointerEvents: "auto", cursor: "pointer" }}
+                className="group flex flex-1 flex-col items-center gap-1 rounded-md border border-outline/30 bg-surface-container-lowest p-2 hover:border-outline/60"
+                title={`Cambia colore ${sw.label.toLowerCase()}`}
+              >
+                <span
+                  className="h-6 w-full rounded border border-outline/30"
+                  style={{
+                    background: swatchValues[
+                      sw.key as keyof typeof swatchValues
+                    ],
+                  }}
+                />
+                <span className="text-label-xs text-text-muted">
+                  {sw.label}
+                </span>
+              </button>
+            ),
+          )}
+        </div>
+
+        {openPicker && (
+          <div
+            className="relative"
+            style={{ pointerEvents: "auto" }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="mt-1 flex flex-col gap-2 rounded-lg border border-outline/40 bg-surface-container-highest p-3 shadow-xl">
+              <HexColorPicker
+                color={swatchValues[openPicker as keyof typeof swatchValues]}
+                onChange={(next) => onApplyPatch("style", next, openPicker)}
+                style={{ width: "100%", height: 140 }}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={swatchValues[openPicker as keyof typeof swatchValues]}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/^#[0-9a-f]{6}$/i.test(v)) {
+                      onApplyPatch("style", v, openPicker);
+                    }
+                  }}
+                  style={{ pointerEvents: "auto" }}
+                  className="flex-1 rounded-md border border-outline/30 bg-surface-container-lowest px-2 py-1 font-mono text-label-sm focus:border-molten-primary focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    onApplyPatch("style", "", openPicker);
+                  }}
+                  style={{ pointerEvents: "auto", cursor: "pointer" }}
+                  className="rounded-md border border-outline/30 px-2 py-1 text-label-xs text-text-muted hover:bg-surface-container hover:text-on-surface"
+                  title="Rimuovi colore (torna al default CSS)"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <p className="text-label-xs text-text-muted">
         Suggerimento: doppio-click sul sito per editare il testo inline. I

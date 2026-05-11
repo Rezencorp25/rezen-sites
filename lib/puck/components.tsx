@@ -1310,11 +1310,25 @@ type InlineSelection = {
   tag: string;
   text: string;
   attrs: { href?: string; src?: string; alt?: string };
+  styles?: InlineStyles;
 };
+
+type StyleProp =
+  | "color"
+  | "backgroundColor"
+  | "borderColor"
+  | "fontFamily"
+  | "fontSize"
+  | "fontWeight"
+  | "width"
+  | "height";
+
+type InlineStyles = Partial<Record<StyleProp, string>>;
 
 type InlinePatch = {
   selector: string;
-  prop: "text" | "href" | "src" | "alt";
+  prop: "text" | "href" | "src" | "alt" | "style";
+  styleProp?: StyleProp;
   value: string;
 };
 
@@ -1392,6 +1406,7 @@ function ImportedSiteRender({
           tag: m.tag,
           text: m.text,
           attrs: m.attrs ?? {},
+          styles: m.styles ?? {},
         });
       } else if (data.type === "rzn:edit") {
         setDirty(true);
@@ -1414,28 +1429,51 @@ function ImportedSiteRender({
   }, []);
 
   const applyPatch = React.useCallback(
-    (prop: "text" | "href" | "src" | "alt", value: string) => {
+    (
+      prop: "text" | "href" | "src" | "alt" | "style",
+      value: string,
+      styleProp?: StyleProp,
+    ) => {
       if (!selection) return;
       iframeRef.current?.contentWindow?.postMessage(
-        { type: "rzn:patch", selector: selection.selector, prop, value },
+        {
+          type: "rzn:patch",
+          selector: selection.selector,
+          prop,
+          styleProp,
+          value,
+        },
         "*",
       );
-      // Coalesce: last write wins per (selector, prop). Avoids replaying
-      // every keystroke when the textarea blurs multiple times.
+      // Coalesce: last write wins per (selector, prop, styleProp). Avoids
+      // replaying every color-picker tick when the user drags around the
+      // gradient — only the final value gets persisted.
       const queue = patchesRef.current;
       const existingIdx = queue.findIndex(
-        (p) => p.selector === selection.selector && p.prop === prop,
+        (p) =>
+          p.selector === selection.selector &&
+          p.prop === prop &&
+          p.styleProp === styleProp,
       );
-      const next: InlinePatch = { selector: selection.selector, prop, value };
+      const next: InlinePatch = {
+        selector: selection.selector,
+        prop,
+        styleProp,
+        value,
+      };
       if (existingIdx >= 0) queue[existingIdx] = next;
       else queue.push(next);
-      setSelection((prev) =>
-        prev
-          ? prop === "text"
-            ? { ...prev, text: value }
-            : { ...prev, attrs: { ...prev.attrs, [prop]: value } }
-          : prev,
-      );
+      setSelection((prev) => {
+        if (!prev) return prev;
+        if (prop === "text") return { ...prev, text: value };
+        if (prop === "style" && styleProp) {
+          return {
+            ...prev,
+            styles: { ...(prev.styles ?? {}), [styleProp]: value },
+          };
+        }
+        return { ...prev, attrs: { ...prev.attrs, [prop]: value } };
+      });
       setDirty(true);
     },
     [selection],

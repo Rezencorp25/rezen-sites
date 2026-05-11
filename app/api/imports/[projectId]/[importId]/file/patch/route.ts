@@ -19,11 +19,48 @@ export const maxDuration = 30;
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PATCHES = 50;
 
+const ALLOWED_STYLE_PROPS = [
+  "color",
+  "backgroundColor",
+  "borderColor",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "width",
+  "height",
+] as const;
+type StyleProp = (typeof ALLOWED_STYLE_PROPS)[number];
+
 type Patch = {
   selector: string;
-  prop: "text" | "href" | "src" | "alt";
+  prop: "text" | "href" | "src" | "alt" | "style";
+  styleProp?: StyleProp;
   value: string;
 };
+
+function toKebab(s: string): string {
+  return s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+}
+
+/**
+ * Merge a single property into an inline style attribute, preserving the rest.
+ * Empty value removes the property. Last write wins.
+ */
+function mergeStyle(existing: string, prop: string, value: string): string {
+  const kebab = toKebab(prop);
+  const parts = (existing || "")
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((decl) => {
+      const k = decl.split(":")[0]?.trim();
+      return k !== kebab;
+    });
+  if (value && value.trim()) {
+    parts.push(`${kebab}: ${value.trim()}`);
+  }
+  return parts.length ? parts.join("; ") + ";" : "";
+}
 
 function safeResolve(
   projectId: string,
@@ -134,6 +171,19 @@ export async function POST(
             applied.push(patch);
           }
           break;
+        case "style": {
+          const sp = patch.styleProp;
+          if (!sp || !ALLOWED_STYLE_PROPS.includes(sp)) {
+            skipped.push({ patch, reason: `styleProp non supportato: ${sp ?? "(missing)"}` });
+            break;
+          }
+          const existingStyle = el.attr("style") ?? "";
+          const merged = mergeStyle(existingStyle, sp, patch.value);
+          if (merged) el.attr("style", merged);
+          else el.removeAttr("style");
+          applied.push(patch);
+          break;
+        }
         default:
           skipped.push({ patch, reason: `prop sconosciuta: ${patch.prop}` });
       }

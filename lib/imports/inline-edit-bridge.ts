@@ -25,18 +25,33 @@ export type EditableTag =
   | "P" | "SPAN" | "LI" | "BUTTON"
   | "A" | "IMG";
 
+/** CSS style properties we expose to the inline editor. */
+export type StyleProp =
+  | "color"
+  | "backgroundColor"
+  | "borderColor"
+  | "fontFamily"
+  | "fontSize"
+  | "fontWeight"
+  | "width"
+  | "height";
+
+export type SelectedStyles = Partial<Record<StyleProp, string>>;
+
 export type SelectMessage = {
   type: "rzn:select";
   selector: string;
   tag: EditableTag;
   text: string;
   attrs: { href?: string; src?: string; alt?: string };
+  styles: SelectedStyles;
 };
 
 export type EditMessage = {
   type: "rzn:edit";
   selector: string;
-  prop: "text" | "href" | "src" | "alt";
+  prop: "text" | "href" | "src" | "alt" | "style";
+  styleProp?: StyleProp;
   value: string;
 };
 
@@ -48,7 +63,8 @@ export type ClearMessage = { type: "rzn:clear" };
 export type PatchMessage = {
   type: "rzn:patch";
   selector: string;
-  prop: "text" | "href" | "src" | "alt";
+  prop: "text" | "href" | "src" | "alt" | "style";
+  styleProp?: StyleProp;
   value: string;
 };
 
@@ -141,6 +157,30 @@ export function buildBridgeScript(): string {
     return out;
   }
 
+  // Read inline style first (what's persisted on disk), fall back to computed.
+  // We prefer inline because computed returns rgb(...) strings that the color
+  // picker can't easily round-trip back to hex, and computed inherits from
+  // ancestors so it doesn't reflect what's *on this element*.
+  function getStyles(el) {
+    var inline = el.style || {};
+    var cs;
+    try { cs = window.getComputedStyle(el); } catch(e) { cs = {}; }
+    function pick(prop) {
+      if (inline && inline[prop]) return inline[prop];
+      return cs[prop] || '';
+    }
+    return {
+      color: pick('color'),
+      backgroundColor: pick('backgroundColor'),
+      borderColor: pick('borderColor'),
+      fontFamily: pick('fontFamily'),
+      fontSize: pick('fontSize'),
+      fontWeight: pick('fontWeight'),
+      width: inline.width || '',
+      height: inline.height || ''
+    };
+  }
+
   var hoverEl = null;
   var selectedEl = null;
 
@@ -186,6 +226,7 @@ export function buildBridgeScript(): string {
       tag: t.tagName,
       text: t.tagName === 'IMG' ? '' : (t.textContent || '').trim(),
       attrs: getAttrs(t),
+      styles: getStyles(t),
     }, '*');
   }
 
@@ -225,6 +266,11 @@ export function buildBridgeScript(): string {
     e.stopPropagation();
   }
 
+  // camelCase → kebab-case (backgroundColor → background-color)
+  function toKebab(s) {
+    return s.replace(/[A-Z]/g, function(m){ return '-' + m.toLowerCase(); });
+  }
+
   function onMessage(e) {
     var msg = e && e.data;
     if (!msg || typeof msg !== 'object') return;
@@ -236,6 +282,11 @@ export function buildBridgeScript(): string {
         else if (msg.prop === 'href' && el.tagName === 'A') el.setAttribute('href', msg.value);
         else if (msg.prop === 'src' && el.tagName === 'IMG') el.setAttribute('src', msg.value);
         else if (msg.prop === 'alt' && el.tagName === 'IMG') el.setAttribute('alt', msg.value);
+        else if (msg.prop === 'style' && msg.styleProp) {
+          // setProperty with kebab-case + priority "important" so inline wins
+          // over external CSS without us having to walk the cascade.
+          el.style.setProperty(toKebab(msg.styleProp), msg.value, 'important');
+        }
       } catch(err) {}
       return;
     }
