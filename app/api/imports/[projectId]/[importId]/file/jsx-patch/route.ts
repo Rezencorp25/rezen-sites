@@ -145,15 +145,40 @@ function findJsxMatches(
         // Walk children recursively to extract all visible text. The browser
         // sees a `<h1>Title <SerifAccent>word</SerifAccent> more</h1>` as a
         // single text node "Title word more", so we need to flatten nested
-        // JSXElement children's JSXText too — otherwise tag+text matching
-        // fails on every JSX with inline component children.
+        // JSXElement children's JSXText too. We also apply Babel's JSX
+        // whitespace cleanup rules so the result matches what React+DOM
+        // actually render (e.g. `text<br/>\n  more` → "textmore", not
+        // "text more" — JSXText whitespace at element boundaries is
+        // collapsed/dropped per JSX spec, not preserved).
+        const cleanJsxText = (raw: string): string => {
+          // Mirror @babel/types' cleanJSXElementLiteralChild logic. Lines of
+          // pure whitespace are dropped; non-first-line leading spaces and
+          // non-last-line trailing spaces are stripped; remaining lines are
+          // joined with a single space.
+          const lines = raw.split(/\r\n|\n|\r/);
+          let lastNonEmpty = -1;
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].match(/[^ \t]/)) lastNonEmpty = i;
+          }
+          let out = "";
+          for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].replace(/\t/g, " ");
+            if (i > 0) line = line.replace(/^[ ]+/, "");
+            if (i < lines.length - 1) line = line.replace(/[ ]+$/, "");
+            if (line) {
+              if (i !== lastNonEmpty) line += " ";
+              out += line;
+            }
+          }
+          return out;
+        };
         const collectText = (nodes: unknown): string => {
           let acc = "";
           if (!Array.isArray(nodes)) return acc;
           for (const c of nodes as Array<Record<string, unknown>>) {
             if (!c) continue;
             if (c.type === "JSXText") {
-              acc += (c.value as string) ?? "";
+              acc += cleanJsxText((c.value as string) ?? "");
             } else if (
               c.type === "JSXExpressionContainer" &&
               (c.expression as { type?: string })?.type === "StringLiteral"
