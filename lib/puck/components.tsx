@@ -1635,7 +1635,10 @@ function ImportedSiteRender({
         const jsxRes = await fetch(jsxUrl, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ patches }),
+          // Pass the iframe html path → server scopes the AST scan to the
+          // .jsx files actually loaded by that index.html, avoiding wrong-
+          // file matches in sibling page-*.jsx duplicates.
+          body: JSON.stringify({ patches, path: parsed.filePath }),
         });
         if (jsxRes.ok) {
           jsxBody = (await jsxRes.json()) as JsxBody;

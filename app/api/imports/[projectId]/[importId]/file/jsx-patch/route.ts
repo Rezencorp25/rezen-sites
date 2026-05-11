@@ -406,6 +406,35 @@ async function listJsxFiles(importDir: string): Promise<string[]> {
   }
 }
 
+/**
+ * Read an HTML entry file and extract the .jsx scripts it references via
+ * `<script type="text/babel" src="*.jsx">`. Used to scope the AST scan to
+ * the JSX bundle ACTUALLY loaded by the iframe, instead of every .jsx in
+ * the folder — Verumflow ships separate page-*.jsx files for other routes
+ * that share identical headlines (page-layout.jsx duplicates the H1 from
+ * section-nav-hero.jsx), causing wrong-file matches in the alphabetical
+ * fallback.
+ */
+async function loadedJsxFromHtml(
+  importDir: string,
+  htmlPath: string,
+): Promise<string[]> {
+  try {
+    const full = path.join(importDir, htmlPath);
+    const safe = path.resolve(full);
+    if (!safe.startsWith(path.resolve(importDir))) return [];
+    const src = await fs.readFile(safe, "utf-8");
+    const matches = [
+      ...src.matchAll(
+        /<script[^>]*type=["']text\/babel["'][^>]*src=["']([^"']+\.jsx)["']/gi,
+      ),
+    ];
+    return matches.map((m) => m[1]).filter((s) => !s.includes("/"));
+  } catch {
+    return [];
+  }
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ projectId: string; importId: string }> },
@@ -416,7 +445,7 @@ export async function POST(
     return NextResponse.json({ error: "invalid path" }, { status: 400 });
   }
   const importDir: string = maybeImportDir;
-  const body = (await req.json()) as { patches?: Patch[] };
+  const body = (await req.json()) as { patches?: Patch[]; path?: string };
   if (!Array.isArray(body.patches) || body.patches.length === 0) {
     return NextResponse.json({ error: "patches array richiesto" }, { status: 400 });
   }
@@ -427,13 +456,23 @@ export async function POST(
     );
   }
 
-  const jsxFiles = await listJsxFiles(importDir);
-  if (jsxFiles.length === 0) {
+  // Scope the AST scan to .jsx files actually loaded by the current iframe
+  // HTML, when possible. Falls back to all .jsx in the folder. This avoids
+  // matching a JSXElement in a sibling page-*.jsx file (different route)
+  // that happens to share text with the home section the user is editing.
+  const allJsxFiles = await listJsxFiles(importDir);
+  if (allJsxFiles.length === 0) {
     return NextResponse.json(
       { error: "nessun file .jsx trovato in importDir" },
       { status: 404 },
     );
   }
+  const loadedFromHtml = body.path
+    ? await loadedJsxFromHtml(importDir, body.path)
+    : [];
+  const jsxFiles = loadedFromHtml.length > 0
+    ? loadedFromHtml.filter((f) => allJsxFiles.includes(f))
+    : allJsxFiles;
 
   // Cache: parse each candidate file once even if it gets multiple patches.
   const fileCache = new Map<
