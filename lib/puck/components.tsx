@@ -1370,28 +1370,77 @@ function ImportedSiteRender({
     }
   }, [inlineMode, parsed]);
 
-  const handleLoad = React.useCallback(() => {
-    if (autoFit) {
-      try {
-        const doc = iframeRef.current?.contentDocument;
-        if (doc) {
-          const measured = Math.max(
-            doc.documentElement?.scrollHeight ?? 0,
-            doc.body?.scrollHeight ?? 0,
-          );
-          if (measured > 0) setAutoHeight(measured + 40);
-        }
-      } catch {
-        // cross-origin: fallback to manual height
+  /**
+   * Measure the iframe content height. Called on load + when ResizeObserver
+   * fires + during the polling window for the first 8s after load (to catch
+   * SPAs that mount with Babel-in-browser, where load fires before React
+   * renders so scrollHeight is initially tiny).
+   */
+  const measureHeight = React.useCallback(() => {
+    if (!autoFit) return;
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) return;
+      const measured = Math.max(
+        doc.documentElement?.scrollHeight ?? 0,
+        doc.body?.scrollHeight ?? 0,
+      );
+      if (measured > 0) {
+        setAutoHeight((prev) => {
+          // Only grow — never shrink during the polling window, otherwise
+          // a partially-rendered SPA would yo-yo the layout. The user can
+          // toggle autoFit off to force a smaller height manually.
+          return prev === null || measured + 40 > prev ? measured + 40 : prev;
+        });
       }
+    } catch {
+      // cross-origin: ignore
     }
+  }, [autoFit]);
+
+  const handleLoad = React.useCallback(() => {
+    measureHeight();
     injectBridge();
-  }, [autoFit, injectBridge]);
+  }, [measureHeight, injectBridge]);
 
   // Inject bridge when toggling inline mode ON without reloading the iframe.
   React.useEffect(() => {
     if (inlineMode) injectBridge();
   }, [inlineMode, injectBridge]);
+
+  // SPA-aware height tracking: poll for 8s after load to catch React+Babel
+  // mounts that happen progressively, and attach a ResizeObserver on the
+  // iframe body so subsequent content changes (lazy-loaded sections, etc.)
+  // grow the iframe further. Same-origin only.
+  React.useEffect(() => {
+    if (!autoFit) return;
+    let polls = 0;
+    const interval = window.setInterval(() => {
+      measureHeight();
+      polls++;
+      if (polls >= 16) window.clearInterval(interval); // 16 * 500ms = 8s
+    }, 500);
+    let ro: ResizeObserver | null = null;
+    const attach = () => {
+      try {
+        const body = iframeRef.current?.contentDocument?.body;
+        if (!body || ro) return;
+        ro = new ResizeObserver(() => measureHeight());
+        ro.observe(body);
+      } catch {
+        // cross-origin
+      }
+    };
+    // Try immediately + once iframe loads
+    attach();
+    const onLoad = () => attach();
+    iframeRef.current?.addEventListener("load", onLoad);
+    return () => {
+      window.clearInterval(interval);
+      ro?.disconnect();
+      iframeRef.current?.removeEventListener("load", onLoad);
+    };
+  }, [autoFit, measureHeight, reloadKey]);
 
   // Listen to messages from the iframe (select / edit / serialize-response).
   React.useEffect(() => {
