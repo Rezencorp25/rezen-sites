@@ -5,35 +5,34 @@ import {
   isDnsProviderId,
 } from "@/lib/dns/provider-factory";
 import { DnsProviderError } from "@/lib/dns/types";
-import { splitDomain } from "@/lib/dns/godaddy";
+import { splitDomain } from "@/lib/dns/util";
 import { generateVerifyToken, VERIFY_TXT_NAME } from "@/lib/dns/verify-token";
 import { getAdmin } from "@/lib/firebase/admin";
 
 /**
- * S7.14 sub-B — Collega un dominio custom a un progetto.
+ * S7.14 — Collega un dominio custom a un progetto.
  *
  * POST body:
- *   { domain: "verumflow.com", provider?: "godaddy" }
+ *   { domain, mode?: "auto" | "manual", provider? }
  *
- * Flow:
- *   1. Validate domain + projectId (basic).
- *   2. Resolve DNS provider (project override → workspace default; o esplicito).
- *   3. Genera verifyToken cryptografico.
- *   4. Upsert TXT record `_rezen-verify.{domain} = "rzn-{token}"` via provider API.
- *   5. Scrive Firestore doc `domains/{fqdn}` con status="pending-verify" +
- *      token + projectId. Idempotente: se il doc esiste già su STESSO project,
- *      ruota il token. Se esiste su PROGETTO DIVERSO → 409 conflict.
+ * Mode auto (default se provider configurato):
+ *   Risolve DNS provider (Cloudflare oggi) → upsert TXT verify via API.
+ *   L'utente non tocca nulla, polling verify dopo qualche secondo.
  *
- * Restituisce gli istruzioni che la UI mostrerà all'utente:
- *   - "TXT creato automaticamente, verifica DNS in corso"
- *   - "Aggiungi questi A/CNAME se vuoi che il sito risponda" (placeholder
- *      finché sub-C non collega Firebase App Hosting)
+ * Mode manual (default se nessun provider configurato):
+ *   Genera il TXT atteso ma NON lo crea. La response include i record DNS
+ *   da copy-paste nel pannello del registrar (GoDaddy/Namecheap/ecc.).
+ *   Lo step verify polla dns.resolveTxt finché l'utente non li aggiunge.
+ *
+ * Status finale Firestore in entrambi i casi: `pending-verify`.
  */
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const DOMAIN_RE = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+
+type Mode = "auto" | "manual";
 
 export async function POST(
   req: Request,
@@ -43,7 +42,7 @@ export async function POST(
   if (!/^[a-z0-9-]+$/.test(projectId)) {
     return NextResponse.json({ error: "invalid projectId" }, { status: 400 });
   }
-  let body: { domain?: string; provider?: string };
+  let body: { domain?: string; mode?: Mode; provider?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -56,37 +55,39 @@ export async function POST(
       { status: 400 },
     );
   }
+
+  // Decide mode: explicit body.mode > provider configurato > manual
+  let mode: Mode = body.mode ?? "auto";
+  let providerId: string | null = null;
+  let dnsInstance: import("@/lib/dns/types").DnsProvider | null = null;
+
   try {
-    // 1. Provider risoluzione (esplicito > auto-pick).
-    let providerId: string;
-    let dns;
-    if (body.provider) {
-      if (!isDnsProviderId(body.provider)) {
-        return NextResponse.json(
-          { error: `provider ${body.provider} non supportato` },
-          { status: 400 },
-        );
+    if (mode === "auto") {
+      if (body.provider) {
+        if (!isDnsProviderId(body.provider)) {
+          return NextResponse.json(
+            { error: `provider ${body.provider} non supportato` },
+            { status: 400 },
+          );
+        }
+        dnsInstance = await resolveDnsProvider({
+          provider: body.provider,
+          projectId,
+        });
+        providerId = body.provider;
+      } else {
+        const found = await findFirstConfiguredDnsProvider({ projectId });
+        if (found) {
+          dnsInstance = found.instance;
+          providerId = found.provider;
+        } else {
+          // Auto richiesto ma nessun provider configurato → fallback a manual.
+          mode = "manual";
+        }
       }
-      dns = await resolveDnsProvider({ provider: body.provider, projectId });
-      providerId = body.provider;
-    } else {
-      const found = await findFirstConfiguredDnsProvider({ projectId });
-      if (!found) {
-        return NextResponse.json(
-          {
-            error: "no_dns_provider_configured",
-            message:
-              "Collega un provider DNS in Integrazioni prima di collegare un dominio.",
-          },
-          { status: 404 },
-        );
-      }
-      dns = found.instance;
-      providerId = found.provider;
     }
 
-    // 2. Conflict check Firestore: se il dominio è già stato collegato a
-    // un altro progetto, blocca. Stesso progetto → ok (rotation token).
+    // Conflict check Firestore
     const { db } = getAdmin();
     const docRef = db.collection("domains").doc(domain);
     const snap = await docRef.get();
@@ -103,36 +104,47 @@ export async function POST(
       }
     }
 
-    // 3. Split FQDN per posizionare il TXT sul dominio root.
+    // Split FQDN per posizionare il TXT.
     const { apex, subdomain } = splitDomain(domain);
-    // `_rezen-verify.<full-domain>` → quando l'utente collega un sottodominio
-    // verify.example.com, il TXT va su `_rezen-verify.verify.example.com`.
-    // Se è apex, va su `_rezen-verify.example.com`.
-    const recordName =
+    const txtName =
       subdomain === "@" || subdomain === ""
         ? VERIFY_TXT_NAME
         : `${VERIFY_TXT_NAME}.${subdomain}`;
-
-    // 4. Generate token + crea TXT.
     const token = generateVerifyToken();
-    await dns.upsertRecord(apex, {
-      type: "TXT",
-      name: recordName,
-      value: token,
-      ttl: 600,
-    });
 
-    // 5. Persist Firestore doc. Usiamo set+merge per gestire entrambi
-    // i casi (first connect / re-connect su stesso project).
+    let recordsCreated = false;
+    if (mode === "auto" && dnsInstance) {
+      try {
+        await dnsInstance.upsertRecord(apex, {
+          type: "TXT",
+          name: txtName,
+          value: token,
+          ttl: 600,
+        });
+        recordsCreated = true;
+      } catch (err) {
+        // Se l'auto-create fallisce (es. zone non in Cloudflare), ritorniamo
+        // graceful: persiste come manual, l'utente vedrà i record da
+        // aggiungere a mano.
+        console.warn(
+          "[api/domains/connect] auto upsert failed, falling back to manual",
+          err,
+        );
+        mode = "manual";
+      }
+    }
+
+    // Persist Firestore doc.
     const now = new Date();
     await docRef.set(
       {
         fqdn: domain,
         projectId,
-        workspaceId: "default", // singleton oggi, future multi-workspace
+        workspaceId: "default",
         status: "pending-verify",
         verifyToken: token,
-        registrationProvider: providerId,
+        registrationProvider: providerId ?? "manual",
+        connectMode: mode,
         createdAt: snap.exists ? snap.get("createdAt") : now,
         updatedAt: now,
         verifiedAt: null,
@@ -146,12 +158,34 @@ export async function POST(
       ok: true,
       domain,
       status: "pending-verify",
+      mode,
       provider: providerId,
-      txt: {
-        name: `${recordName}.${apex}`,
-        value: token,
-        note: "Creato automaticamente via API provider. La propagazione DNS può richiedere fino a qualche minuto.",
-      },
+      recordsCreated,
+      // Sempre ritornati così la UI può mostrarli a chi va in modalità manual
+      // (e anche in auto, come reference utente).
+      dnsRecordsToAdd: [
+        {
+          type: "TXT" as const,
+          name: `${txtName}.${apex}`,
+          value: token,
+          ttl: 600,
+          purpose:
+            "Verifica proprietà dominio. Richiesto sempre (anche in modalità auto è stato creato da noi).",
+          autoCreated: recordsCreated,
+        },
+        {
+          type: subdomain === "@" || subdomain === "" ? "A" : "CNAME",
+          name: subdomain === "@" || subdomain === "" ? "@" : subdomain,
+          value:
+            subdomain === "@" || subdomain === ""
+              ? "[I record A verranno mostrati dopo verify]"
+              : `[CNAME al backend hosted.app — generato dopo verify]`,
+          ttl: 600,
+          purpose:
+            "Routing del traffico. Sarà autocompilato dopo il passo di verifica.",
+          autoCreated: false,
+        },
+      ],
       next: {
         verifyEndpoint: `/api/projects/${projectId}/domains/verify`,
         pollIntervalMs: 5000,

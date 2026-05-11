@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as dnsPromises } from "node:dns";
 import { getAdmin } from "@/lib/firebase/admin";
 import { VERIFY_TXT_NAME } from "@/lib/dns/verify-token";
-import { splitDomain } from "@/lib/dns/godaddy";
+import { splitDomain } from "@/lib/dns/util";
 
 /**
  * S7.14 sub-B — Polling endpoint: verifica che il TXT `_rezen-verify.<domain>`

@@ -2,20 +2,23 @@ import "server-only";
 
 import type { DnsProvider } from "./types";
 import { DnsProviderError } from "./types";
-import { GoDaddyProvider } from "./godaddy";
+import { CloudflareProvider } from "./cloudflare";
 import { resolveProviderSecret } from "@/lib/integrations/server-secrets";
 import type { IntegrationProviderId } from "@/lib/integrations/providers";
 
 /**
- * S7.14 sub-A — Resolve a DnsProvider istance per uno scope.
+ * S7.14 — Resolve a DnsProvider istance per uno scope.
  *
- * Risolve credentials da Secret Manager (project override → workspace default)
- * e ritorna l'implementazione concreta. Throw DnsProviderError se non
- * configurato — il caller decide come surface-arlo all'utente (404 con
- * "collega prima un provider DNS").
+ * Provider auto-DNS supportati oggi: Cloudflare (free API). I domini su
+ * altri registrar (GoDaddy, Namecheap, ecc.) usano il flow MANUAL DNS:
+ * la UI mostra i record da copy-paste nel pannello DNS del registrar e
+ * polla la propagazione via dns.resolveTxt.
+ *
+ * Throw DnsProviderError 404 se nessun provider è configurato — il caller
+ * decide se fallback a manuale o segnalare all'utente.
  */
 
-const DNS_PROVIDER_IDS = ["godaddy"] as const satisfies ReadonlyArray<IntegrationProviderId>;
+const DNS_PROVIDER_IDS = ["cloudflare"] as const satisfies ReadonlyArray<IntegrationProviderId>;
 
 export type DnsProviderId = (typeof DNS_PROVIDER_IDS)[number];
 
@@ -41,16 +44,16 @@ export async function resolveDnsProvider(opts: {
     );
   }
   switch (opts.provider) {
-    case "godaddy": {
-      const { apiKey, apiSecret } = secret.fields;
-      if (!apiKey || !apiSecret) {
+    case "cloudflare": {
+      const { apiToken } = secret.fields;
+      if (!apiToken) {
         throw new DnsProviderError(
-          "Credenziali GoDaddy incomplete (apiKey + apiSecret richiesti)",
+          "Credenziali Cloudflare incomplete (apiToken richiesto)",
           400,
-          "godaddy",
+          "cloudflare",
         );
       }
-      return new GoDaddyProvider(apiKey, apiSecret);
+      return new CloudflareProvider(apiToken);
     }
   }
 }
@@ -58,7 +61,7 @@ export async function resolveDnsProvider(opts: {
 /**
  * Trova il primo DnsProvider configurato per lo scope. Utile per UI "scegli
  * un dominio" che non conosce ancora quale provider l'utente ha settato.
- * Ritorna null se nessuno configurato.
+ * Ritorna null se nessuno configurato (flow MANUAL DNS).
  */
 export async function findFirstConfiguredDnsProvider(opts: {
   projectId?: string;

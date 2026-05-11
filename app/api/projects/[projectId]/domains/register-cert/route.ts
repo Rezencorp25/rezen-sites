@@ -5,7 +5,7 @@ import {
   defaultBackendCoords,
   getCustomDomain,
 } from "@/lib/firebase/apphosting-admin";
-import { splitDomain } from "@/lib/dns/godaddy";
+import { splitDomain } from "@/lib/dns/util";
 import {
   resolveDnsProvider,
   isDnsProviderId,

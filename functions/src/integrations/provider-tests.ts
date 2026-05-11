@@ -242,37 +242,39 @@ async function testAdSense(fields: Fields): Promise<TestResult> {
   }
 }
 
-async function testGoDaddy(fields: Fields): Promise<TestResult> {
-  const apiKey = fields.apiKey;
-  const apiSecret = fields.apiSecret;
-  if (!apiKey || !apiSecret) return bad("Manca apiKey o apiSecret");
+async function testCloudflare(fields: Fields): Promise<TestResult> {
+  const apiToken = fields.apiToken;
+  if (!apiToken) return bad("Manca apiToken");
   try {
-    // GET /v1/domains: lista domini visibili al key owner. Conferma auth +
-    // proprietà account. Limit=1 perché ci basta sapere che la 401 non scatta.
+    // GET /user/tokens/verify: convalida il token. Risposta {success: true}
+    // conferma il token attivo + scope corretti.
     const res = await safeFetch(
-      "https://api.godaddy.com/v1/domains?limit=1",
+      "https://api.cloudflare.com/client/v4/user/tokens/verify",
       {
         method: "GET",
         headers: {
-          authorization: `sso-key ${apiKey}:${apiSecret}`,
+          authorization: `Bearer ${apiToken}`,
           accept: "application/json",
         },
       },
     );
     if (res.status === 401 || res.status === 403) {
       return bad(
-        "Credenziali GoDaddy non valide o non Production-tier (le key OTE non vedono i domini reali)",
+        "Token Cloudflare non valido. Verifica permessi Zone:Read + DNS:Edit",
       );
     }
-    if (res.status === 429) {
-      return bad("Rate limit GoDaddy (60 req/min). Riprova fra qualche secondo");
-    }
     if (!res.ok) {
-      return bad(`GoDaddy ${res.status}: ${(await res.text()).slice(0, 120)}`);
+      return bad(
+        `Cloudflare ${res.status}: ${(await res.text()).slice(0, 120)}`,
+      );
+    }
+    const body = (await res.json()) as { success?: boolean };
+    if (body.success !== true) {
+      return bad("Cloudflare risponde success=false. Verifica permessi.");
     }
     return ok();
   } catch (err) {
-    return bad(formatErr(err, "GoDaddy"));
+    return bad(formatErr(err, "Cloudflare"));
   }
 }
 
@@ -344,7 +346,7 @@ const TESTS: Record<string, (fields: Fields) => Promise<TestResult>> = {
   dataforseo: testDataForSEO,
   adsense: testAdSense,
   ga4: testGa4,
-  godaddy: testGoDaddy,
+  cloudflare: testCloudflare,
 };
 
 export async function runProviderTest(

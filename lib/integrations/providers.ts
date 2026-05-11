@@ -21,7 +21,7 @@ export type IntegrationProviderId =
   | "dataforseo"
   | "adsense"
   | "ga4"
-  | "godaddy";
+  | "cloudflare";
 
 export type IntegrationCategory =
   | "llm"
@@ -249,42 +249,37 @@ export const INTEGRATION_PROVIDERS: Record<
     },
   },
 
-  godaddy: {
-    id: "godaddy",
-    label: "GoDaddy",
+  cloudflare: {
+    id: "cloudflare",
+    label: "Cloudflare DNS",
     category: "dns",
     description:
-      "Lista domini + gestione DNS records (TXT/A/CNAME) per collegare il sito a un dominio custom posseduto su GoDaddy.",
+      "Gestisce record DNS via Cloudflare (gratis). Funziona per qualunque dominio dopo che i nameservers puntano a Cloudflare — la registrazione resta su GoDaddy/altri.",
     difficulty: 2,
     fields: [
       {
-        key: "apiKey",
-        label: "API Key",
-        type: "text",
-        placeholder: "dGfXp...",
-        required: true,
-        hint: "Key (parte prima dei due punti) generata su developer.godaddy.com",
-      },
-      {
-        key: "apiSecret",
-        label: "API Secret",
+        key: "apiToken",
+        label: "API Token",
         type: "password",
-        placeholder: "C8j...",
+        placeholder: "Y...",
         required: true,
-        hint: "Secret (parte dopo i due punti). Mostrato una sola volta",
+        hint: "Token con permessi Zone:Read + DNS:Edit",
       },
     ],
-    last4Source: { fieldKey: "apiKey" },
+    last4Source: { fieldKey: "apiToken" },
     guide: {
-      headline: "Come ottenere le credenziali GoDaddy",
+      headline: "Come ottenere il token Cloudflare",
       steps: [
-        "Vai su developer.godaddy.com/keys (accedi col tuo account GoDaddy proprietario dei domini)",
-        "Click 'Create New API Key'",
-        "Nome a piacere (es. 'rezen-sites'), Environment: 'Production' (NON OTE — non vede i tuoi domini reali)",
-        "GoDaddy mostra una stringa 'API Key:API Secret' separata da due punti — copia entrambi i pezzi",
-        "Incolla la parte prima dei `:` come API Key e dopo come API Secret",
+        "Crea account gratis su cloudflare.com (se non ce l'hai)",
+        "Aggiungi il tuo dominio (es. verumflow.com) a Cloudflare → ti dà 2 nameservers",
+        "Su GoDaddy: cambia i nameservers del dominio puntandoli a quelli Cloudflare (operazione 1 volta)",
+        "Vai su dash.cloudflare.com/profile/api-tokens",
+        "Click 'Create Token' → template 'Edit zone DNS' (o custom con Zone:Read + DNS:Edit)",
+        "Zone Resources: 'Include All zones' (o solo il tuo dominio)",
+        "Copia il token mostrato e incollalo qui — viene mostrato una sola volta",
       ],
-      docsUrl: "https://developer.godaddy.com/getstarted",
+      docsUrl:
+        "https://developers.cloudflare.com/fundamentals/api/get-started/create-token/",
     },
   },
 
@@ -346,7 +341,7 @@ export const INTEGRATION_PROVIDER_ORDER: IntegrationProviderId[] = [
   "dataforseo",
   "ga4",
   "adsense",
-  "godaddy",
+  "cloudflare",
 ];
 
 /**
