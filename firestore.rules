@@ -135,6 +135,20 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ── S7.14: Custom domains ─────────────────────────────────────────
+    //
+    // Mapping `domain → project` per il middleware host-aware (sub-D).
+    // Path: domains/{fqdn}
+    // - read: utente autenticato (Admin SDK bypassa; il middleware Cloud Run
+    //   usa Admin SDK → unauth ok)
+    // - write: solo Admin SDK (Next.js API routes /domains/connect e /verify)
+    // Lo verifyToken NON è sensibile per sicurezza ma per evitare leak banale
+    // teniamo write deny lato client.
+    match /domains/{fqdn} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
     // ── Leads (Sprint S3 — Lead Pipeline interno) ──────────────────────
 
     // CRUD permesso a utenti autenticati.
