@@ -129,6 +129,7 @@ export function ImportedSiteInlineEditor({
   const [localHref, setLocalHref] = useState(selection.attrs.href ?? "");
   const [localSrc, setLocalSrc] = useState(selection.attrs.src ?? "");
   const [localAlt, setLocalAlt] = useState(selection.attrs.alt ?? "");
+  const [aspectLock, setAspectLock] = useState(true);
   /** Which color swatch popover is open. null = none. */
   const [openPicker, setOpenPicker] = useState<StyleProp | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -199,6 +200,23 @@ export function ImportedSiteInlineEditor({
   }, [selection.styles]);
 
   const currentFontWeight = selection.styles?.fontWeight ?? "";
+
+  // Image dimensions (inline style only; we don't echo computed because the
+  // user wants to edit the explicit value, not the layout-derived one).
+  const currentImgWidth = useMemo(() => {
+    const w = selection.styles?.width ?? "";
+    const m = w.match(/(\d+(?:\.\d+)?)/);
+    return m ? Math.round(Number(m[1])) : 0;
+  }, [selection.styles]);
+  const currentImgHeight = useMemo(() => {
+    const h = selection.styles?.height ?? "";
+    const m = h.match(/(\d+(?:\.\d+)?)/);
+    return m ? Math.round(Number(m[1])) : 0;
+  }, [selection.styles]);
+  /** Original aspect ratio of the image to lock proportional scaling. */
+  const imgAspect = currentImgWidth && currentImgHeight
+    ? currentImgWidth / currentImgHeight
+    : 1;
 
   async function handleSave() {
     try {
@@ -488,6 +506,84 @@ export function ImportedSiteInlineEditor({
               </select>
             </label>
           </div>
+        </div>
+      )}
+
+      {/* Dimensioni — solo per IMG. L'utente può anche trascinare le 8
+          maniglie sull'immagine; questi input sono per regolazione fine. */}
+      {isImg && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-label-xs font-medium uppercase tracking-wider text-text-muted">
+              Stile · dimensioni
+            </span>
+            <label className="flex items-center gap-1.5 text-label-xs text-text-muted">
+              <input
+                type="checkbox"
+                checked={aspectLock}
+                onChange={(e) => setAspectLock(e.target.checked)}
+                style={{ pointerEvents: "auto" }}
+              />
+              <span>Aspect lock</span>
+            </label>
+          </div>
+          <div className="flex items-end gap-2">
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-label-xs text-text-muted">Width</span>
+              <input
+                type="number"
+                value={currentImgWidth || ""}
+                onChange={(e) => {
+                  const w = Math.max(20, Number(e.target.value) || 0);
+                  onApplyPatch("style", `${w}px`, "width");
+                  if (aspectLock && imgAspect && currentImgHeight) {
+                    onApplyPatch("style", `${Math.round(w / imgAspect)}px`, "height");
+                  }
+                }}
+                style={{ pointerEvents: "auto" }}
+                className="rounded-md border border-outline/30 bg-surface-container-lowest px-2 py-1.5 text-body-sm focus:border-molten-primary focus:outline-none"
+                placeholder="auto"
+                min={20}
+                max={3000}
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-label-xs text-text-muted">Height</span>
+              <input
+                type="number"
+                value={currentImgHeight || ""}
+                onChange={(e) => {
+                  const h = Math.max(20, Number(e.target.value) || 0);
+                  onApplyPatch("style", `${h}px`, "height");
+                  if (aspectLock && imgAspect && currentImgWidth) {
+                    onApplyPatch("style", `${Math.round(h * imgAspect)}px`, "width");
+                  }
+                }}
+                style={{ pointerEvents: "auto" }}
+                className="rounded-md border border-outline/30 bg-surface-container-lowest px-2 py-1.5 text-body-sm focus:border-molten-primary focus:outline-none"
+                placeholder="auto"
+                min={20}
+                max={3000}
+              />
+            </label>
+            <button
+              type="button"
+              onClickCapture={(e) => {
+                e.stopPropagation();
+                onApplyPatch("style", "", "width");
+                onApplyPatch("style", "", "height");
+              }}
+              style={{ pointerEvents: "auto", cursor: "pointer" }}
+              className="rounded-md border border-outline/30 px-2 py-1.5 text-label-xs text-text-muted hover:bg-surface-container hover:text-on-surface"
+              title="Rimuovi width/height (torna alle dimensioni native)"
+            >
+              Reset
+            </button>
+          </div>
+          <p className="text-label-xs text-text-muted">
+            Suggerimento: trascina le 8 maniglie sull'immagine. Tieni Shift per
+            sbloccare/bloccare il rapporto.
+          </p>
         </div>
       )}
 

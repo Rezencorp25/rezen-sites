@@ -189,7 +189,144 @@ export function buildBridgeScript(): string {
     hoverEl = null;
   }
 
+  // ─── Image resize overlay ────────────────────────────────────────────
+  // When an IMG is selected we render a transparent overlay with 8 drag
+  // handles (4 corners + 4 mid-edges) Canva-style. Drag → live update
+  // el.style.width/height. Shift held → lock aspect ratio.
+  var resizeOverlay = null;
+  var resizeAspect = 1;
+
+  function detachResizeOverlay() {
+    if (resizeOverlay && resizeOverlay.parentNode) {
+      resizeOverlay.parentNode.removeChild(resizeOverlay);
+    }
+    resizeOverlay = null;
+  }
+
+  function positionResizeOverlay(img) {
+    if (!resizeOverlay) return;
+    var rect = img.getBoundingClientRect();
+    var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    resizeOverlay.style.left = (rect.left + scrollX) + 'px';
+    resizeOverlay.style.top = (rect.top + scrollY) + 'px';
+    resizeOverlay.style.width = rect.width + 'px';
+    resizeOverlay.style.height = rect.height + 'px';
+  }
+
+  function attachResizeOverlay(img) {
+    detachResizeOverlay();
+    if (!img.naturalWidth) return;
+    resizeAspect = img.naturalWidth / Math.max(1, img.naturalHeight);
+    var overlay = document.createElement('div');
+    overlay.setAttribute('data-rzn-resize-overlay', '1');
+    overlay.style.cssText = [
+      'position:absolute',
+      'pointer-events:none',
+      'z-index:2147483646',
+      'box-sizing:border-box',
+      'border:1px solid #06b6d4'
+    ].join(';');
+    var handles = ['nw','n','ne','e','se','s','sw','w'];
+    handles.forEach(function(name){
+      var h = document.createElement('div');
+      h.setAttribute('data-rzn-resize-handle', name);
+      h.style.cssText = [
+        'position:absolute',
+        'width:10px',
+        'height:10px',
+        'background:#fff',
+        'border:1px solid #06b6d4',
+        'border-radius:2px',
+        'pointer-events:auto',
+        'cursor:' + cursorFor(name)
+      ].join(';');
+      // Place handle at corner/edge
+      if (name.indexOf('n') !== -1) h.style.top = '-5px';
+      if (name.indexOf('s') !== -1) h.style.bottom = '-5px';
+      if (name.indexOf('w') !== -1) h.style.left = '-5px';
+      if (name.indexOf('e') !== -1) h.style.right = '-5px';
+      if (name === 'n' || name === 's') { h.style.left = 'calc(50% - 5px)'; }
+      if (name === 'e' || name === 'w') { h.style.top = 'calc(50% - 5px)'; }
+      h.addEventListener('mousedown', function(ev){ startResize(ev, img, name); });
+      overlay.appendChild(h);
+    });
+    document.body.appendChild(overlay);
+    resizeOverlay = overlay;
+    positionResizeOverlay(img);
+  }
+
+  function cursorFor(name) {
+    var map = { nw:'nwse-resize', n:'ns-resize', ne:'nesw-resize',
+                e:'ew-resize', se:'nwse-resize', s:'ns-resize',
+                sw:'nesw-resize', w:'ew-resize' };
+    return map[name] || 'pointer';
+  }
+
+  function startResize(ev, img, dir) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    var startX = ev.clientX, startY = ev.clientY;
+    var startRect = img.getBoundingClientRect();
+    var startW = startRect.width, startH = startRect.height;
+    var shiftLock = false;
+    function move(e) {
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      shiftLock = e.shiftKey;
+      var w = startW, h = startH;
+      // Compute new width based on which handle
+      if (dir.indexOf('e') !== -1) w = startW + dx;
+      if (dir.indexOf('w') !== -1) w = startW - dx;
+      if (dir.indexOf('s') !== -1) h = startH + dy;
+      if (dir.indexOf('n') !== -1) h = startH - dy;
+      // For corner handles, lock aspect ratio unless user wants free resize
+      // For edge handles, lock by default UNLESS shift (inverse of Figma)
+      var isCorner = dir.length === 2;
+      if ((isCorner && !shiftLock) || (!isCorner && shiftLock)) {
+        // Lock aspect: derive missing dimension from the more-changed one
+        if (Math.abs(dx) > Math.abs(dy)) {
+          h = w / resizeAspect;
+        } else {
+          w = h * resizeAspect;
+        }
+      }
+      // Clamp min 20px, max parent width (or 2000)
+      var parentW = img.parentNode && img.parentNode.getBoundingClientRect
+        ? img.parentNode.getBoundingClientRect().width
+        : 2000;
+      w = Math.max(20, Math.min(w, parentW));
+      h = Math.max(20, h);
+      img.style.setProperty('width', Math.round(w) + 'px', 'important');
+      img.style.setProperty('height', Math.round(h) + 'px', 'important');
+      positionResizeOverlay(img);
+    }
+    function up() {
+      document.removeEventListener('mousemove', move, true);
+      document.removeEventListener('mouseup', up, true);
+      // Persist via rzn:edit so the parent queues a patch
+      var finalRect = img.getBoundingClientRect();
+      parent.postMessage({
+        type: 'rzn:edit',
+        selector: cssPath(img),
+        prop: 'style',
+        styleProp: 'width',
+        value: Math.round(finalRect.width) + 'px'
+      }, '*');
+      parent.postMessage({
+        type: 'rzn:edit',
+        selector: cssPath(img),
+        prop: 'style',
+        styleProp: 'height',
+        value: Math.round(finalRect.height) + 'px'
+      }, '*');
+    }
+    document.addEventListener('mousemove', move, true);
+    document.addEventListener('mouseup', up, true);
+  }
+
   function clearSelected() {
+    detachResizeOverlay();
     if (selectedEl) {
       selectedEl.removeAttribute('data-rzn-selected');
       if (selectedEl.getAttribute('contenteditable') === 'true') {
@@ -220,6 +357,8 @@ export function buildBridgeScript(): string {
     if (selectedEl && selectedEl !== t) clearSelected();
     selectedEl = t;
     t.setAttribute('data-rzn-selected', '1');
+    // Image: render resize handles overlay so user can drag-resize Canva-style.
+    if (t.tagName === 'IMG') attachResizeOverlay(t);
     parent.postMessage({
       type: 'rzn:select',
       selector: cssPath(t),
@@ -329,6 +468,12 @@ export function buildBridgeScript(): string {
           if (msg.styleProp === 'fontFamily' && msg.value) {
             ensureFontLink(msg.value);
           }
+          // Reposition the resize overlay if dimensions changed from the
+          // side panel (input numerico → patch → bridge).
+          if ((msg.styleProp === 'width' || msg.styleProp === 'height')
+              && el === selectedEl) {
+            repositionOverlay();
+          }
         }
       } catch(err) {}
       return;
@@ -336,6 +481,12 @@ export function buildBridgeScript(): string {
     if (msg.type === 'rzn:clear') {
       clearSelected();
       return;
+    }
+  }
+
+  function repositionOverlay() {
+    if (resizeOverlay && selectedEl && selectedEl.tagName === 'IMG') {
+      positionResizeOverlay(selectedEl);
     }
   }
 
@@ -349,6 +500,10 @@ export function buildBridgeScript(): string {
     document.addEventListener('focusout', onBlur, true);
     document.addEventListener('submit', onSubmit, true);
     window.addEventListener('message', onMessage);
+    // Keep the resize overlay locked to the IMG when the user scrolls or
+    // the viewport resizes.
+    window.addEventListener('scroll', repositionOverlay, true);
+    window.addEventListener('resize', repositionOverlay, true);
     parent.postMessage({ type: 'rzn:ready' }, '*');
   }
 

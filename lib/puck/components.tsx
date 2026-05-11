@@ -1410,18 +1410,42 @@ function ImportedSiteRender({
         });
       } else if (data.type === "rzn:edit") {
         setDirty(true);
-        setSelection((prev) =>
-          prev
-            ? {
-                ...prev,
-                text:
-                  (data as unknown as { prop: string; value: string }).prop ===
-                  "text"
-                    ? (data as unknown as { value: string }).value
-                    : prev.text,
-              }
-            : prev,
+        const m = data as unknown as {
+          prop: "text" | "href" | "src" | "alt" | "style";
+          value: string;
+          styleProp?: StyleProp;
+          selector?: string;
+        };
+        // Sync local selection state for UI (text/styles), then enqueue a
+        // patch so the next Save persists. Drag-resize handles emit two
+        // rzn:edit messages (width + height) on mouseup → both flow here.
+        setSelection((prev) => {
+          if (!prev) return prev;
+          if (m.prop === "text") return { ...prev, text: m.value };
+          if (m.prop === "style" && m.styleProp) {
+            return {
+              ...prev,
+              styles: { ...(prev.styles ?? {}), [m.styleProp]: m.value },
+            };
+          }
+          return prev;
+        });
+        // Coalesce into the patch queue (same logic as applyPatch).
+        const queue = patchesRef.current;
+        const existingIdx = queue.findIndex(
+          (p) =>
+            p.selector === (m.selector ?? "") &&
+            p.prop === m.prop &&
+            p.styleProp === m.styleProp,
         );
+        const next: InlinePatch = {
+          selector: m.selector ?? "",
+          prop: m.prop,
+          styleProp: m.styleProp,
+          value: m.value,
+        };
+        if (existingIdx >= 0) queue[existingIdx] = next;
+        else if (next.selector) queue.push(next);
       }
     }
     window.addEventListener("message", onMsg);
