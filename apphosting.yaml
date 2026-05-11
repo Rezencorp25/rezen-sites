@@ -1,9 +1,11 @@
 runConfig:
   cpu: 1
-  memoryMiB: 512
-  maxInstances: 1
+  memoryMiB: 1024
+  maxInstances: 3
   minInstances: 0
   concurrency: 80
+  # S7.13: github-init endpoint può durare 30-60s (creazione repo + push blob tree)
+  timeoutSeconds: 120
 
 env:
   - variable: NEXT_PUBLIC_USE_FIREBASE_EMULATOR
@@ -20,3 +22,11 @@ env:
     value: "000000000000"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "1:000000000000:web:preview"
+  # S7.13 — GitHub App credentials per inline edits → commit su Rezencorp26 org.
+  # Secrets gestiti via Google Secret Manager (firebase apphosting:secrets:set).
+  - variable: GITHUB_APP_ID
+    secret: GITHUB_APP_ID
+  - variable: GITHUB_INSTALLATION_ID
+    secret: GITHUB_INSTALLATION_ID
+  - variable: GITHUB_APP_PRIVATE_KEY
+    secret: GITHUB_APP_PRIVATE_KEY

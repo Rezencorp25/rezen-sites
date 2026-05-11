@@ -92,6 +92,26 @@ export type Project = {
     logoUrl: string;
     primaryColor: string;
   };
+  /**
+   * S7.13 — Source of truth GitHub repo per il sito. Quando present, le
+   * edits inline producono commit nel repo (branch `main`) e il preview
+   * dell'editor legge file da lì invece che da /public/imports/.
+   * Pubblica = merge main→production + Firebase App Hosting rollout.
+   */
+  githubRepo?: {
+    /** Org GitHub che possiede il repo (es. "rezencorp25"). */
+    owner: string;
+    /** Nome repo, convenzione `site-{projectId}`. */
+    name: string;
+    /** Branch workspace (live editing). */
+    branch: string;
+    /** Branch published (deploy production). */
+    productionBranch: string;
+    /** SHA dell'ultimo commit conosciuto su branch workspace. */
+    lastSha?: string;
+    /** ISO timestamp dell'init del repo. */
+    initializedAt?: string;
+  };
 };
 
 /**
